@@ -25,11 +25,21 @@ export enum FichaType {
   MALA = 'MALA'        // Rojo
 }
 
+export enum ClientStatus {
+  PENDING = 'Pendiente',
+  APPROVED = 'Aprobado',
+  REJECTED = 'Rechazado'
+}
+
 export interface User {
   id: string;
   name: string;
+  username: string;
   role: Role;
   avatar?: string;
+  isActive: boolean;
+  phone?: string;
+  createdAt: string;
 }
 
 export interface Client {
@@ -40,8 +50,11 @@ export interface Client {
   cedula: string;
   phone: string;
   address: string;
-  assignedUserId?: string;
-  creditRating?: FichaType; // Nuevo campo
+  assignedUserId: string; // ID del Cobrador asignado (Obligatorio)
+  creditRating?: FichaType;
+  isBlocked?: boolean;
+  blockReason?: string;
+  status: ClientStatus; // Nuevo campo para flujo de aprobación
   createdAt: string;
 }
 
@@ -51,6 +64,7 @@ export interface Ficha {
   type: FichaType;
   reason: string;
   note?: string;
+  impact: 'UP' | 'DOWN' | 'NEUTRAL';
   createdBy: string; // User ID
   createdAt: string;
   isArchived: boolean;
@@ -88,13 +102,24 @@ export interface PaymentReceipt {
   loanId: string;
   installmentId: string;
   amount: number;
+  moraPaid: number;
   date: string;
   note?: string;
 }
 
-export interface DashboardStats {
-  totalLent: number;
-  totalCollectedToday: number;
-  pendingToday: number;
-  activeLoansCount: number;
+export type ActivityType = 'PAGO' | 'NOTA' | 'PROMESA' | 'CONDUCTA' | 'BLOQUEO' | 'PRESTAMO' | 'USER_MGMT' | 'APPROVAL';
+
+export interface ActivityEvent {
+  id: string;
+  type: ActivityType;
+  timestamp: string;
+  clientId?: string;
+  clientName?: string;
+  userId: string;
+  userName: string;
+  title: string;
+  description: string;
+  amount?: number;
+  status?: string;
+  metadata?: any;
 }

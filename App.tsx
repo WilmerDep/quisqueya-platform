@@ -8,6 +8,8 @@ import { Clients } from './pages/Clients';
 import { ClientProfile } from './pages/ClientProfile';
 import { LoanCreate } from './pages/LoanCreate';
 import { Reports } from './pages/Reports';
+import { ActivityPage } from './pages/Activity';
+import { UsersManagement } from './pages/UsersManagement';
 
 const App: React.FC = () => {
   return (
@@ -16,10 +18,12 @@ const App: React.FC = () => {
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/activity" element={<ActivityPage />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/clients/:id" element={<ClientProfile />} />
             <Route path="/loans" element={<Navigate to="/loans/new" replace />} />
             <Route path="/loans/new" element={<LoanCreate />} />
+            <Route path="/users" element={<UsersManagement />} />
             <Route path="/reports" element={<Reports />} />
           </Routes>
         </Layout>

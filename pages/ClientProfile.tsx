@@ -1,505 +1,362 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
     getClientById, getClientLoans, getClientFichas, getClientPayments, 
-    updateClient, addFicha 
+    updateClient, addFicha, updateClientStatus 
 } from '../services/dataService';
-import { Client, Loan, Ficha, PaymentReceipt, FichaType, LoanStatus } from '../types';
+import { Client, Loan, Ficha, PaymentReceipt, FichaType, LoanStatus, Role, ClientStatus } from '../types';
 import { formatCurrency, formatDate } from '../utils';
 import { useAuth } from '../context/AuthContext';
 import { Badge } from '../components/ui/Badge';
 import { 
-    Phone, MapPin, User, FileText, AlertTriangle, CheckCircle, 
-    Clock, Printer, ArrowLeft, Edit2, Plus, Download, X 
+    Phone, MapPin, AlertTriangle, CheckCircle, 
+    Clock, ArrowLeft, Edit2, Plus, Download, X, TrendingUp, TrendingDown,
+    ShieldOff, ShieldAlert, Wallet, Hash, FileText, Check, XCircle
 } from 'lucide-react';
-
-// Sub-components
-const RatingBadge = ({ type }: { type?: FichaType }) => {
-    const colors = {
-        [FichaType.BUENA]: 'bg-green-100 text-green-800 border-green-200',
-        [FichaType.REGULAR]: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-        [FichaType.MALA]: 'bg-red-100 text-red-800 border-red-200',
-    };
-    return (
-        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${colors[type || FichaType.BUENA]}`}>
-            {type || 'SIN CALIFICAR'}
-        </span>
-    );
-};
 
 export const ClientProfile: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     
-    // Data State
     const [client, setClient] = useState<Client | undefined>(undefined);
     const [loans, setLoans] = useState<Loan[]>([]);
     const [fichas, setFichas] = useState<Ficha[]>([]);
     const [payments, setPayments] = useState<PaymentReceipt[]>([]);
     const [activeTab, setActiveTab] = useState<'RESUMEN' | 'HISTORIAL' | 'FICHAS'>('RESUMEN');
 
-    // Modals State
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isFichaOpen, setIsFichaOpen] = useState(false);
-    const [isExportOpen, setIsExportOpen] = useState(false);
+    const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
 
-    // Form States
     const [editForm, setEditForm] = useState<Partial<Client>>({});
-    const [fichaForm, setFichaForm] = useState({ type: FichaType.REGULAR, reason: '', note: '' });
+    const [fichaForm, setFichaForm] = useState({ type: FichaType.REGULAR, reason: '', note: '', impact: 'NEUTRAL' });
+    const [blockReason, setBlockReason] = useState('');
 
     useEffect(() => {
-        if (id) {
-            loadData(id);
-        }
+        if (id) loadData(id);
     }, [id]);
 
     const loadData = (clientId: string) => {
-        setClient(getClientById(clientId));
-        setLoans(getClientLoans(clientId));
-        setFichas(getClientFichas(clientId));
-        setPayments(getClientPayments(clientId));
+        const c = getClientById(clientId);
+        if (c) {
+            setClient({ ...c }); 
+            setEditForm({ ...c });
+            setLoans(getClientLoans(clientId));
+            setFichas(getClientFichas(clientId));
+            setPayments(getClientPayments(clientId));
+        }
+    };
+
+    const handleApproval = (status: ClientStatus) => {
+        if (!client) return;
+        
+        const confirmMsg = `¿Desea cambiar el estatus de ${client.firstName} a ${status.toUpperCase()}?`;
+        
+        if (window.confirm(confirmMsg)) {
+            try {
+                // Actualizamos y capturamos el retorno
+                const updated = updateClientStatus(client.id, status, currentUser);
+                
+                // Actualizamos el estado local INMEDIATAMENTE con el objeto retornado
+                setClient({ ...updated });
+                
+                // Refrescamos otros datos (bitácora, etc)
+                loadData(client.id);
+                
+                alert(`Expediente actualizado a: ${status.toUpperCase()}`);
+            } catch (error) {
+                console.error("Error en aprobación:", error);
+                alert("No se pudo actualizar el estatus.");
+            }
+        }
     };
 
     const handleUpdateClient = (e: React.FormEvent) => {
         e.preventDefault();
-        if (client) {
-            updateClient(client.id, editForm);
-            loadData(client.id);
+        if (id && editForm) {
+            const updated = updateClient(id, editForm);
+            setClient({ ...updated });
             setIsEditOpen(false);
+            alert("Información actualizada.");
         }
     };
 
-    const handleAddFicha = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (client) {
-            addFicha({
-                clientId: client.id,
-                type: fichaForm.type as FichaType,
-                reason: fichaForm.reason,
-                note: fichaForm.note,
-                createdBy: currentUser.id
+    const handleUnblock = () => {
+        if (!client) return;
+        if (window.confirm("¿CONFIRMAR DESBLOQUEO? El cliente volverá a estar habilitado para préstamos.")) {
+            const updated = updateClient(client.id, { isBlocked: false, blockReason: '', creditRating: FichaType.BUENA });
+            addFicha({ 
+                clientId: client.id, 
+                type: FichaType.BUENA, 
+                reason: 'DESBLOQUEO DE CUENTA', 
+                note: `El oficial ${currentUser.name} retiró el bloqueo manual.`, 
+                impact: 'UP', 
+                createdBy: currentUser.id 
             });
+            setClient({ ...updated }); 
             loadData(client.id);
-            setIsFichaOpen(false);
-            setFichaForm({ type: FichaType.REGULAR, reason: '', note: '' });
         }
     };
 
-    const handlePrint = () => {
-        window.print();
-        setIsExportOpen(false);
-    };
-
-    if (!client) return <div className="p-8">Cargando perfil...</div>;
+    if (!client) return <div className="p-12 text-center font-black text-gray-400 uppercase tracking-widest animate-pulse">Cargando Expediente...</div>;
 
     return (
-        <div className="space-y-6">
-            <style>{`
-                @media print {
-                    @page { margin: 1cm; size: portrait; }
-                    body * { visibility: hidden; }
-                    #print-area, #print-area * { visibility: visible; }
-                    #print-area { position: absolute; left: 0; top: 0; width: 100%; }
-                    .no-print { display: none !important; }
-                }
-            `}</style>
-
-            {/* Header & Nav */}
-            <div className="flex items-center gap-4 mb-4 no-print">
-                <button onClick={() => navigate('/clients')} className="p-2 hover:bg-gray-100 rounded-lg">
-                    <ArrowLeft size={20} className="text-gray-600"/>
-                </button>
-                <h1 className="text-xl font-bold text-gray-800">Perfil del Cliente</h1>
-            </div>
-
-            {/* Main Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden no-print">
-                <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col md:flex-row justify-between gap-6">
-                    {/* Info */}
-                    <div className="flex gap-5">
-                        <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-3xl">
-                            {client.firstName[0]}{client.lastName[0]}
+        <div className="space-y-6 pb-20 animate-fadeIn">
+            {/* Banner de Estado Pendiente: Visible solo para Admin/Supervisor */}
+            {client.status === ClientStatus.PENDING && (
+                <div className="bg-orange-500 text-white p-7 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between shadow-2xl gap-6 no-print border-4 border-orange-400/30">
+                    <div className="flex items-center gap-5">
+                        <div className="bg-white/20 p-4 rounded-3xl">
+                            <Clock size={44} />
                         </div>
                         <div>
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-2xl font-bold text-gray-900">{client.firstName} {client.lastName}</h2>
-                                <RatingBadge type={client.creditRating} />
-                            </div>
-                            <p className="text-gray-500 italic">"{client.nickname || 'Sin apodo'}"</p>
-                            
-                            <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-600">
-                                <span className="flex items-center gap-1">
-                                    <span className="font-mono font-medium bg-gray-100 px-1 rounded">{client.cedula}</span>
-                                </span>
-                                <span className="flex items-center gap-1 hover:text-blue-600 cursor-pointer">
-                                    <Phone size={14} /> {client.phone}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <MapPin size={14} /> {client.address}
-                                </span>
-                            </div>
+                            <p className="font-black uppercase tracking-[0.2em] text-[10px] text-orange-100 mb-1">PROSPECTO ESPERANDO REVISIÓN</p>
+                            <p className="text-xl font-black leading-tight">Este expediente debe ser validado antes de otorgar crédito.</p>
                         </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-2 min-w-[160px]">
-                        <button 
-                            onClick={() => { setEditForm(client); setIsEditOpen(true); }}
-                            className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700"
-                        >
-                            <Edit2 size={16} /> Editar Datos
-                        </button>
-                        <button 
-                            onClick={() => setIsExportOpen(true)}
-                            className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700"
-                        >
-                            <Download size={16} /> Exportar Ficha
-                        </button>
-                    </div>
-                </div>
-
-                {/* Tabs */}
-                <div className="flex border-b border-gray-200 bg-gray-50 px-6">
-                    {[
-                        { id: 'RESUMEN', label: 'Resumen Financiero', icon: FileText },
-                        { id: 'HISTORIAL', label: 'Historial de Pagos', icon: Clock },
-                        { id: 'FICHAS', label: 'Comportamiento (Fichas)', icon: AlertTriangle }
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`
-                                flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 transition-colors
-                                ${activeTab === tab.id 
-                                    ? 'border-blue-600 text-blue-600 bg-white' 
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'}
-                            `}
-                        >
-                            <tab.icon size={16} />
-                            {tab.label}
-                            {tab.id === 'FICHAS' && fichas.length > 0 && (
-                                <span className="ml-1 bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs">{fichas.length}</span>
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Content */}
-                <div className="p-6 md:p-8 min-h-[400px]">
-                    
-                    {/* TAB: RESUMEN */}
-                    {activeTab === 'RESUMEN' && (
-                        <div className="space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl">
-                                    <p className="text-sm text-blue-600 font-medium uppercase">Total Prestado</p>
-                                    <p className="text-2xl font-bold text-blue-900">
-                                        {formatCurrency(loans.reduce((acc, l) => acc + l.amount, 0))}
-                                    </p>
-                                </div>
-                                <div className="p-5 bg-orange-50 border border-orange-100 rounded-xl">
-                                    <p className="text-sm text-orange-600 font-medium uppercase">Deuda Actual</p>
-                                    <p className="text-2xl font-bold text-orange-900">
-                                        {formatCurrency(loans.reduce((acc, l) => acc + l.balance, 0))}
-                                    </p>
-                                </div>
-                                <div className="p-5 bg-green-50 border border-green-100 rounded-xl">
-                                    <p className="text-sm text-green-600 font-medium uppercase">Préstamos Activos</p>
-                                    <p className="text-2xl font-bold text-green-900">
-                                        {loans.filter(l => l.status === LoanStatus.ACTIVO || l.status === LoanStatus.MORA).length}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-4">Préstamos Asociados</h3>
-                                <div className="overflow-hidden border border-gray-200 rounded-xl">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="bg-gray-50 text-gray-500 uppercase font-medium">
-                                            <tr>
-                                                <th className="px-4 py-3">Fecha Inicio</th>
-                                                <th className="px-4 py-3">Monto</th>
-                                                <th className="px-4 py-3">Frecuencia</th>
-                                                <th className="px-4 py-3">Balance</th>
-                                                <th className="px-4 py-3 text-center">Estado</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {loans.map(loan => (
-                                                <tr key={loan.id} className="hover:bg-gray-50">
-                                                    <td className="px-4 py-3">{formatDate(loan.startDate)}</td>
-                                                    <td className="px-4 py-3 font-medium">{formatCurrency(loan.amount)}</td>
-                                                    <td className="px-4 py-3">{loan.frequency} ({loan.duration} cuotas)</td>
-                                                    <td className="px-4 py-3 font-bold text-gray-700">{formatCurrency(loan.balance)}</td>
-                                                    <td className="px-4 py-3 text-center"><Badge status={loan.status} /></td>
-                                                </tr>
-                                            ))}
-                                            {loans.length === 0 && (
-                                                <tr><td colSpan={5} className="p-4 text-center text-gray-400">Sin préstamos registrados</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* TAB: HISTORIAL PAGOS */}
-                    {activeTab === 'HISTORIAL' && (
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-bold text-gray-800">Historial de Pagos Recibidos</h3>
-                                <span className="text-sm text-gray-500">Total: {payments.length} recibos</span>
-                            </div>
-                            <div className="overflow-hidden border border-gray-200 rounded-xl">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50 text-gray-500 uppercase font-medium">
-                                        <tr>
-                                            <th className="px-4 py-3">Fecha</th>
-                                            <th className="px-4 py-3">Monto</th>
-                                            <th className="px-4 py-3">Préstamo</th>
-                                            <th className="px-4 py-3">Recibo ID</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {payments.map(pay => (
-                                            <tr key={pay.id} className="hover:bg-gray-50">
-                                                <td className="px-4 py-3">{formatDate(pay.date)}</td>
-                                                <td className="px-4 py-3 font-bold text-green-700">{formatCurrency(pay.amount)}</td>
-                                                <td className="px-4 py-3 text-gray-600 font-mono">...{pay.loanId.slice(-6)}</td>
-                                                <td className="px-4 py-3 text-gray-500 font-mono text-xs">{pay.id.slice(0,12)}</td>
-                                            </tr>
-                                        ))}
-                                        {payments.length === 0 && (
-                                            <tr><td colSpan={4} className="p-8 text-center text-gray-400">No hay pagos registrados para este cliente.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* TAB: FICHAS */}
-                    {activeTab === 'FICHAS' && (
-                        <div>
-                            <div className="flex justify-between items-center mb-6">
-                                <p className="text-sm text-gray-500 max-w-lg">
-                                    Las fichas registran eventos positivos o negativos que afectan la calificación crediticia del cliente. No se pueden eliminar, solo archivar.
-                                </p>
-                                <button 
-                                    onClick={() => setIsFichaOpen(true)}
-                                    className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800"
-                                >
-                                    <Plus size={16}/> Nueva Ficha
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                {fichas.map(ficha => (
-                                    <div key={ficha.id} className="flex gap-4 p-4 border border-gray-100 rounded-xl bg-gray-50">
-                                        <div className={`
-                                            w-12 h-12 rounded-full flex items-center justify-center shrink-0
-                                            ${ficha.type === FichaType.BUENA ? 'bg-green-100 text-green-600' : ''}
-                                            ${ficha.type === FichaType.REGULAR ? 'bg-yellow-100 text-yellow-600' : ''}
-                                            ${ficha.type === FichaType.MALA ? 'bg-red-100 text-red-600' : ''}
-                                        `}>
-                                            {ficha.type === FichaType.BUENA && <CheckCircle size={20} />}
-                                            {ficha.type === FichaType.REGULAR && <Clock size={20} />}
-                                            {ficha.type === FichaType.MALA && <AlertTriangle size={20} />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <h4 className="font-bold text-gray-900">{ficha.reason}</h4>
-                                                <span className="text-xs text-gray-500">{formatDate(ficha.createdAt)}</span>
-                                            </div>
-                                            <p className="text-sm text-gray-600 mt-1">{ficha.note}</p>
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <span className={`text-xs font-bold px-2 py-0.5 rounded border 
-                                                    ${ficha.type === 'BUENA' ? 'border-green-200 text-green-700 bg-white' : ''}
-                                                    ${ficha.type === 'MALA' ? 'border-red-200 text-red-700 bg-white' : ''}
-                                                    ${ficha.type === 'REGULAR' ? 'border-yellow-200 text-yellow-700 bg-white' : ''}
-                                                `}>
-                                                    {ficha.type}
-                                                </span>
-                                                <span className="text-xs text-gray-400">Autor: Staff</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {fichas.length === 0 && (
-                                    <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl">
-                                        <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <FileText className="text-gray-400" />
-                                        </div>
-                                        <p className="text-gray-500">Este cliente no tiene historial de comportamiento registrado.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* --- MODALS --- */}
-
-            {/* EDIT MODAL */}
-            {isEditOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl w-full max-w-md p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold">Editar Cliente</h3>
-                            <button onClick={() => setIsEditOpen(false)}><X className="text-gray-400"/></button>
-                        </div>
-                        <form onSubmit={handleUpdateClient} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Teléfono</label>
-                                <input className="w-full border rounded-lg p-2 bg-white" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Dirección</label>
-                                <input className="w-full border rounded-lg p-2 bg-white" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Apodo</label>
-                                <input className="w-full border rounded-lg p-2 bg-white" value={editForm.nickname} onChange={e => setEditForm({...editForm, nickname: e.target.value})} />
-                            </div>
-                            <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold mt-2">Guardar Cambios</button>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* FICHA MODAL */}
-            {isFichaOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl w-full max-w-md p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold">Nueva Ficha de Comportamiento</h3>
-                            <button onClick={() => setIsFichaOpen(false)}><X className="text-gray-400"/></button>
-                        </div>
-                        <form onSubmit={handleAddFicha} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Tipo de Evento</label>
-                                <div className="grid grid-cols-3 gap-2 mt-1">
-                                    {[FichaType.BUENA, FichaType.REGULAR, FichaType.MALA].map(t => (
-                                        <button 
-                                            key={t}
-                                            type="button"
-                                            onClick={() => setFichaForm({...fichaForm, type: t})}
-                                            className={`py-2 text-sm font-bold rounded-lg border ${fichaForm.type === t ? 'ring-2 ring-offset-1 ring-blue-500' : 'opacity-60'}
-                                                ${t === 'BUENA' ? 'bg-green-100 text-green-700 border-green-200' : ''}
-                                                ${t === 'REGULAR' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : ''}
-                                                ${t === 'MALA' ? 'bg-red-100 text-red-700 border-red-200' : ''}
-                                            `}
-                                        >
-                                            {t}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Motivo (Título)</label>
-                                <input 
-                                    required
-                                    placeholder="Ej: Promesa Incumplida"
-                                    className="w-full border rounded-lg p-2 mt-1 bg-white" 
-                                    value={fichaForm.reason} 
-                                    onChange={e => setFichaForm({...fichaForm, reason: e.target.value})} 
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Nota detallada</label>
-                                <textarea 
-                                    className="w-full border rounded-lg p-2 mt-1 bg-white" 
-                                    rows={3}
-                                    value={fichaForm.note} 
-                                    onChange={e => setFichaForm({...fichaForm, note: e.target.value})} 
-                                />
-                            </div>
-                            <button type="submit" className="w-full bg-gray-900 text-white py-2 rounded-lg font-bold mt-2">Registrar Ficha</button>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* EXPORT MODAL */}
-            {isExportOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl w-full max-w-sm p-6 text-center">
-                        <Printer size={48} className="mx-auto text-blue-600 mb-4 bg-blue-50 p-3 rounded-full"/>
-                        <h3 className="text-lg font-bold text-gray-800 mb-2">Exportar Ficha de Cliente</h3>
-                        <p className="text-gray-500 text-sm mb-6">Se generará un documento PDF listo para imprimir con el historial completo.</p>
-                        
-                        <div className="space-y-3">
-                            <button onClick={handlePrint} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">
-                                Imprimir / Guardar PDF
+                    {/* Control de roles para aprobación */}
+                    {currentUser.role !== Role.COBRADOR && (
+                        <div className="flex gap-3 w-full md:w-auto">
+                            <button 
+                                onClick={() => handleApproval(ClientStatus.REJECTED)} 
+                                className="flex-1 md:flex-none bg-red-600 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-red-700 active:scale-95 transition-all"
+                            >
+                                RECHAZAR
                             </button>
-                            <button onClick={() => setIsExportOpen(false)} className="w-full text-gray-500 py-2 font-medium">
-                                Cancelar
+                            <button 
+                                onClick={() => handleApproval(ClientStatus.APPROVED)} 
+                                className="flex-1 md:flex-none bg-white text-orange-600 px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-gray-50 active:scale-95 transition-all"
+                            >
+                                APROBAR CLIENTE
                             </button>
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
 
-            {/* PRINT TEMPLATE (Hidden unless printing) */}
-            <div id="print-area" className="hidden p-8 font-sans bg-white">
-                <div className="text-center border-b pb-4 mb-6">
-                    <h1 className="text-2xl font-bold uppercase tracking-wide">PrestaFácil RD</h1>
-                    <p className="text-gray-500">Reporte de Estado de Cliente</p>
-                    <p className="text-sm mt-1">{new Date().toLocaleDateString()}</p>
+            {/* Banner de Cliente Rechazado */}
+            {client.status === ClientStatus.REJECTED && (
+                <div className="bg-gray-800 text-white p-7 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between shadow-xl gap-6 no-print border-4 border-gray-700">
+                    <div className="flex items-center gap-5">
+                        <div className="bg-red-500/20 p-4 rounded-3xl">
+                            <XCircle size={44} className="text-red-400" />
+                        </div>
+                        <div>
+                            <p className="font-black uppercase tracking-[0.2em] text-[10px] text-gray-400 mb-1">EXPEDIENTE RECHAZADO</p>
+                            <p className="text-xl font-black leading-tight">Este cliente no cumple con las políticas de la empresa.</p>
+                        </div>
+                    </div>
+                    {currentUser.role !== Role.COBRADOR && (
+                        <button 
+                            onClick={() => handleApproval(ClientStatus.APPROVED)} 
+                            className="w-full md:w-auto bg-blue-600 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-blue-700 active:scale-95 transition-all"
+                        >
+                            RECONSIDERAR / APROBAR
+                        </button>
+                    )}
                 </div>
+            )}
 
-                <div className="flex justify-between mb-8">
+            {/* Banner de Bloqueo / Cicla */}
+            {client.isBlocked && (
+                <div className="bg-red-600 text-white p-7 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between shadow-2xl gap-6 no-print border-4 border-red-500">
+                    <div className="flex items-center gap-5">
+                        <div className="bg-white/20 p-4 rounded-3xl">
+                            <ShieldOff size={44} />
+                        </div>
+                        <div>
+                            <p className="font-black uppercase tracking-[0.2em] text-[10px] text-red-100 mb-1">CLIENTE BLOQUEADO (CICLA)</p>
+                            <p className="text-xl font-black leading-tight">{client.blockReason || 'Inhabilitado por comportamiento de pago.'}</p>
+                        </div>
+                    </div>
+                    {currentUser.role !== Role.COBRADOR && (
+                        <button onClick={handleUnblock} className="w-full md:w-auto bg-white text-red-600 px-10 py-4 rounded-2xl text-[12px] font-black uppercase tracking-widest shadow-xl hover:bg-gray-100 transition-all">RETIRAR BLOQUEO</button>
+                    )}
+                </div>
+            )}
+
+            {/* Header de Perfil */}
+            <div className="flex items-center justify-between no-print">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => navigate('/clients')} className="p-3 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 shadow-sm transition-all active:scale-90">
+                        <ArrowLeft size={22} className="text-gray-600"/>
+                    </button>
                     <div>
-                        <h2 className="text-xl font-bold">{client.firstName} {client.lastName}</h2>
-                        <p>Cédula: {client.cedula}</p>
-                        <p>Tel: {client.phone}</p>
-                        <p>{client.address}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="font-bold">Calificación Actual</p>
-                        <div className="text-lg uppercase mt-1">{client.creditRating}</div>
+                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">{client.firstName} {client.lastName}</h1>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">EXPEDIENTE: {client.status.toUpperCase()}</p>
                     </div>
                 </div>
-
-                <h3 className="font-bold border-b pb-1 mb-3 mt-6">Préstamos Activos</h3>
-                <table className="w-full text-sm mb-6">
-                    <thead>
-                        <tr className="text-left border-b">
-                            <th className="py-1">Fecha</th>
-                            <th className="py-1">Monto</th>
-                            <th className="py-1">Balance</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loans.map(l => (
-                            <tr key={l.id} className="border-b border-gray-100">
-                                <td className="py-1">{formatDate(l.startDate)}</td>
-                                <td>{formatCurrency(l.amount)}</td>
-                                <td>{formatCurrency(l.balance)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                <h3 className="font-bold border-b pb-1 mb-3 mt-6">Historial de Comportamiento</h3>
-                {fichas.map(f => (
-                    <div key={f.id} className="mb-2 pb-2 border-b border-gray-100">
-                        <div className="flex justify-between">
-                            <span className="font-bold text-sm">{f.reason} ({f.type})</span>
-                            <span className="text-xs">{formatDate(f.createdAt)}</span>
-                        </div>
-                        <p className="text-xs text-gray-600">{f.note}</p>
-                    </div>
-                ))}
-
-                <div className="mt-12 pt-8 border-t border-black flex justify-between text-xs">
-                    <span>Firma Responsable</span>
-                    <span>Firma Cliente</span>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => { setEditForm({...client}); setIsEditOpen(true); }} 
+                        className="p-4 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-blue-600 shadow-sm transition-all active:scale-90"
+                    >
+                        <Edit2 size={22} />
+                    </button>
                 </div>
             </div>
+
+            {/* Resumen y Tarjeta de Estatus */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm">
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-8">Datos de Identidad y Contacto</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Cédula del Cliente</p>
+                            <p className="font-black text-gray-900 text-lg tracking-tight">{client.cedula || 'NO REGISTRADA'}</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Teléfono de Contacto</p>
+                            <a href={`tel:${client.phone}`} className="font-black text-blue-600 text-xl hover:underline">{client.phone}</a>
+                        </div>
+                        <div className="md:col-span-2">
+                            <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Dirección de Cobro</p>
+                            <p className="font-bold text-gray-600 text-base leading-relaxed">{client.address}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className={`rounded-[2.5rem] p-10 flex flex-col justify-center items-center text-center shadow-sm border-2 transition-all
+                    ${client.status === ClientStatus.APPROVED ? 'bg-green-50 border-green-100' : 
+                      client.status === ClientStatus.REJECTED ? 'bg-red-50 border-red-100' : 'bg-orange-50 border-orange-100'}
+                `}>
+                    <div className={`w-20 h-20 rounded-[1.8rem] flex items-center justify-center mb-5 shadow-2xl
+                        ${client.status === ClientStatus.APPROVED ? 'bg-green-600 text-white' : 
+                          client.status === ClientStatus.REJECTED ? 'bg-red-600 text-white' : 'bg-orange-500 text-white'}
+                    `}>
+                        {client.status === ClientStatus.APPROVED ? <CheckCircle size={40}/> : 
+                         client.status === ClientStatus.REJECTED ? <XCircle size={40}/> : <Clock size={40}/>}
+                    </div>
+                    <h4 className="font-black text-gray-900 uppercase tracking-tight text-2xl mb-1">{client.status}</h4>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Estatus de Crédito</p>
+                    
+                    {/* El botón de nuevo préstamo solo aparece si el cliente está aprobado */}
+                    {client.status === ClientStatus.APPROVED && !client.isBlocked && (
+                        <button 
+                            onClick={() => navigate('/loans/new', { state: { clientId: client.id } })}
+                            className="mt-8 w-full py-5 bg-gray-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-gray-400/30 active:scale-95 transition-all"
+                        >
+                            CREAR PRÉSTAMO
+                        </button>
+                    )}
+
+                    {client.status === ClientStatus.PENDING && (
+                        <p className="mt-6 text-xs font-bold text-orange-700 leading-tight">
+                            Esperando aprobación para habilitar cobros y préstamos.
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {/* Tabs de Contenido */}
+            <div className="flex bg-white rounded-[1.5rem] p-1 shadow-sm border border-gray-100 no-print">
+                {[
+                    { id: 'RESUMEN', label: 'PRÉSTAMOS', icon: Wallet }, 
+                    { id: 'HISTORIAL', label: 'PAGOS', icon: Clock }, 
+                    { id: 'FICHAS', label: 'BITÁCORA', icon: AlertTriangle }
+                ].map(t => (
+                    <button key={t.id} onClick={() => setActiveTab(t.id as any)} className={`flex-1 flex items-center justify-center gap-3 py-5 rounded-[1.2rem] text-[11px] font-black tracking-widest transition-all ${activeTab === t.id ? 'bg-gray-900 text-white shadow-2xl' : 'text-gray-400 hover:text-gray-700'}`}>
+                        <t.icon size={16}/> {t.label}
+                    </button>
+                ))}
+            </div>
+
+            <div className="animate-fadeIn no-print">
+                {activeTab === 'RESUMEN' && (
+                    <div className="space-y-4">
+                        {loans.length === 0 ? (
+                            <div className="bg-white p-20 rounded-[3rem] border border-gray-100 text-center">
+                                <FileText size={48} className="mx-auto text-gray-100 mb-4" />
+                                <p className="font-black text-gray-300 uppercase tracking-[0.3em] text-xs">Sin préstamos activos</p>
+                            </div>
+                        ) : (
+                            loans.map(loan => (
+                                <div key={loan.id} className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between items-center gap-8 group hover:border-blue-200 transition-all">
+                                    <div className="flex items-center gap-6">
+                                        <div className="p-5 bg-blue-50 text-blue-600 rounded-[1.5rem]"><Hash size={28}/></div>
+                                        <div>
+                                            <h4 className="font-black text-gray-900 text-xl leading-none mb-1">#{loan.id.slice(0,6).toUpperCase()}</h4>
+                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{loan.frequency}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Inversión</p>
+                                        <p className="font-black text-gray-900 text-lg">{formatCurrency(loan.amount)}</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Saldo Pendiente</p>
+                                        <p className="font-black text-red-600 text-lg">{formatCurrency(loan.balance)}</p>
+                                    </div>
+                                    <Badge status={loan.status} />
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+                
+                {activeTab === 'FICHAS' && (
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Notas Conductuales</h3>
+                            <button onClick={() => setIsFichaOpen(true)} className="px-6 py-3 bg-gray-900 text-white text-[10px] font-black rounded-xl shadow-xl active:scale-95 transition-all">AGREGAR NOTA</button>
+                        </div>
+                        {fichas.length === 0 ? (
+                             <div className="bg-white p-20 rounded-[3rem] border border-gray-100 text-center">
+                                <p className="font-black text-gray-300 uppercase tracking-[0.2em] text-xs">Bitácora Vacía</p>
+                             </div>
+                        ) : (
+                            fichas.map(ficha => (
+                                <div key={ficha.id} className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h5 className="font-black text-gray-900 uppercase text-lg">{ficha.reason}</h5>
+                                        <span className="text-[10px] text-gray-400 font-black">{formatDate(ficha.createdAt)}</span>
+                                    </div>
+                                    <p className="text-base text-gray-600 font-medium leading-relaxed">{ficha.note}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Modal Editar Perfil */}
+            {isEditOpen && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-10 shadow-2xl animate-scaleIn">
+                        <div className="flex justify-between items-center mb-8">
+                            <h3 className="text-2xl font-black text-gray-900">Editar Perfil</h3>
+                            <button onClick={() => setIsEditOpen(false)} className="p-3 bg-gray-100 rounded-full text-gray-400 hover:text-gray-900"><X size={20}/></button>
+                        </div>
+                        <form onSubmit={handleUpdateClient} className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Nombre</label>
+                                    <input required className="w-full border-2 border-gray-50 rounded-2xl p-4 bg-gray-50 outline-none font-bold focus:bg-white focus:border-blue-500 transition-all" value={editForm.firstName || ''} onChange={e => setEditForm({...editForm, firstName: e.target.value})} />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Apellido</label>
+                                    <input required className="w-full border-2 border-gray-50 rounded-2xl p-4 bg-gray-50 outline-none font-bold focus:bg-white focus:border-blue-500 transition-all" value={editForm.lastName || ''} onChange={e => setEditForm({...editForm, lastName: e.target.value})} />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Cédula</label>
+                                <input className="w-full border-2 border-gray-50 rounded-2xl p-4 bg-gray-50 outline-none font-bold focus:bg-white focus:border-blue-500 transition-all" value={editForm.cedula || ''} onChange={e => setEditForm({...editForm, cedula: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Teléfono</label>
+                                <input className="w-full border-2 border-gray-50 rounded-2xl p-4 bg-gray-50 outline-none font-bold focus:bg-white focus:border-blue-500 transition-all" value={editForm.phone || ''} onChange={e => setEditForm({...editForm, phone: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Dirección</label>
+                                <textarea className="w-full border-2 border-gray-50 rounded-2xl p-4 bg-gray-50 outline-none font-bold h-24 focus:bg-white focus:border-blue-500 transition-all" value={editForm.address || ''} onChange={e => setEditForm({...editForm, address: e.target.value})} />
+                            </div>
+                            <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all">Guardar Cambios</button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
