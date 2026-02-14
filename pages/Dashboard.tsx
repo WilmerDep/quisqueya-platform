@@ -36,6 +36,7 @@ interface DailyInstallment extends Installment {
   clientNickname?: string;
   clientPhone: string;
   clientRating?: FichaType;
+  clientPhoto?: string;
   assignedUserId?: string;
   loanBalance: number;
 }
@@ -90,6 +91,7 @@ export const Dashboard: React.FC = () => {
              clientNickname: client?.nickname,
              clientPhone: client?.phone || '',
              clientRating: client?.creditRating,
+             clientPhoto: client?.photo,
              assignedUserId: client?.assignedUserId,
              loanBalance: loan.balance
            });
@@ -229,6 +231,14 @@ export const Dashboard: React.FC = () => {
             to { transform: scale(1); opacity: 1; }
         }
         .animate-scaleIn { animation: scaleIn 0.2s cubic-bezier(0, 0, 0.2, 1) forwards; }
+
+        /* Custom Date Picker Icon Color (Blue-600 equivalent) */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(27%) sepia(91%) saturate(2350%) hue-rotate(206deg) brightness(95%) contrast(92%);
+            transform: scale(1.3);
+            margin-left: 10px;
+        }
       `}</style>
 
       {/* Header Area */}
@@ -300,17 +310,28 @@ export const Dashboard: React.FC = () => {
                   <div>
                     {/* Card Header: Client Info */}
                     <div className="flex justify-between items-start mb-5">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <h3 className="font-black text-gray-900 text-lg leading-tight truncate max-w-[180px]">{item.clientName}</h3>
-                            <RatingBadge type={item.clientRating} />
-                        </div>
-                        {item.clientNickname && (
-                            <p className="text-xs text-gray-400 font-bold italic mb-2">"{item.clientNickname}"</p>
+                      <div className="flex gap-4 items-center flex-1">
+                        {item.clientPhoto ? (
+                          <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-gray-100">
+                            <img src={item.clientPhoto} alt="" className="w-full h-full object-cover"/>
+                          </div>
+                        ) : (
+                          <div className="h-12 w-12 rounded-2xl bg-gray-100 flex items-center justify-center font-black text-lg text-gray-400 shrink-0">
+                            {item.clientName.charAt(0)}
+                          </div>
                         )}
-                        <a href={`tel:${item.clientPhone}`} className="text-blue-600 text-sm font-bold flex items-center">
-                          <Phone size={14} className="mr-1.5"/> {item.clientPhone}
-                        </a>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                                <h3 className="font-black text-gray-900 text-lg leading-tight truncate">{item.clientName}</h3>
+                                <RatingBadge type={item.clientRating} />
+                            </div>
+                            {item.clientNickname && (
+                                <p className="text-xs text-gray-400 font-bold italic mb-1 truncate">"{item.clientNickname}"</p>
+                            )}
+                            <a href={`tel:${item.clientPhone}`} className="text-blue-600 text-sm font-bold flex items-center">
+                              <Phone size={14} className="mr-1.5"/> {item.clientPhone}
+                            </a>
+                        </div>
                       </div>
                       <Badge status={item.status} />
                     </div>
@@ -389,11 +410,22 @@ export const Dashboard: React.FC = () => {
                   {dueToday.map((item) => (
                     <tr key={item.id} className="hover:bg-blue-50/20 transition-colors group">
                       <td className="px-6 py-5">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-black text-gray-900 text-base">{item.clientName}</span>
-                            <div className="flex items-center gap-2">
-                                <RatingBadge type={item.clientRating} />
-                                {item.clientNickname && <span className="text-[10px] text-gray-400 font-bold italic">"{item.clientNickname}"</span>}
+                          <div className="flex items-center gap-3">
+                            {item.clientPhoto ? (
+                                <div className="h-10 w-10 rounded-xl overflow-hidden shadow-sm shrink-0 border border-gray-100">
+                                    <img src={item.clientPhoto} alt="" className="w-full h-full object-cover"/>
+                                </div>
+                            ) : (
+                                <div className="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-gray-400 shrink-0">
+                                    {item.clientName.charAt(0)}
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-0.5">
+                                <span className="font-black text-gray-900 text-base">{item.clientName}</span>
+                                <div className="flex items-center gap-2">
+                                    <RatingBadge type={item.clientRating} />
+                                    {item.clientNickname && <span className="text-[10px] text-gray-400 font-bold italic">"{item.clientNickname}"</span>}
+                                </div>
                             </div>
                           </div>
                       </td>
@@ -540,6 +572,7 @@ export const Dashboard: React.FC = () => {
                     type="date"
                     className="w-full border-2 border-gray-100 rounded-2xl p-6 bg-gray-50 text-2xl font-black text-blue-600 focus:bg-white focus:border-blue-500 transition-all outline-none"
                     required
+                    style={{ colorScheme: 'light' }}
                     value={promiseDate}
                     onChange={(e) => setPromiseDate(e.target.value)}
                 />

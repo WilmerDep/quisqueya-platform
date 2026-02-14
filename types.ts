@@ -36,7 +36,8 @@ export interface User {
   name: string;
   username: string;
   role: Role;
-  avatar?: string;
+  avatar?: string; // Iniciales
+  photo?: string;  // Foto Base64
   isActive: boolean;
   phone?: string;
   createdAt: string;
@@ -55,6 +56,7 @@ export interface Client {
   isBlocked?: boolean;
   blockReason?: string;
   status: ClientStatus; // Nuevo campo para flujo de aprobación
+  photo?: string; // Nuevo campo para la foto de perfil (Base64)
   createdAt: string;
 }
 

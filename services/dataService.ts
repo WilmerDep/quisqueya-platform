@@ -11,240 +11,206 @@ const STORAGE_KEYS = {
   ACTIVITY: 'prestard_activity'
 };
 
-export const MOCK_USERS: User[] = [
-  { id: 'u1', name: 'Juan Admin', username: 'admin', role: Role.ADMIN, avatar: 'JA', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'u2', name: 'Pedro Cobrador', username: 'pedro', role: Role.COBRADOR, avatar: 'PC', isActive: true, createdAt: new Date().toISOString() },
-  { id: 'u3', name: 'Maria Supervisora', username: 'maria', role: Role.SUPERVISOR, avatar: 'MS', isActive: true, createdAt: new Date().toISOString() }
+const SAMPLE_ADMIN_PHOTO = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
+
+const initialUsers: User[] = [
+  {
+    id: 'admin-1',
+    name: 'Juan Pérez (Admin)',
+    username: 'admin',
+    role: Role.ADMIN,
+    avatar: 'JP',
+    photo: SAMPLE_ADMIN_PHOTO,
+    isActive: true,
+    phone: '809-555-0101',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'cobrador-1',
+    name: 'Pedro Cobro',
+    username: 'pedro',
+    role: Role.COBRADOR,
+    avatar: 'PC',
+    isActive: true,
+    phone: '809-555-0102',
+    createdAt: new Date().toISOString()
+  }
 ];
 
-const initStorage = () => {
-  if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(MOCK_USERS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.CLIENTS)) {
-    localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify([]));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.LOANS)) {
-    localStorage.setItem(STORAGE_KEYS.LOANS, JSON.stringify([]));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.PAYMENTS)) {
-    localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify([]));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.FICHAS)) {
-    localStorage.setItem(STORAGE_KEYS.FICHAS, JSON.stringify([]));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.ACTIVITY)) {
-    localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify([]));
-  }
+const getFromStorage = <T>(key: string, defaultValue: T): T => {
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : defaultValue;
 };
 
-// --- USER MANAGEMENT ---
-
-export const getUsers = (): User[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.USERS);
-  return data ? JSON.parse(data) : [];
+const saveToStorage = (key: string, data: any) => {
+  localStorage.setItem(key, JSON.stringify(data));
 };
 
-export const createUser = (userData: Omit<User, 'id' | 'createdAt'>, adminId: string): User => {
+export const getUsers = (): User[] => getFromStorage(STORAGE_KEYS.USERS, initialUsers);
+
+export const createUser = (userData: Partial<User>, currentUserId: string) => {
   const users = getUsers();
   const newUser: User = {
-    ...userData,
     id: crypto.randomUUID(),
-    createdAt: new Date().toISOString()
+    name: userData.name || '',
+    username: userData.username || '',
+    role: userData.role || Role.COBRADOR,
+    avatar: userData.avatar || '??',
+    photo: userData.photo,
+    isActive: true,
+    phone: userData.phone,
+    createdAt: new Date().toISOString(),
   };
-  users.push(newUser);
-  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  
-  logActivity({
+  saveToStorage(STORAGE_KEYS.USERS, [...users, newUser]);
+  addActivity({
     type: 'USER_MGMT',
-    userId: adminId,
-    userName: 'Admin',
-    title: 'Nuevo Usuario Creado',
-    description: `Se creó el usuario ${newUser.name} con rol ${newUser.role}`
+    userId: currentUserId,
+    userName: 'Administrador',
+    title: 'Usuario Creado',
+    description: `Se creó el usuario ${newUser.name}`
   });
-
   return newUser;
 };
 
-export const updateUser = (id: string, updates: Partial<User>, adminId: string): User => {
+export const updateUser = (userId: string, updates: Partial<User>, currentUserId: string) => {
   const users = getUsers();
-  const index = users.findIndex(u => u.id === id);
-  if (index === -1) throw new Error("Usuario no encontrado");
-  
+  const index = users.findIndex(u => u.id === userId);
+  if (index === -1) return;
   users[index] = { ...users[index], ...updates };
-  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-
-  logActivity({
-    type: 'USER_MGMT',
-    userId: adminId,
-    userName: 'Admin',
-    title: 'Usuario Actualizado',
-    description: `Se actualizaron los datos del usuario ${users[index].name}`
-  });
-
-  return users[index];
+  saveToStorage(STORAGE_KEYS.USERS, users);
 };
 
-// --- CLIENT MANAGEMENT ---
+export const getClients = (): Client[] => getFromStorage(STORAGE_KEYS.CLIENTS, []);
 
-export const getClients = (): Client[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.CLIENTS);
-  return data ? JSON.parse(data) : [];
-};
+export const getClientById = (id: string) => getClients().find(c => c.id === id);
 
-export const getClientById = (id: string): Client | undefined => {
-  return getClients().find(c => c.id === id);
-};
-
-export const createClient = (clientData: any, creator: User): Client => {
+export const createClient = (clientData: any, currentUser: User) => {
   const clients = getClients();
   const newClient: Client = {
-    ...clientData,
     id: crypto.randomUUID(),
+    firstName: clientData.firstName,
+    lastName: clientData.lastName,
+    nickname: clientData.nickname,
+    cedula: clientData.cedula,
+    phone: clientData.phone,
+    address: clientData.address,
+    assignedUserId: clientData.assignedUserId,
     creditRating: FichaType.BUENA,
-    isBlocked: false,
-    status: creator.role === Role.COBRADOR ? ClientStatus.PENDING : ClientStatus.APPROVED,
+    status: ClientStatus.PENDING,
+    photo: clientData.photo,
     createdAt: new Date().toISOString()
   };
-  clients.push(newClient);
-  localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients));
-
-  logActivity({
+  saveToStorage(STORAGE_KEYS.CLIENTS, [...clients, newClient]);
+  addActivity({
     type: 'APPROVAL',
-    userId: creator.id,
-    userName: creator.name,
+    userId: currentUser.id,
+    userName: currentUser.name,
+    title: 'Nuevo Prospecto',
+    description: `Expediente creado para ${newClient.firstName} ${newClient.lastName}`,
     clientId: newClient.id,
-    clientName: `${newClient.firstName} ${newClient.lastName}`,
-    title: creator.role === Role.COBRADOR ? 'Solicitud de Aprobación' : 'Cliente Registrado',
-    description: creator.role === Role.COBRADOR 
-      ? `Cobrador ${creator.name} registró un prospecto para revisión.`
-      : `Admin ${creator.name} registró un cliente aprobado directamente.`
+    clientName: `${newClient.firstName} ${newClient.lastName}`
   });
-
   return newClient;
 };
 
-export const updateClientStatus = (clientId: string, status: ClientStatus, approver: User): Client => {
+export const updateClient = (clientId: string, updates: Partial<Client>) => {
   const clients = getClients();
   const index = clients.findIndex(c => c.id === clientId);
-  if (index === -1) throw new Error("Cliente no encontrado");
-  
-  // Actualizamos el objeto
-  const updatedClient = { ...clients[index], status };
-  clients[index] = updatedClient;
-  
-  // Guardamos
-  localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients));
-
-  // Bitácora
-  logActivity({
-    type: 'APPROVAL',
-    userId: approver.id,
-    userName: approver.name,
-    clientId: clientId,
-    clientName: `${updatedClient.firstName} ${updatedClient.lastName}`,
-    title: status === ClientStatus.APPROVED ? 'Cliente Aprobado' : 'Cliente Rechazado',
-    description: `El ${approver.role} ${approver.name} cambió el estatus a ${status}.`
-  });
-
-  return updatedClient;
+  if (index === -1) return;
+  clients[index] = { ...clients[index], ...updates };
+  saveToStorage(STORAGE_KEYS.CLIENTS, clients);
+  return clients[index];
 };
 
-export const updateClient = (id: string, updates: Partial<Client>): Client => {
-  const clients = getClients();
-  const index = clients.findIndex(c => c.id === id);
-  if (index === -1) throw new Error("Cliente no encontrado");
-  
-  const updatedClient = { ...clients[index], ...updates };
-  clients[index] = updatedClient;
-  localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients));
-  return updatedClient;
-};
-
-// --- FICHA MANAGEMENT ---
-
-export const getFichas = (): Ficha[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.FICHAS);
-  return data ? JSON.parse(data) : [];
-};
-
-export const getClientFichas = (clientId: string): Ficha[] => {
-  return getFichas()
-    .filter(f => f.clientId === clientId && !f.isArchived)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-};
-
-export const addFicha = (ficha: Omit<Ficha, 'id' | 'createdAt' | 'isArchived'>): Ficha => {
-  const allFichas = getFichas();
-  const newFicha: Ficha = {
-    ...ficha,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    isArchived: false
-  };
-  allFichas.push(newFicha);
-  localStorage.setItem(STORAGE_KEYS.FICHAS, JSON.stringify(allFichas));
-  
-  if (ficha.impact !== 'NEUTRAL') {
-    updateClient(ficha.clientId, { creditRating: ficha.type });
+export const updateClientStatus = (clientId: string, status: ClientStatus, currentUser: User) => {
+  const updated = updateClient(clientId, { status });
+  if (updated) {
+    addActivity({
+      type: 'APPROVAL',
+      userId: currentUser.id,
+      userName: currentUser.name,
+      title: status === ClientStatus.APPROVED ? 'Expediente Aprobado' : 'Expediente Rechazado',
+      description: `El administrador ha ${status === ClientStatus.APPROVED ? 'aprobado' : 'rechazado'} formalmente a este cliente.`,
+      clientId: clientId,
+      clientName: `${updated.firstName} ${updated.lastName}`
+    });
   }
-  return newFicha;
+  return updated;
 };
 
-// --- LOAN MANAGEMENT ---
+export const getLoans = (): Loan[] => getFromStorage(STORAGE_KEYS.LOANS, []);
 
-export const getLoans = (): Loan[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.LOANS);
-  return data ? JSON.parse(data) : [];
-};
+export const getClientLoans = (clientId: string) => getLoans().filter(l => l.clientId === clientId);
 
-export const getClientLoans = (clientId: string): Loan[] => {
-  return getLoans().filter(l => l.clientId === clientId);
-};
-
-export const createLoan = (loanData: any): Loan => {
+export const createLoan = (loanData: any) => {
   const loans = getLoans();
-  const installments = generateSchedule(loanData.amount, loanData.interestRate, loanData.duration, loanData.frequency, loanData.startDate);
-  const totalToPay = installments.reduce((sum, inst) => sum + inst.expectedAmount, 0);
+  const schedule = generateSchedule(
+    loanData.amount,
+    loanData.interestRate,
+    loanData.duration,
+    loanData.frequency,
+    loanData.startDate
+  );
+
+  const totalToPay = schedule.reduce((sum, i) => sum + i.expectedAmount, 0);
+  
   const newLoan: Loan = {
-    ...loanData,
     id: crypto.randomUUID(),
+    clientId: loanData.clientId,
+    amount: loanData.amount,
+    interestRate: loanData.interestRate,
     interestType: 'FLAT',
-    totalToPay,
+    frequency: loanData.frequency,
+    duration: loanData.duration,
+    startDate: loanData.startDate,
+    totalToPay: totalToPay,
     balance: totalToPay,
     status: LoanStatus.ACTIVO,
-    installments: installments.map(i => ({ ...i, loanId: '' })), 
+    installments: schedule,
     createdAt: new Date().toISOString()
   };
+
   newLoan.installments.forEach(i => i.loanId = newLoan.id);
-  loans.push(newLoan);
-  localStorage.setItem(STORAGE_KEYS.LOANS, JSON.stringify(loans));
+  const updatedLoans = [...loans, newLoan];
+  saveToStorage(STORAGE_KEYS.LOANS, updatedLoans);
+  
+  const client = getClientById(loanData.clientId);
+  addActivity({
+    type: 'PRESTAMO',
+    userId: 'system',
+    userName: 'Sistema',
+    title: 'Desembolso Realizado',
+    description: `Préstamo de ${loanData.amount} creado`,
+    amount: loanData.amount,
+    clientId: loanData.clientId,
+    clientName: client ? `${client.firstName} ${client.lastName}` : 'Cliente'
+  });
+  
   return newLoan;
 };
 
-// --- PAYMENT MANAGEMENT ---
+export const getPayments = (): PaymentReceipt[] => getFromStorage(STORAGE_KEYS.PAYMENTS, []);
 
-export const getPayments = (): PaymentReceipt[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.PAYMENTS);
-  return data ? JSON.parse(data) : [];
-};
-
-export const getClientPayments = (clientId: string): PaymentReceipt[] => {
-  const clientLoanIds = getLoans().filter(l => l.clientId === clientId).map(l => l.id);
-  return getPayments().filter(p => clientLoanIds.includes(p.loanId));
+export const getClientPayments = (clientId: string) => {
+  const clientLoans = getClientLoans(clientId).map(l => l.id);
+  return getPayments().filter(p => clientLoans.includes(p.loanId));
 };
 
 export const processPayment = (loanId: string, installmentId: string, amount: number): PaymentReceipt => {
   const loans = getLoans();
-  const loan = loans.find(l => l.id === loanId);
-  if (!loan) throw new Error("Loan not found");
-  const inst = loan.installments.find(i => i.id === installmentId);
-  if (!inst) throw new Error("Inst not found");
+  const loanIndex = loans.findIndex(l => l.id === loanId);
+  if (loanIndex === -1) throw new Error("Loan not found");
   
+  const loan = loans[loanIndex];
+  const instIndex = loan.installments.findIndex(i => i.id === installmentId);
+  if (instIndex === -1) throw new Error("Installment not found");
+  
+  const inst = loan.installments[instIndex];
   inst.paidAmount += amount;
+  inst.paidAt = new Date().toISOString();
+  
   if (inst.paidAmount >= inst.expectedAmount) {
     inst.status = 'PAGADO';
-    inst.paidAt = new Date().toISOString();
   } else {
     inst.status = 'PARCIAL';
   }
@@ -255,6 +221,7 @@ export const processPayment = (loanId: string, installmentId: string, amount: nu
     loan.balance = 0;
   }
   
+  const payments = getPayments();
   const receipt: PaymentReceipt = {
     id: crypto.randomUUID(),
     loanId,
@@ -264,34 +231,166 @@ export const processPayment = (loanId: string, installmentId: string, amount: nu
     date: new Date().toISOString()
   };
   
-  const payments = getPayments();
-  payments.push(receipt);
+  saveToStorage(STORAGE_KEYS.LOANS, loans);
+  saveToStorage(STORAGE_KEYS.PAYMENTS, [receipt, ...payments]);
   
-  localStorage.setItem(STORAGE_KEYS.LOANS, JSON.stringify(loans));
-  localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+  const client = getClientById(loan.clientId);
+  addActivity({
+    type: 'PAGO',
+    userId: 'system',
+    userName: 'Sistema',
+    title: 'Cobro Registrado',
+    description: `Recibido pago de ${amount}`,
+    amount: amount,
+    clientId: loan.clientId,
+    clientName: client ? `${client.firstName} ${client.lastName}` : 'Cliente'
+  });
   
   return receipt;
 };
 
-// --- ACTIVITY & AUDIT ---
+export const getFichas = (): Ficha[] => getFromStorage(STORAGE_KEYS.FICHAS, []);
 
-const logActivity = (event: Omit<ActivityEvent, 'id' | 'timestamp'>) => {
-  const data = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
-  const activity: ActivityEvent[] = data ? JSON.parse(data) : [];
-  
+export const getClientFichas = (clientId: string) => getFichas().filter(f => f.clientId === clientId);
+
+export const addFicha = (fichaData: any) => {
+  const fichas = getFichas();
+  const newFicha: Ficha = {
+    id: crypto.randomUUID(),
+    clientId: fichaData.clientId,
+    type: fichaData.type,
+    reason: fichaData.reason,
+    note: fichaData.note,
+    impact: fichaData.impact || 'NEUTRAL',
+    createdBy: fichaData.createdBy,
+    createdAt: new Date().toISOString(),
+    isArchived: false
+  };
+  saveToStorage(STORAGE_KEYS.FICHAS, [...fichas, newFicha]);
+
+  if (fichaData.type === FichaType.MALA) {
+    updateClient(fichaData.clientId, { creditRating: FichaType.MALA });
+  }
+
+  const client = getClientById(fichaData.clientId);
+  addActivity({
+    type: 'CONDUCTA',
+    userId: fichaData.createdBy,
+    userName: 'Sistema',
+    title: 'Nota de Conducta',
+    description: fichaData.reason,
+    clientId: fichaData.clientId,
+    clientName: client ? `${client.firstName} ${client.lastName}` : 'Cliente'
+  });
+
+  return newFicha;
+};
+
+export const getGlobalActivity = (): ActivityEvent[] => getFromStorage(STORAGE_KEYS.ACTIVITY, []);
+
+export const addActivity = (event: Omit<ActivityEvent, 'id' | 'timestamp'>) => {
+  const events = getGlobalActivity();
   const newEvent: ActivityEvent = {
     ...event,
     id: crypto.randomUUID(),
     timestamp: new Date().toISOString()
   };
-  
-  activity.push(newEvent);
-  localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(activity.slice(-500))); // Keep last 500
+  saveToStorage(STORAGE_KEYS.ACTIVITY, [newEvent, ...events]);
+  return newEvent;
 };
 
-export const getGlobalActivity = (): ActivityEvent[] => {
-  const data = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
-  return data ? JSON.parse(data) : [];
+// --- SEED DATA LOGIC ---
+const seedData = () => {
+  const existingClients = getFromStorage(STORAGE_KEYS.CLIENTS, []);
+  if (existingClients.length > 0) return;
+
+  const demoClients: Client[] = [
+    {
+      id: 'client-pending',
+      firstName: 'Ramón',
+      lastName: 'Valdez',
+      nickname: 'Don Moncho',
+      cedula: '001-0000000-1',
+      phone: '809-111-2222',
+      address: 'Calle Las Damas #12, Zona Colonial',
+      assignedUserId: 'cobrador-1',
+      creditRating: FichaType.BUENA,
+      status: ClientStatus.PENDING,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'client-approved',
+      firstName: 'Ana',
+      lastName: 'Martínez',
+      cedula: '001-1111111-2',
+      phone: '829-333-4444',
+      address: 'Av. Winston Churchill, Plaza Central',
+      assignedUserId: 'cobrador-1',
+      creditRating: FichaType.BUENA,
+      status: ClientStatus.APPROVED,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'client-overdue',
+      firstName: 'José',
+      lastName: 'Rodríguez',
+      nickname: 'Chelo',
+      cedula: '001-2222222-3',
+      phone: '849-555-6666',
+      address: 'C/ El Sol, Edif. 4, Santiago',
+      assignedUserId: 'cobrador-1',
+      creditRating: FichaType.MALA,
+      status: ClientStatus.APPROVED,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'client-blocked',
+      firstName: 'Lucía',
+      lastName: 'Peralta',
+      cedula: '001-3333333-4',
+      phone: '809-777-8888',
+      address: 'Barrio Lindo, San Pedro',
+      assignedUserId: 'cobrador-1',
+      creditRating: FichaType.MALA,
+      isBlocked: true,
+      blockReason: 'Múltiples promesas incumplidas y reporte en CICLA',
+      status: ClientStatus.APPROVED,
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  saveToStorage(STORAGE_KEYS.CLIENTS, demoClients);
+
+  // Crear préstamos de prueba para Ana (Al día) y José (En mora)
+  const anaLoan = createLoan({
+    clientId: 'client-approved',
+    amount: 10000,
+    interestRate: 20,
+    frequency: Frequency.SEMANAL,
+    duration: 13,
+    startDate: new Date().toISOString()
+  });
+
+  const joseLoan = createLoan({
+    clientId: 'client-overdue',
+    amount: 5000,
+    interestRate: 20,
+    frequency: Frequency.DIARIO,
+    duration: 30,
+    startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString() // Hace 15 días
+  });
+
+  // Marcar algunas cuotas de José como vencidas
+  const loans = getLoans();
+  const joseIdx = loans.findIndex(l => l.id === joseLoan.id);
+  if (joseIdx !== -1) {
+    loans[joseIdx].status = LoanStatus.MORA;
+    loans[joseIdx].installments.forEach((inst, idx) => {
+      if (idx < 5) inst.status = 'VENCIDO';
+    });
+    saveToStorage(STORAGE_KEYS.LOANS, loans);
+  }
 };
 
-initStorage();
+// EJECUCIÓN DE SEMILLAS AL FINAL PARA EVITAR ERRORES DE INICIALIZACIÓN
+seedData();

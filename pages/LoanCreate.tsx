@@ -127,7 +127,11 @@ export const LoanCreate: React.FC = () => {
                 {filteredClients.map(c => (
                     <button key={c.id} onClick={() => setSelectedClientId(c.id)} className={`flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${selectedClientId === c.id ? 'border-blue-600 bg-blue-50/50' : 'border-gray-50 bg-gray-50 hover:border-gray-200'}`}>
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center font-black text-white">{c.firstName[0]}</div>
+                            {c.photo ? (
+                                <img src={c.photo} alt={c.firstName} className="h-10 w-10 rounded-xl object-cover border border-blue-200" />
+                            ) : (
+                                <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center font-black text-white">{c.firstName[0]}</div>
+                            )}
                             <div className="text-left">
                                 <p className="font-black text-gray-900 text-sm">{c.firstName} {c.lastName}</p>
                                 <p className="text-[10px] text-gray-400 font-black tracking-widest">{c.cedula}</p>
@@ -153,11 +157,11 @@ export const LoanCreate: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Capital (RD$)</label>
-                    <input type="number" className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-black text-lg" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                    <input type="number" className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-black text-lg placeholder-gray-300" value={amount} onChange={(e) => setAmount(Number(e.target.value))} placeholder="Ej: 10000" />
                 </div>
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Interés Total (%)</label>
-                    <input type="number" className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-black text-lg" value={interest} onChange={(e) => setInterest(Number(e.target.value))} />
+                    <input type="number" className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-black text-lg placeholder-gray-300" value={interest} onChange={(e) => setInterest(Number(e.target.value))} placeholder="Ej: 20" />
                 </div>
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Frecuencia</label>
@@ -167,18 +171,18 @@ export const LoanCreate: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Número de Pagos</label>
-                    <input type="number" className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-black text-lg" value={duration} onChange={(e) => setDuration(Number(e.target.value))} />
+                    <input type="number" className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-black text-lg placeholder-gray-300" value={duration} onChange={(e) => setDuration(Number(e.target.value))} placeholder="Ej: 13" />
                 </div>
             </div>
             
-            <div className="mt-10 bg-gray-900 rounded-[2rem] p-8 text-white flex justify-between items-center shadow-2xl">
-                <div>
+            <div className="mt-10 bg-gray-900 rounded-[2rem] p-8 text-white flex flex-col sm:flex-row justify-between items-center gap-6 shadow-2xl text-center sm:text-left">
+                <div className="flex flex-col items-center sm:items-start">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Cuota Resultante</p>
-                    <p className="text-3xl font-black">{formatCurrency(quotaAmount)}</p>
+                    <p className="text-3xl font-black leading-none">{formatCurrency(quotaAmount)}</p>
                 </div>
-                <div className="text-right">
+                <div className="flex flex-col items-center sm:items-end">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Monto Final</p>
-                    <p className="text-xl font-black text-blue-400">{formatCurrency(totalToPay)}</p>
+                    <p className="text-xl font-black text-blue-400 leading-none">{formatCurrency(totalToPay)}</p>
                 </div>
             </div>
 

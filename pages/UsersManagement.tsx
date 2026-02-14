@@ -1,12 +1,12 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { getUsers, createUser, updateUser, getClients } from '../services/dataService';
 import { User, Role } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { 
   Plus, UserPlus, Shield, ToggleLeft, ToggleRight, 
-  Search, X, Edit3, Briefcase, Phone, Mail, UserCheck
+  Search, X, Edit3, Briefcase, Phone, Mail, UserCheck,
+  Camera, Image as ImageIcon
 } from 'lucide-react';
 
 export const UsersManagement: React.FC = () => {
@@ -22,7 +22,8 @@ export const UsersManagement: React.FC = () => {
     username: '',
     role: Role.COBRADOR,
     phone: '',
-    isActive: true
+    isActive: true,
+    photo: ''
   });
 
   useEffect(() => {
@@ -34,6 +35,17 @@ export const UsersManagement: React.FC = () => {
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setFormData({ ...formData, photo: reader.result as string });
+        };
+        reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +63,7 @@ export const UsersManagement: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', username: '', role: Role.COBRADOR, phone: '', isActive: true });
+    setFormData({ name: '', username: '', role: Role.COBRADOR, phone: '', isActive: true, photo: '' });
     setEditingUser(null);
   };
 
@@ -107,9 +119,13 @@ export const UsersManagement: React.FC = () => {
                 <div>
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 bg-gray-900 text-white rounded-2xl flex items-center justify-center font-black text-xl">
-                                {user.avatar}
-                            </div>
+                            {user.photo ? (
+                                <img src={user.photo} alt={user.name} className="w-14 h-14 rounded-2xl object-cover border border-gray-200" />
+                            ) : (
+                                <div className="w-14 h-14 bg-gray-900 text-white rounded-2xl flex items-center justify-center font-black text-xl">
+                                    {user.avatar}
+                                </div>
+                            )}
                             <div>
                                 <h3 className="font-black text-gray-900 text-lg leading-tight">{user.name}</h3>
                                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-0.5">@{user.username}</p>
@@ -134,7 +150,6 @@ export const UsersManagement: React.FC = () => {
 
                 <div className="pt-5 border-t border-gray-50 flex justify-between items-center gap-2">
                     <button 
-                        // Explicitly mapping required fields to fix type assignment error from User to formData
                         onClick={() => { 
                             setEditingUser(user); 
                             setFormData({
@@ -142,7 +157,8 @@ export const UsersManagement: React.FC = () => {
                                 username: user.username,
                                 role: user.role,
                                 phone: user.phone || '',
-                                isActive: user.isActive
+                                isActive: user.isActive,
+                                photo: user.photo || ''
                             }); 
                             setIsModalOpen(true); 
                         }}
@@ -172,6 +188,24 @@ export const UsersManagement: React.FC = () => {
                     <button onClick={() => setIsModalOpen(false)} className="p-2 bg-gray-100 rounded-full text-gray-400"><X size={20}/></button>
                 </div>
                 <form onSubmit={handleSubmit} className="p-8 space-y-5">
+                    
+                    {/* User Photo Upload */}
+                    <div className="flex justify-center mb-4">
+                        <div className="relative group cursor-pointer">
+                            <div className={`w-24 h-24 rounded-2xl flex items-center justify-center overflow-hidden border-4 ${formData.photo ? 'border-blue-600' : 'border-gray-100 bg-gray-50'}`}>
+                                {formData.photo ? (
+                                    <img src={formData.photo} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                    <ImageIcon size={32} className="text-gray-300" />
+                                )}
+                            </div>
+                            <label className="absolute bottom-0 right-0 bg-gray-900 text-white p-2 rounded-xl cursor-pointer hover:bg-black transition-colors shadow-lg">
+                                <Camera size={14} />
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            </label>
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Nombre Completo</label>
                         <input required className="w-full border-2 border-gray-50 rounded-2xl p-4 bg-gray-50 focus:bg-white focus:border-blue-500 outline-none font-bold" 
