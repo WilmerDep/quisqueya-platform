@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import gsap from 'gsap';
@@ -1541,7 +1541,10 @@ export const ClientProfile: React.FC = () => {
                 style={{
                   background: `conic-gradient(${behaviorSegments[0].color} 0deg ${behaviorSegments[0].value * 3.6}deg, ${behaviorSegments[1].color} ${behaviorSegments[0].value * 3.6}deg ${(behaviorSegments[0].value + behaviorSegments[1].value) * 3.6}deg, ${behaviorSegments[2].color} ${(behaviorSegments[0].value + behaviorSegments[1].value) * 3.6}deg ${(behaviorSegments[0].value + behaviorSegments[1].value + behaviorSegments[2].value) * 3.6}deg, ${behaviorSegments[3].color} 0deg)`,
                 }}
-                onMouseEnter={() => setHoveredBehaviorLabel('Promesas')}
+                onMouseEnter={() => {
+                  const maxSeg = [...behaviorSegments].sort((a, b) => b.value - a.value)[0];
+                  setHoveredBehaviorLabel(maxSeg ? maxSeg.label : 'Al dia');
+                }}
                 onMouseLeave={() => setHoveredBehaviorLabel(null)}
               >
                 <div className="flex h-[88px] w-[88px] flex-col items-center justify-center rounded-full bg-white">

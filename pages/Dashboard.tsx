@@ -53,6 +53,7 @@ export const Dashboard: React.FC = () => {
   const [company, setCompany] = useState<Company | undefined>(undefined);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [hoveredComplianceLabel, setHoveredComplianceLabel] = useState<string | null>(null);
   const branchScope = useMemo(() => (currentUser ? getBranchScope(currentUser) : null), [currentUser]);
   const isCollector = currentUser?.role === Role.COBRADOR;
 
@@ -158,6 +159,11 @@ export const Dashboard: React.FC = () => {
   );
   const totalExpected = cashBalance + todayCollections + stats.portfolio;
   const recoveredShare = totalExpected > 0 ? Math.round((todayCollections / totalExpected) * 100) : 0;
+  const complianceSegments = [
+    { label: 'Cobrado', value: todayCollections, percent: recoveredShare, color: '#2563EB', helper: 'Monto cobrado hoy respecto a la meta diaria.' },
+    { label: 'Faltante', value: Math.max(0, totalExpected * 0.72 - todayCollections), percent: Math.max(0, 100 - recoveredShare), color: '#E5E7EB', helper: 'Monto restante para completar la meta del dia.' }
+  ];
+  const activeComplianceTooltip = complianceSegments.find(item => item.label === hoveredComplianceLabel) || null;
   const amountPending = Math.max(0, stats.portfolio * 0.18);
   const recoveryRate = stats.lent > 0 ? Math.min(100, Math.round(((stats.lent - stats.portfolio) / stats.lent) * 100)) : 0;
 
@@ -347,15 +353,30 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div data-workspace-panels className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+        <div data-workspace-panels className="relative rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <ShieldCheck size={20} className="text-[#2563EB]" />
             <h2 className="text-[19px] font-semibold text-[#111827]">Cumplimiento del dia</h2>
           </div>
+          {activeComplianceTooltip ? (
+            <div className="pointer-events-none absolute right-6 top-6 z-10 w-[250px] rounded-[24px] border border-[#E5E7EB] bg-white/95 p-4 shadow-[0_22px_48px_rgba(15,23,42,0.14)] backdrop-blur-sm">
+              <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">{activeComplianceTooltip.label}</p>
+              <div className="mt-3 flex items-center justify-between gap-4">
+                <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#111827]">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: activeComplianceTooltip.color }} />
+                  Proporcion
+                </span>
+                <span className="text-[28px] font-black tracking-tight text-[#111827]">{activeComplianceTooltip.percent}%</span>
+              </div>
+              <p className="mt-3 text-[13px] font-medium leading-6 text-[#64748B]">{activeComplianceTooltip.helper}</p>
+            </div>
+          ) : null}
           <div className="mt-6 flex items-center gap-6">
             <div
-              className="relative flex h-[160px] w-[160px] items-center justify-center rounded-full"
+              className="relative flex h-[160px] w-[160px] items-center justify-center rounded-full cursor-pointer"
               style={{ background: `conic-gradient(#2563EB ${recoveredShare * 3.6}deg, #E5E7EB 0deg)` }}
+              onMouseEnter={() => setHoveredComplianceLabel('Cobrado')}
+              onMouseLeave={() => setHoveredComplianceLabel(null)}
             >
               <div className="flex h-[118px] w-[118px] flex-col items-center justify-center rounded-full bg-white">
                 <p className="text-[32px] font-semibold leading-none text-[#111827]">{recoveredShare}%</p>
@@ -367,11 +388,19 @@ export const Dashboard: React.FC = () => {
                 <span className="text-[16px] font-medium text-[#6B7280]">Meta de cobro</span>
                 <span className="text-[18px] font-semibold text-[#374151]">{formatCurrency(totalExpected * 0.72)}</span>
               </div>
-              <div className="flex items-center justify-between border-b border-[#F3F4F6] pb-3">
+              <div
+                className="flex items-center justify-between border-b border-[#F3F4F6] pb-3 cursor-pointer hover:bg-[#F8FAFC] px-1 rounded-lg transition-colors duration-200"
+                onMouseEnter={() => setHoveredComplianceLabel('Cobrado')}
+                onMouseLeave={() => setHoveredComplianceLabel(null)}
+              >
                 <span className="text-[16px] font-medium text-[#6B7280]">Cobrado</span>
                 <span className="text-[18px] font-semibold text-[#16A34A]">{formatCurrency(todayCollections)}</span>
               </div>
-              <div className="flex items-center justify-between pb-1">
+              <div
+                className="flex items-center justify-between pb-1 cursor-pointer hover:bg-[#F8FAFC] px-1 rounded-lg transition-colors duration-200"
+                onMouseEnter={() => setHoveredComplianceLabel('Faltante')}
+                onMouseLeave={() => setHoveredComplianceLabel(null)}
+              >
                 <span className="text-[16px] font-medium text-[#6B7280]">Faltante</span>
                 <span className="text-[18px] font-semibold text-[#DC2626]">{formatCurrency(Math.max(0, totalExpected * 0.72 - todayCollections))}</span>
               </div>

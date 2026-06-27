@@ -121,6 +121,7 @@ export const RoutesPage: React.FC = () => {
   const [formError, setFormError] = useState('');
   const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>([]);
   const [selectedPdfTemplateId, setSelectedPdfTemplateId] = useState('');
+  const [hoveredRouteSegment, setHoveredRouteSegment] = useState<string | null>(null);
 
   const isCollector = currentUser?.role === Role.COBRADOR;
   const company = useMemo(
@@ -1118,6 +1119,13 @@ export const RoutesPage: React.FC = () => {
     const pendingAngle = (pendingItems.length / itemCount) * 360;
     const failedAngle = (failedItems.length / itemCount) * 360;
     const routeDonut = `conic-gradient(#22C55E 0deg ${paidAngle}deg, #3B82F6 ${paidAngle}deg ${paidAngle + pendingAngle}deg, #F97316 ${paidAngle + pendingAngle}deg ${paidAngle + pendingAngle + failedAngle}deg, #8B5CF6 ${paidAngle + pendingAngle + failedAngle}deg 360deg)`;
+    const routeSegments = [
+      { label: 'Cobrados', value: paidItems.length, percent: Math.round((paidItems.length / itemCount) * 100), color: '#22C55E', helper: 'Clientes que ya pagaron en el recorrido actual.' },
+      { label: 'Pendientes', value: pendingItems.length, percent: Math.round((pendingItems.length / itemCount) * 100), color: '#3B82F6', helper: 'Visitas planificadas aun por realizar.' },
+      { label: 'No localizados', value: failedItems.length, percent: Math.round((failedItems.length / itemCount) * 100), color: '#F97316', helper: 'Visitas fallidas o deudores no encontrados.' },
+      { label: 'Promesas', value: promisedItems.length, percent: Math.round((promisedItems.length / itemCount) * 100), color: '#8B5CF6', helper: 'Compromisos de pago acordados para hoy.' },
+    ];
+    const activeRouteTooltip = routeSegments.find(item => item.label === hoveredRouteSegment) || null;
     const detailTabs: Array<{ id: RouteDetailTab; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
       { id: 'summary', label: 'Resumen', icon: RouteIcon },
       { id: 'clients', label: 'Clientes asignados', icon: Users },
@@ -1501,20 +1509,65 @@ export const RoutesPage: React.FC = () => {
           </div>
 
           <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-            <article data-routes-panel className="rounded-[32px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <article data-routes-panel className="relative rounded-[32px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
               <h2 className="text-[28px] font-black tracking-tight text-[#111827]">Estado de la ruta</h2>
+              {activeRouteTooltip ? (
+                <div className="pointer-events-none absolute right-6 top-6 z-10 w-[250px] rounded-[24px] border border-[#E5E7EB] bg-white/95 p-4 shadow-[0_22px_48px_rgba(15,23,42,0.14)] backdrop-blur-sm">
+                  <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">{activeRouteTooltip.label}</p>
+                  <div className="mt-3 flex items-center justify-between gap-4">
+                    <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-[#111827]">
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: activeRouteTooltip.color }} />
+                      Proporcion
+                    </span>
+                    <span className="text-[28px] font-black tracking-tight text-[#111827]">{activeRouteTooltip.percent}%</span>
+                  </div>
+                  <p className="mt-3 text-[13px] font-medium leading-6 text-[#64748B]">{activeRouteTooltip.helper}</p>
+                </div>
+              ) : null}
               <div className="mt-6 flex items-center gap-6">
-                <div className="relative flex h-40 w-40 items-center justify-center rounded-full" style={{ backgroundImage: routeDonut }}>
+                <div
+                  className="relative flex h-40 w-40 items-center justify-center rounded-full"
+                  style={{ backgroundImage: routeDonut }}
+                  onMouseEnter={() => {
+                    const maxSeg = [...routeSegments].sort((a, b) => b.value - a.value)[0];
+                    setHoveredRouteSegment(maxSeg ? maxSeg.label : 'Cobrados');
+                  }}
+                  onMouseLeave={() => setHoveredRouteSegment(null)}
+                >
                   <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white text-center">
                     <span className="text-[34px] font-black text-[#111827]">{activeRouteData.items.length}</span>
                     <span className="text-[12px] font-semibold text-[#64748B]">Clientes</span>
                   </div>
                 </div>
                 <div className="flex-1 space-y-4">
-                  <LegendRow label="Cobrados" color="bg-[#22C55E]" value={`${paidItems.length} (${Math.round((paidItems.length / itemCount) * 100)}%)`} />
-                  <LegendRow label="Pendientes" color="bg-[#3B82F6]" value={`${pendingItems.length} (${Math.round((pendingItems.length / itemCount) * 100)}%)`} />
-                  <LegendRow label="No localizados" color="bg-[#F97316]" value={`${failedItems.length} (${Math.round((failedItems.length / itemCount) * 100)}%)`} />
-                  <LegendRow label="Promesas" color="bg-[#8B5CF6]" value={`${promisedItems.length} (${Math.round((promisedItems.length / itemCount) * 100)}%)`} />
+                  <LegendRow
+                    label="Cobrados"
+                    color="bg-[#22C55E]"
+                    value={`${paidItems.length} (${Math.round((paidItems.length / itemCount) * 100)}%)`}
+                    onMouseEnter={() => setHoveredRouteSegment('Cobrados')}
+                    onMouseLeave={() => setHoveredRouteSegment(null)}
+                  />
+                  <LegendRow
+                    label="Pendientes"
+                    color="bg-[#3B82F6]"
+                    value={`${pendingItems.length} (${Math.round((pendingItems.length / itemCount) * 100)}%)`}
+                    onMouseEnter={() => setHoveredRouteSegment('Pendientes')}
+                    onMouseLeave={() => setHoveredRouteSegment(null)}
+                  />
+                  <LegendRow
+                    label="No localizados"
+                    color="bg-[#F97316]"
+                    value={`${failedItems.length} (${Math.round((failedItems.length / itemCount) * 100)}%)`}
+                    onMouseEnter={() => setHoveredRouteSegment('No localizados')}
+                    onMouseLeave={() => setHoveredRouteSegment(null)}
+                  />
+                  <LegendRow
+                    label="Promesas"
+                    color="bg-[#8B5CF6]"
+                    value={`${promisedItems.length} (${Math.round((promisedItems.length / itemCount) * 100)}%)`}
+                    onMouseEnter={() => setHoveredRouteSegment('Promesas')}
+                    onMouseLeave={() => setHoveredRouteSegment(null)}
+                  />
                 </div>
               </div>
             </article>
@@ -2110,12 +2163,20 @@ const LegendRow = ({
   label,
   color,
   value,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   label: string;
   color: string;
   value: string;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }) => (
-  <div className="flex items-center justify-between gap-4">
+  <div
+    className="flex items-center justify-between gap-4 cursor-pointer hover:bg-[#F8FAFC] px-1.5 py-1 rounded-xl transition-all duration-200"
+    onMouseEnter={onMouseEnter}
+    onMouseLeave={onMouseLeave}
+  >
     <div className="flex items-center gap-3">
       <span className={`h-3 w-3 rounded-full ${color}`} />
       <span className="text-[14px] font-medium text-[#64748B]">{label}</span>
