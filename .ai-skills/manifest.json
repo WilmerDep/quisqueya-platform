@@ -1,0 +1,39 @@
+{
+  "name": "pholiodev-ai-skill-pack",
+  "displayName": "PholioDev AI Skill Pack",
+  "version": "2.0.0",
+  "license": "MIT",
+  "author": "PholioDev",
+  "description": "Reusable AI methodology pack for software development, automation, UI/UX, WordPress, mobile apps, QA, proposals and documents.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WilmerDep/pholiodev-ai-skill-pack.git"
+  },
+  "directories": {
+    "global": "global",
+    "skills": "skills",
+    "adapters": "adapters",
+    "templates": "templates"
+  },
+  "recommendedUsage": [
+    "Codex via AGENTS.md",
+    "ChatGPT custom GPT knowledge",
+    "Cursor project rules",
+    "Claude project instructions",
+    "Windsurf workspace rules",
+    "Generic AI system prompt"
+  ],
+  "skills": [
+    "wordpress-surgeon",
+    "web-app-builder",
+    "backend-api-architect",
+    "database-architect",
+    "mobile-app-builder",
+    "n8n-automation-architect",
+    "ui-ux-screen-generator",
+    "full-team-mode",
+    "qa-debugging",
+    "project-proposal",
+    "pdf-document-builder"
+  ]
+}

@@ -1,5 +1,7 @@
 {
   "name": "PrestaFácil RD",
   "description": "Sistema de gestión de préstamos optimizado para el mercado dominicano. Control de clientes, rutas de cobro, mora y caja.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

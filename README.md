@@ -1,20 +1,30 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# PrestaFacil RD
 
-# Run and deploy your AI Studio app
+React/Vite app for loan management, collections routes, cash control, reports, and SaaS administration for Dominican lenders.
 
-This contains everything you need to run your app locally.
+## Local Development
 
-View your app in AI Studio: https://ai.studio/apps/drive/1kZhyEiQ78065NGmrNBUTwr6959UIhP6v
+```bash
+npm install
+npm run dev
+```
 
-## Run Locally
+Demo credentials:
 
-**Prerequisites:**  Node.js
+- Admin: `admin` / `admin123`
+- Master: `master` / `master123`
+- Users created from Equipo receive temporary password `Temp12345` until password reset is connected to the backend.
 
+## Quality Gates
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run test:e2e
+npm run build
+```
+
+## Production Notes
+
+This repository now has local Tailwind/Vite integration, Vitest unit tests, Playwright smoke tests, a NestJS API, MySQL persistence, expiring sessions, password hash verification, and security audit logging. The web app uses the API for the main operating flows and keeps `services/dataService.ts` as a local demo/fallback adapter. The backend contract and production checklist are documented in `services/apiContract.ts`, `docs/system-architecture.md`, and `docs/production-readiness.md`.

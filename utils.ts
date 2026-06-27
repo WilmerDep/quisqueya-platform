@@ -51,9 +51,12 @@ export const generateSchedule = (
   frequency: Frequency,
   startDateStr: string
 ): Installment[] => {
-  const totalInterest = amount * (interestRate / 100);
-  const totalToPay = amount + totalInterest;
-  const amountPerQuota = Math.ceil(totalToPay / duration);
+  const safeAmount = Number(amount) || 0;
+  const safeInterestRate = Number(interestRate) || 0;
+  const safeDuration = Math.max(1, Number(duration) || 1);
+  const totalInterest = safeAmount * (safeInterestRate / 100);
+  const totalToPay = safeAmount + totalInterest;
+  const amountPerQuota = Math.floor((totalToPay / safeDuration) * 100) / 100;
   
   const schedule: Installment[] = [];
   const parts = startDateStr.split(/[-/T]/);
@@ -62,14 +65,14 @@ export const generateSchedule = (
     parseInt(parts[1], 10) - 1,
     parseInt(parts[2], 10)
   );
+  let accumulated = 0;
 
-  for (let i = 1; i <= duration; i++) {
+  for (let i = 1; i <= safeDuration; i++) {
     currentDate = getNextDueDate(currentDate, frequency);
-    let quotaAmount = amountPerQuota;
-    if (i === duration) {
-       const accumulated = amountPerQuota * (duration - 1);
-       quotaAmount = totalToPay - accumulated;
-    }
+    const quotaAmount = i === safeDuration
+      ? Number((totalToPay - accumulated).toFixed(2))
+      : Number(amountPerQuota.toFixed(2));
+    if (i !== safeDuration) accumulated += quotaAmount;
     schedule.push({
       id: crypto.randomUUID(),
       loanId: '', 

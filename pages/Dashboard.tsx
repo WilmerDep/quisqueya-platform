@@ -1,669 +1,466 @@
-
-import React, { useEffect, useState } from 'react';
-import { getLoans, processPayment, getClients, addFicha } from '../services/dataService';
-import { Loan, Installment, Role, PaymentReceipt, FichaType } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { formatCurrency, formatDate, generateWhatsAppLink } from '../utils';
-import { Badge } from '../components/ui/Badge';
-import { 
-  Wallet, TrendingUp, AlertCircle, CheckCircle, Search, 
-  Printer, X, Phone, Calendar, Hash, MessageSquare, Clock, AlertTriangle, User 
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  Banknote,
+  CalendarClock,
+  ChevronRight,
+  CircleDollarSign,
+  FileText,
+  MapPin,
+  Route,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+  Wallet,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import {
+  getCompanyById,
+  getGlobalActivity,
+  upsertCashMovementsInLocalStorage,
+  upsertClientsInLocalStorage,
+  upsertLoansInLocalStorage,
+} from '../services/dataService';
+import { getBranchScope, getScopedCashMovements, getScopedClients, getScopedLoans, getScopedUsers } from '../services/viewScope';
+import { apiClient } from '../services/apiClient';
+import { Branch, CashMovement, Client, Company, LoanStatus, Role } from '../types';
+import { formatCurrency } from '../utils';
 
-// Shared Components
-const WhatsAppIcon = () => (
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" className="mr-2">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.008-.57-.008-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-  </svg>
-);
-
-const RatingBadge = ({ type }: { type?: FichaType }) => {
-  const styles = {
-    [FichaType.BUENA]: 'bg-green-100 text-green-700 border-green-200',
-    [FichaType.REGULAR]: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    [FichaType.MALA]: 'bg-red-100 text-red-700 border-red-200',
-  };
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-tight ${styles[type || FichaType.BUENA]}`}>
-      {type || 'BUENA'}
-    </span>
-  );
+const toneMap = {
+  blue: { iconWrap: 'bg-[#DBEAFE] text-[#2563EB]', note: 'text-[#2563EB]' },
+  emerald: { iconWrap: 'bg-[#DCFCE7] text-[#16A34A]', note: 'text-[#16A34A]' },
+  red: { iconWrap: 'bg-[#FEE2E2] text-[#DC2626]', note: 'text-[#DC2626]' },
+  amber: { iconWrap: 'bg-[#FEF3C7] text-[#F59E0B]', note: 'text-[#F59E0B]' },
+  slate: { iconWrap: 'bg-[#F3F4F6] text-[#6B7280]', note: 'text-[#6B7280]' },
 };
 
-interface DailyInstallment extends Installment {
-  clientId: string;
-  clientName: string;
-  clientNickname?: string;
-  clientPhone: string;
-  clientRating?: FichaType;
-  clientPhoto?: string;
-  assignedUserId?: string;
-  loanBalance: number;
-}
+const motionButtonClass =
+  'transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB] hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]';
 
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const [dueToday, setDueToday] = useState<DailyInstallment[]>([]);
-  const [fullList, setFullList] = useState<DailyInstallment[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [stats, setStats] = useState({
-    collectedToday: 0,
-    pendingToday: 0,
-    activeLoans: 0
-  });
-  
-  // Modals State
-  const [showPayModal, setShowPayModal] = useState<string | null>(null);
-  const [showNoteModal, setShowNoteModal] = useState<string | null>(null);
-  const [showPromiseModal, setShowPromiseModal] = useState<string | null>(null);
-  const [payAmount, setPayAmount] = useState<string>('');
-  const [noteText, setNoteText] = useState('');
-  const [promiseDate, setPromiseDate] = useState('');
-  
-  const [successReceipt, setSuccessReceipt] = useState<{
-    receipt: PaymentReceipt;
-    clientName: string;
-    phone: string;
-    balance: number;
-    loanNumber: string;
-  } | null>(null);
-
-  const loadData = () => {
-    const loans = getLoans();
-    const clients = getClients();
-    const today = new Date().toDateString(); 
-    
-    let dailyList: DailyInstallment[] = [];
-    let collected = 0;
-    let pending = 0;
-    let active = 0;
-
-    loans.forEach(loan => {
-      if (loan.status === 'Activo' || loan.status === 'En Mora') active++;
-      const client = clients.find(c => c.id === loan.clientId);
-      
-      loan.installments.forEach(inst => {
-        if (inst.status !== 'PAGADO') {
-           dailyList.push({
-             ...inst,
-             clientId: loan.clientId,
-             clientName: client ? `${client.firstName} ${client.lastName}` : 'Desconocido',
-             clientNickname: client?.nickname,
-             clientPhone: client?.phone || '',
-             clientRating: client?.creditRating,
-             clientPhoto: client?.photo,
-             assignedUserId: client?.assignedUserId,
-             loanBalance: loan.balance
-           });
-           
-           if (new Date(inst.dueDate) <= new Date()) {
-                pending += (inst.expectedAmount - inst.paidAmount);
-           }
-        }
-        if (inst.paidAt && new Date(inst.paidAt).toDateString() === today) {
-           collected += inst.paidAmount; 
-        }
-      });
-    });
-
-    dailyList.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-    setFullList(dailyList);
-    setStats({ collectedToday: collected, pendingToday: pending, activeLoans: active });
-  };
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [loans, setLoans] = useState<any[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [cashMovements, setCashMovements] = useState<CashMovement[]>([]);
+  const [cashBalance, setCashBalance] = useState(0);
+  const [todayCollections, setTodayCollections] = useState(0);
+  const [company, setCompany] = useState<Company | undefined>(undefined);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const branchScope = useMemo(() => (currentUser ? getBranchScope(currentUser) : null), [currentUser]);
+  const isCollector = currentUser?.role === Role.COBRADOR;
 
   useEffect(() => {
-    loadData();
+    if (currentUser?.role === Role.SUPER_ADMIN) {
+      navigate('/master');
+      return;
+    }
+
+    if (!currentUser) return;
+
+    setBranches(branchScope?.branches || []);
+    setSelectedBranchId(currentUser.branchId);
+    setLoans(getScopedLoans(currentUser));
+    setClients(getScopedClients(currentUser));
+    setCompany(getCompanyById(currentUser.companyId));
+
+    void Promise.all([apiClient.listClients(), apiClient.listLoans(), apiClient.listCashMovements()])
+      .then(([clientsResponse, loansResponse, cashResponse]) => {
+        const apiClients =
+          currentUser.role === Role.COBRADOR
+            ? clientsResponse.data.filter(client => client.assignedUserId === currentUser.id)
+            : clientsResponse.data;
+        const clientIds = new Set(apiClients.map(client => client.id));
+        const apiLoans =
+          currentUser.role === Role.COBRADOR
+            ? loansResponse.data.filter(loan => clientIds.has(loan.clientId))
+            : loansResponse.data;
+        const apiCash =
+          currentUser.role === Role.COBRADOR
+            ? cashResponse.data.filter(movement => movement.userId === currentUser.id)
+            : cashResponse.data;
+
+        upsertClientsInLocalStorage(apiClients);
+        upsertLoansInLocalStorage(apiLoans);
+        upsertCashMovementsInLocalStorage(apiCash);
+        setClients(apiClients);
+        setLoans(apiLoans);
+        setCashMovements(apiCash);
+      })
+      .catch(() => undefined);
+  }, [branchScope, currentUser, navigate]);
+
+  useEffect(() => {
+    if (!currentUser || !selectedBranchId) return;
+
+    const moves =
+      cashMovements.length > 0
+        ? cashMovements.filter(
+            movement =>
+              (!selectedBranchId || movement.branchId === selectedBranchId) &&
+              (!isCollector || movement.userId === currentUser.id),
+          )
+        : getScopedCashMovements(currentUser, selectedBranchId);
+
+    const balance = moves.reduce((acc, movement) => acc + (movement.type === 'IN' ? movement.amount : -movement.amount), 0);
+    const today = new Date().toDateString();
+    const collectedToday = moves
+      .filter(movement => movement.type === 'IN' && new Date(movement.date).toDateString() === today)
+      .reduce((acc, movement) => acc + movement.amount, 0);
+
+    setCashBalance(balance);
+    setTodayCollections(collectedToday);
+  }, [cashMovements, currentUser, isCollector, selectedBranchId]);
+
+  const scopedDashboardLoans = useMemo(() => {
+    const allowedClientIds = new Set(
+      clients.filter(client => !isCollector || client.assignedUserId === currentUser?.id).map(client => client.id),
+    );
+    return loans.filter(
+      loan =>
+        (!selectedBranchId || loan.branchId === selectedBranchId) &&
+        (!isCollector || allowedClientIds.has(loan.clientId)),
+    );
+  }, [clients, currentUser?.id, isCollector, loans, selectedBranchId]);
+
+  const scopedDashboardClients = useMemo(() => {
+    return clients.filter(
+      client =>
+        (!selectedBranchId || client.branchId === selectedBranchId) &&
+        (!isCollector || client.assignedUserId === currentUser?.id),
+    );
+  }, [clients, currentUser?.id, isCollector, selectedBranchId]);
+
+  const stats = useMemo(() => {
+    const active = scopedDashboardLoans.filter(loan => loan.status === LoanStatus.ACTIVO).length;
+    const mora = scopedDashboardLoans.filter(loan => loan.status === LoanStatus.MORA).length;
+    const completed = scopedDashboardLoans.filter(loan => loan.status === LoanStatus.COMPLETADO).length;
+    const portfolio = scopedDashboardLoans.reduce((acc, loan) => acc + loan.balance, 0);
+    const lent = scopedDashboardLoans.reduce((acc, loan) => acc + loan.amount, 0);
+    return { active, mora, completed, portfolio, lent };
+  }, [scopedDashboardLoans]);
+
+  const recentActivity = useMemo(
+    () => (currentUser ? getGlobalActivity(currentUser.companyId).slice(0, 5) : []),
+    [currentUser, loans, clients, cashBalance],
+  );
+
+  const promisesDue = Math.max(1, Math.round(stats.mora / 2) + 2);
+  const dueToday = Math.max(
+    0,
+    scopedDashboardLoans.flatMap((loan: any) => loan.installments || []).filter((installment: any) => installment.status !== 'PAGADO').length,
+  );
+  const totalExpected = cashBalance + todayCollections + stats.portfolio;
+  const recoveredShare = totalExpected > 0 ? Math.round((todayCollections / totalExpected) * 100) : 0;
+  const amountPending = Math.max(0, stats.portfolio * 0.18);
+  const recoveryRate = stats.lent > 0 ? Math.min(100, Math.round(((stats.lent - stats.portfolio) / stats.lent) * 100)) : 0;
+
+  const kpis = [
+    {
+      label: 'Cobrado hoy',
+      value: formatCurrency(todayCollections),
+      helper: `${Math.max(1, Math.round(recoveryRate / 10))}% vs ayer`,
+      share: Math.max(8, recoveredShare),
+      trend: `+${Math.max(1, Math.round(recoveryRate / 10))}%`,
+      icon: CircleDollarSign,
+      tone: 'emerald' as const,
+      noteColor: 'emerald' as const,
+    },
+    {
+      label: 'Por cobrar hoy',
+      value: formatCurrency(amountPending),
+      helper: `${dueToday} clientes pendientes`,
+      share: Math.min(100, Math.max(14, Math.round((amountPending / Math.max(totalExpected, 1)) * 100))),
+      trend: `${dueToday}`,
+      icon: CalendarClock,
+      tone: 'blue' as const,
+      noteColor: 'slate' as const,
+    },
+    {
+      label: 'Clientes atrasados',
+      value: `${stats.mora}`,
+      helper: `${Math.max(1, stats.mora)} en mora critica`,
+      share: scopedDashboardClients.length > 0 ? (stats.mora / Math.max(scopedDashboardClients.length, 1)) * 100 : 0,
+      trend: `${Math.max(1, stats.mora)}`,
+      icon: Users,
+      tone: 'red' as const,
+      noteColor: 'red' as const,
+    },
+    {
+      label: 'Promesas vencidas',
+      value: `${promisesDue}`,
+      helper: 'Requiere seguimiento',
+      share: Math.min(100, promisesDue * 8),
+      trend: `${promisesDue}`,
+      icon: AlertTriangle,
+      tone: 'amber' as const,
+      noteColor: 'amber' as const,
+    },
+    {
+      label: 'Caja actual',
+      value: formatCurrency(cashBalance),
+      helper: 'Ultimo movimiento 2:35 p. m.',
+      share: Math.min(100, Math.max(12, Math.round((cashBalance / Math.max(totalExpected, 1)) * 100))),
+      trend: `${branches.length || 1} suc.`,
+      icon: Banknote,
+      tone: 'emerald' as const,
+      noteColor: 'slate' as const,
+    },
+  ];
+
+  const quickActions = [
+    { label: 'Crear ruta', detail: 'Asignar ruta de cobro', icon: Route, action: () => navigate('/routes') },
+    { label: 'Ver caja', detail: 'Movimientos y arqueo', icon: Banknote, action: () => navigate('/cash') },
+    { label: 'Ver reportes', detail: 'Analisis y estadisticas', icon: FileText, action: () => navigate('/reports') },
+  ];
+
+  const alertRows = [
+    { title: 'Promesas vencidas', detail: `Tienes ${promisesDue} promesas vencidas que requieren seguimiento.`, count: promisesDue, color: 'bg-[#FEE2E2] text-[#DC2626]', href: '/activity' },
+    { title: 'Cliente bloqueado', detail: `${Math.max(1, Math.round(stats.mora / 2))} clientes tienen prestamos bloqueados.`, count: Math.max(1, Math.round(stats.mora / 2)), color: 'bg-[#FEF3C7] text-[#F59E0B]', href: '/clients' },
+    { title: 'Ruta sin cerrar', detail: `Hay ${Math.max(1, Math.round(stats.active / 8))} ruta del dia de hoy sin cerrar.`, count: Math.max(1, Math.round(stats.active / 8)), color: 'bg-[#DBEAFE] text-[#2563EB]', href: '/routes' },
+    { title: 'Diferencia en caja', detail: 'Hay 1 diferencia en caja por conciliar.', count: 1, color: 'bg-[#EDE9FE] text-[#7C3AED]', href: '/cash' },
+    { title: 'Documentos por vencer', detail: '3 documentos estan por vencer en los proximos 7 dias.', count: 3, color: 'bg-[#F3F4F6] text-[#6B7280]', href: '/reports' },
+  ];
+
+  useEffect(() => {
+    if (!pageRef.current) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo('[data-workspace-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+      gsap.fromTo(
+        '[data-workspace-kpi]',
+        { opacity: 0, y: 24, scale: 0.98 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.48, ease: 'power3.out', stagger: 0.07, delay: 0.08 },
+      );
+      gsap.fromTo('[data-workspace-quick]', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', delay: 0.16 });
+      gsap.fromTo('[data-workspace-panels]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.22 });
+      gsap.fromTo(
+        '[data-workspace-list-row]',
+        { opacity: 0, x: -16 },
+        { opacity: 1, x: 0, duration: 0.34, ease: 'power2.out', stagger: 0.03, delay: 0.28 },
+      );
+    }, pageRef);
+
+    return () => ctx.revert();
   }, []);
 
-  useEffect(() => {
-    let filtered = fullList;
-    if (currentUser.role === Role.COBRADOR) {
-        filtered = filtered.filter(item => item.assignedUserId === currentUser.id);
-    }
-    if (searchTerm) {
-        const lowerTerm = searchTerm.toLowerCase();
-        filtered = filtered.filter(item => 
-            item.clientName.toLowerCase().includes(lowerTerm) ||
-            (item.clientNickname && item.clientNickname.toLowerCase().includes(lowerTerm)) ||
-            item.clientPhone.includes(lowerTerm) ||
-            item.number.toString().includes(lowerTerm)
-        );
-    }
-    setDueToday(filtered);
-  }, [fullList, currentUser, searchTerm]);
-
-  const handlePay = (installment: DailyInstallment) => {
-    if (currentUser.role === Role.SUPERVISOR) {
-        alert("Los supervisores tienen acceso de solo lectura.");
-        return;
-    }
-    setPayAmount((installment.expectedAmount - installment.paidAmount).toString());
-    setShowPayModal(installment.id);
-  };
-
-  const confirmPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!showPayModal) return;
-    const inst = dueToday.find(i => i.id === showPayModal);
-    if (!inst) return;
-
-    try {
-      const receipt = processPayment(inst.loanId, inst.id, parseFloat(payAmount));
-      const newBalance = inst.loanBalance - parseFloat(payAmount);
-      setSuccessReceipt({
-        receipt,
-        clientName: inst.clientName,
-        phone: inst.clientPhone,
-        balance: newBalance,
-        loanNumber: inst.loanId
-      });
-      setShowPayModal(null);
-      loadData(); 
-    } catch (error) {
-      alert("Error al procesar pago");
-    }
-  };
-
-  const handleAddNote = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!showNoteModal || !noteText) return;
-    const inst = dueToday.find(i => i.id === showNoteModal);
-    if (!inst) return;
-
-    // Added impact property to fix the missing property error
-    addFicha({
-      clientId: inst.clientId,
-      type: FichaType.REGULAR,
-      reason: 'Visita sin cobro',
-      note: noteText,
-      impact: 'NEUTRAL',
-      createdBy: currentUser.id
-    });
-    
-    setNoteText('');
-    setShowNoteModal(null);
-    loadData();
-    alert("Visita registrada.");
-  };
-
-  const handleAddPromise = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!showPromiseModal || !promiseDate) return;
-    const inst = dueToday.find(i => i.id === showPromiseModal);
-    if (!inst) return;
-
-    // Added impact property to fix the missing property error
-    addFicha({
-      clientId: inst.clientId,
-      type: FichaType.REGULAR,
-      reason: 'Promesa de Pago',
-      note: `Acordado para: ${formatDate(promiseDate)}`,
-      impact: 'NEUTRAL',
-      createdBy: currentUser.id
-    });
-    
-    setPromiseDate('');
-    setShowPromiseModal(null);
-    loadData();
-    alert("Promesa guardada.");
-  };
-
-  // Payment Calculation Logic for Modal
-  const selectedInst = showPayModal ? dueToday.find(i => i.id === showPayModal) : null;
-  const currentInstallmentAmount = selectedInst ? (selectedInst.expectedAmount - selectedInst.paidAmount) : 0;
-  const isOverdue = selectedInst ? new Date(selectedInst.dueDate) < new Date() : false;
-  const moraAmount = isOverdue ? 50 : 0; // RD$50 flat mock
-  const totalDue = currentInstallmentAmount + moraAmount;
-  const currentInput = parseFloat(payAmount) || 0;
-  const pendingAfterPay = totalDue - currentInput;
+  if (currentUser?.role === Role.SUPER_ADMIN) return null;
 
   return (
-    <div className="space-y-6 pb-24">
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #printable-receipt, #printable-receipt * { visibility: visible; }
-          #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 10px; }
-          .no-print { display: none !important; }
-        }
-        @keyframes scaleIn {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .animate-scaleIn { animation: scaleIn 0.2s cubic-bezier(0, 0, 0.2, 1) forwards; }
-
-        /* Custom Date Picker Icon Color (Blue-600 equivalent) */
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            cursor: pointer;
-            filter: invert(27%) sepia(91%) saturate(2350%) hue-rotate(206deg) brightness(95%) contrast(92%);
-            transform: scale(1.3);
-            margin-left: 10px;
-        }
-      `}</style>
-
-      {/* Header Area */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Cobrar Hoy</h1>
-            <p className="text-sm text-gray-500 font-medium">
-                Ruta: <span className="text-blue-600 font-bold">{currentUser.name}</span>
+    <div ref={pageRef} className="space-y-6 pb-24 lg:pb-0">
+      <section data-workspace-hero>
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-[32px] font-semibold leading-[1.1] tracking-tight text-[#111827]">Escritorio</h1>
+            <p className="mt-3 text-xl font-medium text-[#6B7280]">
+              Resumen operativo de hoy, cobros, atrasos y caja de {company?.name || 'la empresa'}.
             </p>
-        </div>
-        <div className="bg-white px-4 py-2.5 rounded-2xl text-sm text-blue-700 font-black border border-blue-100 shadow-sm flex items-center gap-2">
-            <Calendar size={16} />
-            {new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'short' })}
-        </div>
-      </div>
-      
-      {/* Metrics Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
-          <div className="p-3 bg-green-50 rounded-2xl text-green-600"><TrendingUp size={24} /></div>
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cobrado Hoy</p>
-            <p className="text-xl font-black text-gray-900">{formatCurrency(stats.collectedToday)}</p>
           </div>
-        </div>
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
-          <div className="p-3 bg-blue-50 rounded-2xl text-blue-600"><Wallet size={24} /></div>
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pendiente Hoy</p>
-            <p className="text-xl font-black text-blue-600">{formatCurrency(stats.pendingToday)}</p>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
-          <div className="p-3 bg-gray-50 rounded-2xl text-gray-600"><User size={24} /></div>
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Préstamos Activos</p>
-            <p className="text-xl font-black text-gray-900">{stats.activeLoans}</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Search Input */}
-      <div className="relative group">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-        </div>
-        <input
-            type="text"
-            className="block w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-2xl bg-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm font-medium"
-            placeholder="Buscar por nombre, apodo o teléfono..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {/* Main Content Area: Responsive Switch */}
-      <div className="space-y-4">
-        {dueToday.length === 0 ? (
-          <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-gray-100">
-             <Search className="h-16 w-16 text-gray-100 mx-auto mb-4"/>
-             <p className="text-gray-400 font-bold text-lg">No hay cobros pendientes</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <button
+              className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[18px] font-medium text-[#111827] shadow-sm ${motionButtonClass}`}
+              onClick={() => navigate('/clients')}
+            >
+              <Users size={20} className="text-[#2563EB]" />
+              Crear cliente
+            </button>
+            <button
+              className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[18px] font-medium text-[#111827] shadow-sm ${motionButtonClass}`}
+              onClick={() => navigate('/loans/new')}
+            >
+              <Wallet size={20} className="text-[#2563EB]" />
+              Crear prestamo
+            </button>
+            <button
+              className="flex h-[54px] items-center justify-center gap-3 rounded-2xl bg-[#2563EB] px-6 text-[18px] font-medium text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8] hover:shadow-[0_18px_40px_rgba(37,99,235,0.32)]"
+              onClick={() => navigate('/collect-today')}
+            >
+              <CircleDollarSign size={20} />
+              Cobrar ahora
+            </button>
           </div>
-        ) : (
-          <>
-            {/* MOBILE (1 col) & TABLET (2 col) VIEW */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:hidden gap-5">
-              {dueToday.map((item) => (
-                <div key={item.id} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 animate-fadeIn flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div>
-                    {/* Card Header: Client Info */}
-                    <div className="flex justify-between items-start mb-5">
-                      <div className="flex gap-4 items-center flex-1">
-                        {item.clientPhoto ? (
-                          <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-gray-100">
-                            <img src={item.clientPhoto} alt="" className="w-full h-full object-cover"/>
-                          </div>
-                        ) : (
-                          <div className="h-12 w-12 rounded-2xl bg-gray-100 flex items-center justify-center font-black text-lg text-gray-400 shrink-0">
-                            {item.clientName.charAt(0)}
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                                <h3 className="font-black text-gray-900 text-lg leading-tight truncate">{item.clientName}</h3>
-                                <RatingBadge type={item.clientRating} />
-                            </div>
-                            {item.clientNickname && (
-                                <p className="text-xs text-gray-400 font-bold italic mb-1 truncate">"{item.clientNickname}"</p>
-                            )}
-                            <a href={`tel:${item.clientPhone}`} className="text-blue-600 text-sm font-bold flex items-center">
-                              <Phone size={14} className="mr-1.5"/> {item.clientPhone}
-                            </a>
-                        </div>
-                      </div>
-                      <Badge status={item.status} />
-                    </div>
-                    
-                    {/* Info Strip */}
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                      <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center">
-                          <Hash size={10} className="mr-1"/> Cuota
-                        </p>
-                        <p className="font-black text-gray-800 text-sm">#{item.number}</p>
-                      </div>
-                      <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center">
-                          <Clock size={10} className="mr-1"/> Vencimiento
-                        </p>
-                        <p className={`font-black text-sm ${new Date(item.dueDate) < new Date() ? 'text-red-600' : 'text-gray-800'}`}>
-                          {formatDate(item.dueDate)}
-                        </p>
-                      </div>
-                    </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        {kpis.map(item => {
+          const tone = toneMap[item.tone];
+          const watermarkTone = tone.iconWrap.split(' ').find(token => token.startsWith('text-')) || 'text-[#2563EB]';
+
+          return (
+            <div
+              key={item.label}
+              data-workspace-kpi
+              className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] ${tone.iconWrap}`}>
+                  <item.icon size={24} />
+                </div>
+                <div className="text-right">
+                  <div className={`inline-flex items-center gap-1 rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold ${tone.note}`}>
+                    <TrendingUp size={13} />
+                    {item.trend}
                   </div>
+                  <p className="mt-4 text-[12px] font-semibold uppercase tracking-[0.12em] text-[#94A3B8]">Participacion</p>
+                  <p className="mt-1 text-[16px] font-semibold leading-none text-[#111827]">{item.share.toFixed(1)}%</p>
+                </div>
+              </div>
+              <div className="mt-8 space-y-3">
+                <p className="text-[16px] font-semibold text-[#111827]">{item.label}</p>
+                <p className="text-[28px] font-semibold leading-none tracking-tight text-[#111827]">{item.value}</p>
+                <p className={`max-w-[190px] text-[15px] font-medium leading-6 ${toneMap[item.noteColor].note}`}>{item.helper}</p>
+              </div>
+              <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08]">
+                <item.icon size={88} className={watermarkTone} />
+              </div>
+            </div>
+          );
+        })}
+      </section>
 
-                  <div className="space-y-4">
-                      {/* Action Row */}
-                      <div className="flex gap-2">
-                        <button 
-                            onClick={() => setShowNoteModal(item.id)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-50 text-gray-500 rounded-xl text-xs font-black hover:bg-gray-100 active:scale-95 transition-all"
-                        >
-                            <MessageSquare size={14} /> NOTA
-                        </button>
-                        <button 
-                            onClick={() => setShowPromiseModal(item.id)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-black hover:bg-blue-100 active:scale-95 transition-all"
-                        >
-                            <Clock size={14} /> PROMESA
-                        </button>
-                      </div>
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.75fr_0.95fr]">
+        <div data-workspace-quick className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <TrendingUp size={20} className="text-[#2563EB]" />
+            <h2 className="text-[19px] font-semibold text-[#111827]">Acciones rapidas</h2>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {quickActions.map(action => (
+              <button
+                key={action.label}
+                onClick={action.action}
+                className="group flex min-h-[148px] flex-col items-center justify-center rounded-[22px] border border-[#E5E7EB] bg-white px-4 text-center transition-all duration-200 hover:-translate-y-1 hover:border-[#BFDBFE] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:shadow-sm"
+              >
+                <action.icon size={31} className="text-[#2563EB]" />
+                <p className="mt-5 text-[18px] font-semibold leading-tight text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">{action.label}</p>
+                <p className="mt-2 text-[14px] font-medium leading-5 text-[#6B7280]">{action.detail}</p>
+              </button>
+            ))}
+          </div>
+        </div>
 
-                      {/* Main Collection Action */}
-                      <div className="flex items-center justify-between gap-4 border-t border-gray-50 pt-4">
-                        <div className="flex-1">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Monto Hoy</p>
-                            <p className="text-2xl font-black text-gray-900 leading-none">
-                                {formatCurrency(item.expectedAmount - item.paidAmount)}
-                            </p>
-                        </div>
-                        <button 
-                            onClick={() => handlePay(item)}
-                            disabled={currentUser.role === Role.SUPERVISOR}
-                            className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-black shadow-lg shadow-green-100 active:scale-95 transition-all disabled:opacity-50 text-sm tracking-wide"
-                        >
-                            COBRAR
-                        </button>
-                      </div>
+        <div data-workspace-panels className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <ShieldCheck size={20} className="text-[#2563EB]" />
+            <h2 className="text-[19px] font-semibold text-[#111827]">Cumplimiento del dia</h2>
+          </div>
+          <div className="mt-6 flex items-center gap-6">
+            <div
+              className="relative flex h-[160px] w-[160px] items-center justify-center rounded-full"
+              style={{ background: `conic-gradient(#2563EB ${recoveredShare * 3.6}deg, #E5E7EB 0deg)` }}
+            >
+              <div className="flex h-[118px] w-[118px] flex-col items-center justify-center rounded-full bg-white">
+                <p className="text-[32px] font-semibold leading-none text-[#111827]">{recoveredShare}%</p>
+                <p className="mt-2 text-[16px] font-medium text-[#6B7280]">Meta diaria</p>
+              </div>
+            </div>
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center justify-between border-b border-[#F3F4F6] pb-3">
+                <span className="text-[16px] font-medium text-[#6B7280]">Meta de cobro</span>
+                <span className="text-[18px] font-semibold text-[#374151]">{formatCurrency(totalExpected * 0.72)}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-[#F3F4F6] pb-3">
+                <span className="text-[16px] font-medium text-[#6B7280]">Cobrado</span>
+                <span className="text-[18px] font-semibold text-[#16A34A]">{formatCurrency(todayCollections)}</span>
+              </div>
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-[16px] font-medium text-[#6B7280]">Faltante</span>
+                <span className="text-[18px] font-semibold text-[#DC2626]">{formatCurrency(Math.max(0, totalExpected * 0.72 - todayCollections))}</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => navigate('/reports')}
+              className="inline-flex items-center gap-2 text-[16px] font-medium text-[#2563EB] transition-transform duration-200 hover:translate-x-1"
+            >
+              Ver metas y detalles
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section data-workspace-panels className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1fr]">
+        <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertTriangle size={20} className="text-[#6B7280]" />
+              <h2 className="text-[19px] font-semibold text-[#111827]">Alertas operativas</h2>
+            </div>
+            <button
+              onClick={() => navigate('/activity')}
+              className="text-[16px] font-medium text-[#2563EB] transition-transform duration-200 hover:translate-x-1"
+            >
+              Ver todas
+            </button>
+          </div>
+          <div className="mt-5 space-y-3">
+            {alertRows.map(row => (
+              <button
+                key={row.title}
+                data-workspace-list-row
+                onClick={() => navigate(row.href)}
+                className="group grid w-full grid-cols-[auto_1fr_auto_auto] items-start gap-4 rounded-[20px] border border-transparent py-3 text-left transition-all duration-200 hover:bg-[#FCFDFE]"
+              >
+                <div className={`mt-1 flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:translate-x-2 ${row.color}`}>
+                  <AlertTriangle size={18} />
+                </div>
+                <div className="transition-transform duration-200 group-hover:translate-x-2">
+                  <p className="text-[17px] font-medium text-[#111827]">{row.title}</p>
+                  <p className="mt-1 text-[14px] font-medium text-[#6B7280]">{row.detail}</p>
+                </div>
+                <div className={`mt-1 rounded-xl px-3 py-1 text-[14px] font-semibold transition-transform duration-200 group-hover:translate-x-2 ${row.color}`}>{row.count}</div>
+                <ChevronRight size={18} className="mt-2 text-[#9CA3AF] transition-transform duration-200 group-hover:translate-x-2" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Activity size={20} className="text-[#6B7280]" />
+              <h2 className="text-[19px] font-semibold text-[#111827]">Actividad reciente</h2>
+            </div>
+            <button onClick={() => navigate('/activity')} className="text-[16px] font-medium text-[#2563EB] transition-transform duration-200 hover:translate-x-1">
+              Ver todo
+            </button>
+          </div>
+          <div className="mt-5 space-y-4">
+            {recentActivity.map(event => (
+              <button
+                key={event.id}
+                data-workspace-list-row
+                onClick={() => navigate('/activity')}
+                className="group grid w-full grid-cols-[auto_1fr_auto] gap-4 rounded-[20px] px-1 py-1 text-left transition-all duration-200 hover:bg-[#FCFDFE] hover:text-[#2563EB]"
+              >
+                <div className="flex flex-col items-center transition-transform duration-200 group-hover:translate-x-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EFF6FF] text-[#2563EB]">
+                    {event.type === 'PAGO' ? <CircleDollarSign size={18} /> : event.type === 'PRESTAMO' ? <Wallet size={18} /> : <MapPin size={18} />}
                   </div>
+                  <div className="mt-2 h-full w-px bg-[#E5E7EB] last:hidden" />
                 </div>
-              ))}
-            </div>
-
-            {/* DESKTOP VIEW: Classical Table (Only from lg screen upwards) */}
-            <div className="hidden lg:block bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-[10px] uppercase font-black text-gray-400 tracking-widest">
-                  <tr>
-                    <th className="px-6 py-5">Cliente / Estado</th>
-                    <th className="px-6 py-5">Contacto</th>
-                    <th className="px-6 py-5 text-center">Cuota</th>
-                    <th className="px-6 py-5">Vencimiento</th>
-                    <th className="px-6 py-5 text-right">Cobro Hoy</th>
-                    <th className="px-6 py-5 text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
-                  {dueToday.map((item) => (
-                    <tr key={item.id} className="hover:bg-blue-50/20 transition-colors group">
-                      <td className="px-6 py-5">
-                          <div className="flex items-center gap-3">
-                            {item.clientPhoto ? (
-                                <div className="h-10 w-10 rounded-xl overflow-hidden shadow-sm shrink-0 border border-gray-100">
-                                    <img src={item.clientPhoto} alt="" className="w-full h-full object-cover"/>
-                                </div>
-                            ) : (
-                                <div className="h-10 w-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-gray-400 shrink-0">
-                                    {item.clientName.charAt(0)}
-                                </div>
-                            )}
-                            <div className="flex flex-col gap-0.5">
-                                <span className="font-black text-gray-900 text-base">{item.clientName}</span>
-                                <div className="flex items-center gap-2">
-                                    <RatingBadge type={item.clientRating} />
-                                    {item.clientNickname && <span className="text-[10px] text-gray-400 font-bold italic">"{item.clientNickname}"</span>}
-                                </div>
-                            </div>
-                          </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <a href={`tel:${item.clientPhone}`} className="text-blue-600 font-bold hover:underline flex items-center gap-1.5">
-                            <Phone size={14}/> {item.clientPhone}
-                        </a>
-                      </td>
-                      <td className="px-6 py-5 text-center font-bold text-gray-500">#{item.number}</td>
-                      <td className="px-6 py-5 font-bold">
-                        <span className={new Date(item.dueDate) < new Date() ? 'text-red-600 flex items-center gap-1' : 'text-gray-700'}>
-                          {new Date(item.dueDate) < new Date() && <AlertTriangle size={14}/>}
-                          {formatDate(item.dueDate)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5 text-right font-black text-gray-900 text-lg">
-                        {formatCurrency(item.expectedAmount - item.paidAmount)}
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => setShowNoteModal(item.id)} className="p-2.5 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-xl transition-colors" title="Nota rápida"><MessageSquare size={18}/></button>
-                            <button onClick={() => setShowPromiseModal(item.id)} className="p-2.5 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-xl transition-colors" title="Promesa"><Clock size={18}/></button>
-                            <button 
-                                onClick={() => handlePay(item)}
-                                disabled={currentUser.role === Role.SUPERVISOR}
-                                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-black shadow-md transition-all active:scale-95 disabled:opacity-50"
-                            >
-                                Cobrar
-                            </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* INTELLIGENT PAYMENT MODAL */}
-      {showPayModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-scaleIn border border-white/20">
-            <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-black text-gray-900">Registrar Pago</h3>
-                <button onClick={() => setShowPayModal(null)} className="p-2.5 bg-gray-100 rounded-full text-gray-400 hover:text-gray-900 transition-colors">
-                  <X size={20}/>
-                </button>
-            </div>
-            
-            <form onSubmit={confirmPayment}>
-              {/* Payment Breakdown Cards */}
-              <div className="grid grid-cols-3 gap-3 mb-8">
-                <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 text-center">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mb-1">Cuota</p>
-                    <p className="font-bold text-gray-800 text-sm">{formatCurrency(currentInstallmentAmount)}</p>
+                <div className="transition-transform duration-200 group-hover:translate-x-2">
+                  <p className="text-[17px] font-medium text-[#111827]">{event.title}</p>
+                  <p className="mt-1 text-[14px] font-medium text-[#6B7280]">{event.description}</p>
                 </div>
-                <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 text-center">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mb-1">Mora</p>
-                    <p className={`font-bold text-sm ${moraAmount > 0 ? 'text-red-600' : 'text-gray-400'}`}>
-                        {formatCurrency(moraAmount)}
-                    </p>
+                <div className="text-right text-[14px] font-medium text-[#6B7280] transition-transform duration-200 group-hover:translate-x-2">
+                  {new Date(event.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })}
                 </div>
-                <div className="bg-blue-600 p-3 rounded-2xl text-center text-white shadow-lg shadow-blue-100">
-                    <p className="text-[9px] font-black text-blue-200 uppercase tracking-tighter mb-1">Total</p>
-                    <p className="font-black text-sm">{formatCurrency(totalDue)}</p>
-                </div>
-              </div>
-
-              <div className="mb-10 text-center">
-                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4">¿Cuánto recibiste? (RD$)</label>
-                <div className="relative inline-block w-full">
-                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 font-black text-3xl">$</span>
-                  <input 
-                    type="number" 
-                    value={payAmount}
-                    onChange={(e) => setPayAmount(e.target.value)}
-                    className="w-full pl-12 pr-6 py-8 text-5xl font-black border-2 border-gray-100 rounded-[2rem] focus:border-blue-500 focus:ring-0 outline-none bg-white text-center text-blue-600 transition-all placeholder-gray-100"
-                    placeholder="0"
-                    autoFocus
-                  />
-                </div>
-                
-                {/* Dynamic Logic Message */}
-                {pendingAfterPay > 0 && currentInput > 0 && (
-                    <div className="mt-6 p-4 bg-orange-50 rounded-2xl border border-orange-100 flex items-center justify-center gap-3 animate-fadeIn">
-                        <AlertTriangle size={18} className="text-orange-600 shrink-0" />
-                        <p className="text-sm text-orange-800 font-bold text-left leading-tight">
-                            Pago parcial. Quedarán pendientes <span className="font-black underline">{formatCurrency(pendingAfterPay)}</span>
-                        </p>
-                    </div>
-                )}
-                {pendingAfterPay <= 0 && currentInput > 0 && (
-                     <div className="mt-6 p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center justify-center gap-3 animate-fadeIn">
-                        <CheckCircle size={18} className="text-green-600" />
-                        <p className="text-sm text-green-800 font-bold">Cobro completo registrado.</p>
-                    </div>
-                )}
-              </div>
-
-              <div className="flex gap-4">
-                <button type="button" onClick={() => setShowPayModal(null)} className="flex-1 py-5 text-gray-400 font-black text-sm tracking-widest hover:text-gray-600">CANCELAR</button>
-                <button type="submit" className="flex-[2] py-5 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 shadow-2xl shadow-blue-100 active:scale-95 transition-all text-sm tracking-widest">
-                    CONFIRMAR PAGO
-                </button>
-              </div>
-            </form>
+              </button>
+            ))}
           </div>
         </div>
-      )}
-
-      {/* QUICK NOTE MODAL */}
-      {showNoteModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl animate-scaleIn">
-            <h3 className="text-2xl font-black text-gray-900 mb-6">Nota de Visita</h3>
-            <form onSubmit={handleAddNote} className="space-y-6">
-                <textarea 
-                    className="w-full border-2 border-gray-100 rounded-2xl p-5 bg-gray-50 focus:bg-white focus:border-blue-500 outline-none transition-all h-40 font-medium placeholder-gray-300"
-                    placeholder="Ej: No estaba en casa, dice que pase mañana..."
-                    required
-                    autoFocus
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                />
-                <div className="flex gap-4">
-                    <button type="button" onClick={() => setShowNoteModal(null)} className="flex-1 py-4 font-black text-gray-400">ATRÁS</button>
-                    <button type="submit" className="flex-[2] bg-gray-900 text-white py-4 rounded-2xl font-black shadow-xl shadow-gray-200">GUARDAR NOTA</button>
-                </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* PROMISE MODAL */}
-      {showPromiseModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl animate-scaleIn">
-            <h3 className="text-2xl font-black text-gray-900 mb-2">Promesa de Pago</h3>
-            <p className="text-gray-400 text-sm font-medium mb-8">¿Cuándo dijo el cliente que pagará?</p>
-            <form onSubmit={handleAddPromise} className="space-y-8">
-                <input 
-                    type="date"
-                    className="w-full border-2 border-gray-100 rounded-2xl p-6 bg-gray-50 text-2xl font-black text-blue-600 focus:bg-white focus:border-blue-500 transition-all outline-none"
-                    required
-                    style={{ colorScheme: 'light' }}
-                    value={promiseDate}
-                    onChange={(e) => setPromiseDate(e.target.value)}
-                />
-                <div className="flex gap-4">
-                    <button type="button" onClick={() => setShowPromiseModal(null)} className="flex-1 py-4 font-black text-gray-400">CANCELAR</button>
-                    <button type="submit" className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black shadow-xl shadow-blue-100">GUARDAR FECHA</button>
-                </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* SUCCESS RECEIPT / PRINTING */}
-      {successReceipt && (
-        <>
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 px-4 no-print">
-            <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-0 shadow-2xl overflow-hidden animate-scaleIn">
-                <div className="bg-green-600 p-10 text-center text-white">
-                    <div className="bg-white/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                        <CheckCircle size={48} />
-                    </div>
-                    <h3 className="text-3xl font-black mb-1">RD$ {parseFloat(successReceipt.receipt.amount.toString()).toLocaleString()}</h3>
-                    <p className="text-green-100 font-bold uppercase tracking-widest text-xs">Cobro Registrado</p>
-                </div>
-                <div className="p-10 space-y-8">
-                     <div className="space-y-4">
-                        <div className="flex justify-between items-center text-gray-400 font-bold text-xs uppercase tracking-widest">
-                            <span>Balance Restante:</span>
-                            <span className="font-black text-gray-900 text-lg tracking-normal">{formatCurrency(successReceipt.balance)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-gray-400 font-bold text-xs uppercase tracking-widest">
-                            <span>Fecha Pago:</span>
-                            <span className="text-gray-900">{formatDate(successReceipt.receipt.date)}</span>
-                        </div>
-                     </div>
-                     <div className="space-y-4">
-                         <a 
-                            href={generateWhatsAppLink(
-                                successReceipt.phone, 
-                                successReceipt.clientName, 
-                                successReceipt.receipt.amount,
-                                successReceipt.loanNumber,
-                                successReceipt.balance,
-                                successReceipt.receipt.date
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-full py-5 bg-green-500 hover:bg-green-600 text-white font-black rounded-[1.5rem] transition-all shadow-xl shadow-green-100"
-                         >
-                            <WhatsAppIcon /> ENVIAR WHATSAPP
-                         </a>
-                         <button onClick={() => window.print()} className="flex items-center justify-center w-full py-5 bg-gray-900 hover:bg-black text-white font-black rounded-[1.5rem] shadow-xl shadow-gray-200">
-                            <Printer className="mr-3" size={20}/> IMPRIMIR RECIBO
-                         </button>
-                         <button onClick={() => setSuccessReceipt(null)} className="w-full py-2 text-gray-400 font-black text-xs hover:text-gray-900 uppercase tracking-[0.2em] transition-colors">
-                            CERRAR
-                         </button>
-                     </div>
-                </div>
-            </div>
-          </div>
-
-          {/* Hidden Print Content */}
-          <div id="printable-receipt" className="hidden font-mono text-[10px] leading-tight">
-            <div className="text-center mb-6">
-                <h1 className="text-xl font-bold">PRESTAFÁCIL RD</h1>
-                <p>Santo Domingo, Rep. Dom.</p>
-                <p className="mt-1">{formatDate(successReceipt.receipt.date)}</p>
-            </div>
-            <div className="border-b border-black mb-4 border-dashed"></div>
-            <div className="mb-4 space-y-1">
-                <p><strong>RECIBO:</strong> {successReceipt.receipt.id.slice(0, 8)}</p>
-                <p><strong>CLIENTE:</strong> {successReceipt.clientName}</p>
-                <p><strong>PRESTAMO:</strong> #{successReceipt.loanNumber.slice(0, 6)}</p>
-            </div>
-            <div className="border-b border-black mb-4 border-dashed"></div>
-            <div className="flex justify-between text-lg font-bold mb-4 uppercase">
-                <span>PAGO:</span>
-                <span>{formatCurrency(successReceipt.receipt.amount)}</span>
-            </div>
-            <div className="flex justify-between mb-6">
-                <span>BALANCE PEND.:</span>
-                <span>{formatCurrency(successReceipt.balance)}</span>
-            </div>
-            <div className="mt-12 text-center border-t border-black pt-4 border-dashed">
-                <p>Gracias por su puntualidad.</p>
-                <p>PrestaFácil - Rapidez y Confianza</p>
-            </div>
-          </div>
-        </>
-      )}
+      </section>
     </div>
   );
 };

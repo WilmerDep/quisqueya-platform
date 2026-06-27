@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS report_exports (
+  id VARCHAR(64) PRIMARY KEY,
+  company_id VARCHAR(64) NOT NULL,
+  branch_id VARCHAR(64) NULL,
+  user_id VARCHAR(64) NOT NULL,
+  report_name VARCHAR(180) NOT NULL,
+  report_type VARCHAR(40) NOT NULL,
+  format VARCHAR(16) NOT NULL,
+  range_label VARCHAR(120) NOT NULL,
+  start_date DATE NULL,
+  end_date DATE NULL,
+  branch_name VARCHAR(160) NULL,
+  collector_id VARCHAR(64) NULL,
+  collector_name VARCHAR(180) NULL,
+  file_size_label VARCHAR(40) NULL,
+  filters_json JSON NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_report_exports_company_created (company_id, created_at),
+  KEY idx_report_exports_company (company_id),
+  KEY idx_report_exports_branch (branch_id),
+  KEY idx_report_exports_user (user_id)
+);

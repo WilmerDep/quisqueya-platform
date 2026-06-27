@@ -2,31 +2,44 @@ import React from 'react';
 
 interface BadgeProps {
   status: string;
+  className?: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ status }) => {
-  let colorClass = 'bg-gray-100 text-gray-800';
+export const Badge: React.FC<BadgeProps> = ({ status, className = '' }) => {
+  const normalizedStatus = status.trim().toUpperCase();
+  let colorClass = 'border border-[#E5E7EB] bg-[#F8FAFC] text-[#475569]';
+  let dotClass = 'bg-[#94A3B8]';
 
-  switch (status.toUpperCase()) {
+  switch (normalizedStatus) {
     case 'ACTIVO':
-    case 'PENDIENTE':
-      colorClass = 'bg-blue-100 text-blue-800';
-      break;
+    case 'ACTIVOS':
     case 'SALDADO':
     case 'PAGADO':
-      colorClass = 'bg-green-100 text-green-800';
+      colorClass = 'border border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]';
+      dotClass = 'bg-[#22C55E]';
+      break;
+    case 'PENDIENTE':
+    case 'PARCIAL':
+    case 'EN SEGUIMIENTO':
+      colorClass = 'border border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]';
+      dotClass = 'bg-[#F59E0B]';
       break;
     case 'MORA':
+    case 'EN MORA':
     case 'VENCIDO':
-      colorClass = 'bg-red-100 text-red-800';
-      break;
-    case 'PARCIAL':
-      colorClass = 'bg-yellow-100 text-yellow-800';
+    case 'ATRASADO':
+    case 'ATRASADOS':
+    case 'BLOQUEADO':
+    case 'BLOQUEADOS':
+    case 'NO PAGO':
+      colorClass = 'border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]';
+      dotClass = 'bg-[#EF4444]';
       break;
   }
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold leading-none ${colorClass} ${className}`}>
+      <span className={`h-2 w-2 rounded-full ${dotClass}`} />
       {status}
     </span>
   );
