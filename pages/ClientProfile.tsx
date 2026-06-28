@@ -256,7 +256,7 @@ export const ClientProfile: React.FC = () => {
     [branches, client?.branchId],
   );
   const availablePdfTemplates = useMemo(
-    () => reportTemplates.filter(template => template.status !== 'Archivada'),
+    () => reportTemplates.filter(template => template.status !== 'Archivada' && template.reportType && template.reportType.split(',').includes('CLIENT_STATEMENT')),
     [reportTemplates],
   );
   const fallbackPdfTemplate = useMemo(

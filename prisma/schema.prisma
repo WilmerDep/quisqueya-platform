@@ -493,7 +493,7 @@ model ReportTemplate {
   companyId    String   @map("company_id") @db.VarChar(64)
   userId       String   @map("user_id") @db.VarChar(64)
   name         String   @db.VarChar(180)
-  reportType   String   @map("report_type") @db.VarChar(40)
+  reportType   String   @map("report_type") @db.VarChar(255)
   status       String   @db.VarChar(24)
   isDefault    Boolean  @default(false) @map("is_default")
   sectionsJson Json?    @map("sections_json")

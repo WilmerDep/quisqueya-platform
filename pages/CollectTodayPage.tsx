@@ -753,10 +753,10 @@ export const CollectTodayPage: React.FC = () => {
           const Icon = kpi.icon;
           const tone = kpiToneMap[kpi.tone];
           return (
-            <article
+            <div
               key={kpi.label}
               data-collect-kpi
-              className="group relative overflow-hidden rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-[#DBEAFE] hover:bg-[#FCFDFF] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+              className="relative overflow-hidden rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm"
             >
               <div className="relative z-10 flex items-start justify-between gap-4">
                 <div className={`flex h-14 w-14 items-center justify-center rounded-3xl ${tone.iconWrap}`}>
@@ -778,7 +778,7 @@ export const CollectTodayPage: React.FC = () => {
                 <p className="mt-3 max-w-[185px] text-[15px] font-medium leading-6 text-[#6B7280]">{kpi.helper}</p>
               </div>
               <Icon size={72} className={`absolute bottom-4 right-4 ${tone.watermark} opacity-70`} strokeWidth={1.7} />
-            </article>
+            </div>
           );
         })}
       </section>

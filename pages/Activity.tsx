@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -382,7 +382,7 @@ export const ActivityPage: React.FC = () => {
 
   const branchMap = useMemo(() => new Map(branches.map(branch => [branch.id, branch.name])), [branches]);
   const availablePdfTemplates = useMemo(
-    () => reportTemplates.filter(template => template.status !== 'Archivada'),
+    () => reportTemplates.filter(template => template.status !== 'Archivada' && template.reportType && template.reportType.split(',').includes('ACTIVITY_HISTORY')),
     [reportTemplates],
   );
   const fallbackPdfTemplate = useMemo(
@@ -759,7 +759,7 @@ export const ActivityPage: React.FC = () => {
         {metricCards.map(card => {
           const Icon = card.icon;
           return (
-            <article key={card.label} className="relative overflow-hidden rounded-[28px] border border-[#E2E8F0] bg-white px-5 py-5 shadow-[0_20px_45px_rgba(15,23,42,0.06)]">
+            <div key={card.label} className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-[18px] ${card.iconWrap}`}>
                   <Icon size={22} />
@@ -779,7 +779,7 @@ export const ActivityPage: React.FC = () => {
                 strokeWidth={1.4}
                 className={`pointer-events-none absolute bottom-4 right-4 ${card.watermark} opacity-35`}
               />
-            </article>
+            </div>
           );
         })}
       </section>

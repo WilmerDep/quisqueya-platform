@@ -609,17 +609,21 @@ export const UsersManagement: React.FC = () => {
                   {paginatedUsers.items.map(user => {
                     const statusLabel = user.isActive ? 'Activo' : 'Suspendido';
                     return (
-                      <div key={user.id} className={`grid grid-cols-[2.2fr_1fr_0.9fr_1fr_0.82fr_0.58fr_0.42fr] gap-4 px-4 py-4 ${tableRowMotionClass}`}>
-                        <div className="flex items-center gap-3">
+                      <div
+                        key={user.id}
+                        onClick={() => navigate(`/users/${user.id}`)}
+                        className="grid grid-cols-[2.2fr_1fr_0.9fr_1fr_0.82fr_0.58fr_0.42fr] gap-4 px-4 py-4 cursor-pointer group transition-all duration-200 hover:bg-[#F8FAFC] hover:text-[#2563EB]"
+                      >
+                        <div className="flex items-center gap-3 transition-transform duration-200 group-hover:translate-x-1.5">
                           {user.photo ? (
-                            <img src={user.photo} alt={user.name} className="h-12 w-12 rounded-2xl border border-[#E5E7EB] object-cover" />
+                            <img src={user.photo} alt={user.name} className="h-12 w-12 rounded-full border border-[#E5E7EB] object-cover" />
                           ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[16px] font-black text-[#2563EB]">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EFF6FF] text-[16px] font-black text-[#2563EB]">
                               {user.avatar || user.name.slice(0, 2).toUpperCase()}
                             </div>
                           )}
                           <div>
-                            <p className="text-[15px] font-bold text-[#111827]">{user.name}</p>
+                            <p className="text-[15px] font-bold text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">{user.name}</p>
                             <p className="mt-1 text-[12px] font-medium text-[#64748B]">@{user.username}</p>
                           </div>
                         </div>
@@ -956,7 +960,7 @@ const UserRowActions = ({
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(open => !open)}
+        onClick={(e) => { e.stopPropagation(); setIsOpen(open => !open); }}
         className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-[14px] font-semibold transition-all duration-200 ${
           isOpen
             ? 'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB] shadow-[0_14px_30px_rgba(37,99,235,0.12)]'

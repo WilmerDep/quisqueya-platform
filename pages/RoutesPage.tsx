@@ -162,7 +162,7 @@ export const RoutesPage: React.FC = () => {
   }, [activeRouteId]);
 
   const availablePdfTemplates = useMemo(
-    () => reportTemplates.filter(template => template.status !== 'Archivada'),
+    () => reportTemplates.filter(template => template.status !== 'Archivada' && template.reportType && template.reportType.split(',').includes('COLLECTION_ROUTE')),
     [reportTemplates],
   );
   const fallbackPdfTemplate = useMemo(

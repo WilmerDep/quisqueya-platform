@@ -339,4 +339,8 @@ export interface ReportTemplateConfig {
     showRemainingBalance: boolean;
     includeSignature: boolean;
   };
+  layoutPositions?: Record<
+    string,
+    { x: number; y: number; visible: boolean; width?: number; height?: number }
+  >;
 }

@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import crypto from 'crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
 import { ok } from '../../shared/api-response.js';

@@ -898,7 +898,7 @@ export const renderPlatformPdfDocument = ({
           align: 'right',
           maxWidth: width * 0.36,
         });
-        metaStartY += subtitleLines.length * 10 + 4;
+        metaStartY += subtitleLines.length * 13 + 4;
       }
       drawCompactMetaLines({
         x: right - 20,
@@ -957,7 +957,7 @@ export const renderPlatformPdfDocument = ({
           align: 'right',
           maxWidth: width * 0.34,
         });
-        metaStartY += subtitleLines.length * 10 + 4;
+        metaStartY += subtitleLines.length * 13 + 4;
       }
       drawCompactMetaLines({
         x: right - 18,
@@ -1066,8 +1066,9 @@ export const renderPlatformPdfDocument = ({
     doc.setFontSize(9.2);
     doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
     (model.notesLines || ['Documento listo para entrega institucional.']).forEach(line => {
-      doc.text(doc.splitTextToSize(line, notesWidth - 8), left, y, { maxWidth: notesWidth - 8 });
-      y += 13;
+      const splitLines = doc.splitTextToSize(line, notesWidth - 8) as string[];
+      doc.text(splitLines, left, y, { maxWidth: notesWidth - 8 });
+      y += splitLines.length * 13;
     });
 
     let finalY = y;
@@ -1160,8 +1161,9 @@ export const renderPlatformPdfDocument = ({
     doc.setFontSize(9.2);
     doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
     (model.notesLines || []).forEach(line => {
-      doc.text(doc.splitTextToSize(line, notesWidth), left, y);
-      y += 13;
+      const splitLines = doc.splitTextToSize(line, notesWidth) as string[];
+      doc.text(splitLines, left, y);
+      y += splitLines.length * 13;
     });
 
     const totalBottom = drawTotalsColumn({
@@ -1461,8 +1463,9 @@ export const renderPlatformPdfDocument = ({
   doc.setFontSize(9.3);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
   (model.notesLines || ['Documento listo para entrega, archivo o distribucion.']).forEach(line => {
-    doc.text(doc.splitTextToSize(line, notesWidth - 8), left, y, { maxWidth: notesWidth - 8 });
-    y += 13;
+    const splitLines = doc.splitTextToSize(line, notesWidth - 8) as string[];
+    doc.text(splitLines, left, y, { maxWidth: notesWidth - 8 });
+    y += splitLines.length * 13;
   });
 
   const emphasisFill: PlatformPdfRgb = [248, 250, 252];

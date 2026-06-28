@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   Edit3,
+  FileText,
   Image as ImageIcon,
   MapPin,
   MessageCircle,
@@ -40,6 +41,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { formatCurrency } from '../utils';
+import { PdfTemplateBuilder } from '../components/PdfTemplateBuilder';
 
 const horizontalMotionClass = 'transition-all duration-200 hover:translate-x-1';
 
@@ -125,6 +127,7 @@ const subviews = [
   { id: 'scoring', label: 'Conducta', path: '/settings/scoring', icon: ShieldCheck },
   { id: 'whatsapp', label: 'WhatsApp', path: '/settings/whatsapp', icon: MessageCircle },
   { id: 'branches', label: 'Sucursales', path: '/settings/branches', icon: Building },
+  { id: 'templates', label: 'Plantillas', path: '/settings/templates', icon: FileText },
 ] as const;
 
 type SubviewId = (typeof subviews)[number]['id'];
@@ -1173,6 +1176,15 @@ const ConfigurationPage: React.FC = () => {
     );
   }
 
+  if (activeSubview === 'templates') {
+    return (
+      <PdfTemplateBuilder
+        companyId={currentUser?.companyId || ''}
+        onBack={() => navigate('/settings')}
+      />
+    );
+  }
+
   return (
     <SectionShell
       eyebrow="Configuracion"
@@ -1211,6 +1223,7 @@ const ConfigurationPage: React.FC = () => {
                     {item.id === 'scoring' && 'Umbrales de riesgo y conducta operativa.'}
                     {item.id === 'whatsapp' && 'Mensajes base para clientes y recibos.'}
                     {item.id === 'branches' && 'Sucursales, metas y responsables visibles.'}
+                    {item.id === 'templates' && 'Diseñador de PDF con drag & drop y configuración visual.'}
                   </p>
                 </button>
               );

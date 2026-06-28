@@ -13,6 +13,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       password: config.get<string>('MYSQL_PASSWORD', ''),
       database: config.get<string>('MYSQL_DATABASE', 'prestafacil'),
       connectionLimit: Number(config.get<string>('MYSQL_POOL_LIMIT', '10')),
+      idleTimeout: 1000, // Libera de inmediato las conexiones inactivas acumuladas en Laragon
     });
 
     super({ adapter });

@@ -304,16 +304,21 @@ export const Reports: React.FC = () => {
       .catch(() => setCashClosures([]));
   }, [currentUser]);
 
+  const availablePdfTemplates = useMemo(
+    () => reportTemplates.filter(template => template.status !== 'Archivada' && template.reportType && template.reportType.split(',').includes('FINANCIAL_REPORT')),
+    [reportTemplates],
+  );
+
   useEffect(() => {
-    if (!reportTemplates.length) return;
+    if (!availablePdfTemplates.length) return;
     const persistedTemplateId = getPersistedPdfTemplateId(currentUser?.companyId);
-    if (selectedTemplateId && reportTemplates.some(template => template.id === selectedTemplateId)) return;
+    if (selectedTemplateId && availablePdfTemplates.some(template => template.id === selectedTemplateId)) return;
     const nextTemplate =
-      reportTemplates.find(template => template.id === persistedTemplateId) ||
-      reportTemplates.find(template => template.isDefault) ||
-      reportTemplates[0];
+      availablePdfTemplates.find(template => template.id === persistedTemplateId) ||
+      availablePdfTemplates.find(template => template.isDefault) ||
+      availablePdfTemplates[0];
     setSelectedTemplateId(nextTemplate.id);
-  }, [currentUser?.companyId, reportTemplates, selectedTemplateId]);
+  }, [currentUser?.companyId, availablePdfTemplates, selectedTemplateId]);
 
   useEffect(() => {
     if (!currentUser?.companyId) return;
@@ -467,11 +472,11 @@ export const Reports: React.FC = () => {
   const reportActivityRows = reportExports.length ? exportHistoryRows : exportActivityFallback;
   const effectiveTemplate = useMemo(
     () =>
-      reportTemplates.find(template => template.id === selectedTemplateId) ||
-      reportTemplates.find(template => template.isDefault) ||
-      reportTemplates[0] ||
+      availablePdfTemplates.find(template => template.id === selectedTemplateId) ||
+      availablePdfTemplates.find(template => template.isDefault) ||
+      availablePdfTemplates[0] ||
       null,
-    [reportTemplates, selectedTemplateId],
+    [availablePdfTemplates, selectedTemplateId],
   );
 
   const effectiveTemplateConfig = useMemo(
