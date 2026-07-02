@@ -42,6 +42,10 @@ import {
   X,
   Globe,
   UserRound,
+  Package,
+  CreditCard,
+  FileText,
+  History,
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils';
 import {
@@ -105,19 +109,36 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isSuperAdmin = currentUser?.role === Role.SUPER_ADMIN;
   const branchScope = useMemo(() => (currentUser ? getBranchScope(currentUser) : null), [currentUser]);
 
-  const navigation = [
-    { name: 'Escritorio', href: '/', icon: LayoutDashboard, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR], mobilePrimary: true },
-    { name: 'Cobrar Hoy', href: '/collect-today', icon: CalendarDays, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR] },
-    { name: 'Clientes', href: '/clients', icon: Users, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR], mobilePrimary: true },
-    { name: 'Prestamos', href: '/loans', icon: Wallet, roles: [Role.ADMIN, Role.SUPERVISOR], mobilePrimary: true },
-    { name: 'Rutas', href: '/routes', icon: MapPin, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR], mobilePrimary: true },
-    { name: 'Caja', href: '/cash', icon: BanknoteIcon, roles: [Role.ADMIN, Role.SUPERVISOR] },
-    { name: 'Reportes', href: '/reports', icon: BarChart3, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR] },
-    { name: 'Actividad', href: '/activity', icon: Activity, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR] },
-    { name: 'Usuarios', href: '/users', icon: UserCog, roles: [Role.ADMIN] },
-    { name: 'Configuracion', href: '/settings', icon: Settings, roles: [Role.ADMIN] },
-    { name: 'Super Admin', href: '/master', icon: Crown, roles: [Role.SUPER_ADMIN] },
-  ];
+  const isMasterPath = location.pathname.startsWith('/master');
+
+  const navigation = useMemo(() => {
+    if (isMasterPath && isSuperAdmin) {
+      return [
+        { name: 'Dashboard', href: '/master?section=dashboard', icon: Globe, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
+        { name: 'Empresas', href: '/master?section=companies', icon: Building2, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
+        { name: 'Usuarios Globales', href: '/master?section=users', icon: Users, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
+        { name: 'Planes y Suscripciones', href: '/master?section=plans', icon: Package, roles: [Role.SUPER_ADMIN] },
+        { name: 'Facturacion', href: '/master?section=billing', icon: CreditCard, roles: [Role.SUPER_ADMIN] },
+        { name: 'Reportes Globales', href: '/master?section=reports', icon: FileText, roles: [Role.SUPER_ADMIN] },
+        { name: 'Auditoria', href: '/master?section=audit', icon: History, roles: [Role.SUPER_ADMIN] },
+        { name: 'Configuracion', href: '/master?section=system', icon: Settings, roles: [Role.SUPER_ADMIN] },
+        { name: 'Centro de Ayuda', href: '/master?section=help', icon: Headphones, roles: [Role.SUPER_ADMIN] },
+      ];
+    }
+    return [
+      { name: 'Escritorio', href: '/', icon: LayoutDashboard, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR], mobilePrimary: true },
+      { name: 'Cobrar Hoy', href: '/collect-today', icon: CalendarDays, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR] },
+      { name: 'Clientes', href: '/clients', icon: Users, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR], mobilePrimary: true },
+      { name: 'Prestamos', href: '/loans', icon: Wallet, roles: [Role.ADMIN, Role.SUPERVISOR], mobilePrimary: true },
+      { name: 'Rutas', href: '/routes', icon: MapPin, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR], mobilePrimary: true },
+      { name: 'Caja', href: '/cash', icon: BanknoteIcon, roles: [Role.ADMIN, Role.SUPERVISOR] },
+      { name: 'Reportes', href: '/reports', icon: BarChart3, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR] },
+      { name: 'Actividad', href: '/activity', icon: Activity, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR] },
+      { name: 'Usuarios', href: '/users', icon: UserCog, roles: [Role.ADMIN] },
+      { name: 'Configuracion', href: '/settings', icon: Settings, roles: [Role.ADMIN] },
+      { name: 'Super Admin', href: '/master', icon: Crown, roles: [Role.SUPER_ADMIN] },
+    ];
+  }, [isMasterPath, isSuperAdmin]);
 
   const filteredNav = currentUser
     ? navigation.filter(
@@ -491,10 +512,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <nav className={`space-y-1.5 ${isSidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {filteredNav.map(item => {
-            const isActive =
-              item.href === '/'
-                ? location.pathname === '/'
-                : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
+            let isActive = false;
+            if (isMasterPath) {
+              const urlObj = new URL(item.href, 'http://localhost');
+              const targetSection = urlObj.searchParams.get('section') || 'dashboard';
+              const currentSection = new URLSearchParams(location.search).get('section') || 'dashboard';
+              isActive = targetSection === currentSection;
+            } else {
+              isActive =
+                item.href === '/'
+                  ? location.pathname === '/'
+                  : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
+            }
 
             return (
               <Link
@@ -575,84 +604,89 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               <Menu size={18} />
             </button>
-
-            <div className="hidden items-center gap-3 lg:flex">
-              <div className="relative" ref={companyMenuRef}>
-                <button
-                  onClick={() => {
-                    setIsCompanyMenuOpen(value => !value);
-                    setIsBranchMenuOpen(false);
-                  }}
-                  className={`flex h-11 items-center gap-3 rounded-2xl border bg-white px-4 text-left transition-all duration-200 hover:border-[#DBEAFE] hover:text-[#2563EB] hover:shadow-sm ${
-                    isCompanyMenuOpen ? 'border-[#93C5FD] text-[#2563EB] shadow-[0_10px_25px_rgba(37,99,235,0.12)]' : 'border-[#e5e7eb]'
-                  }`}
-                >
-                  <Building2 size={18} className="text-[#6b7280]" />
-                  <span className="max-w-[240px] truncate text-[15px] font-medium text-[#111827]">{activeCompany?.name || company?.name || 'Empresa'}</span>
-                  <ChevronDown size={16} className={`text-[#6b7280] transition-transform duration-200 ${isCompanyMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isCompanyMenuOpen && (
-                  <div className="absolute left-0 top-[calc(100%+10px)] z-[110] w-[320px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-                    {availableCompanies.map(entry => {
-                      const isSelected = activeCompany?.id === entry.id;
-                      return (
-                        <button
-                          key={entry.id}
-                          onClick={() => handleSelectCompany(entry.id)}
-                          className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition-all duration-200 ${
-                            isSelected ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#111827] hover:translate-x-1 hover:bg-[#F8FAFC]'
-                          }`}
-                        >
-                          <div>
-                            <p className="text-[15px] font-semibold">{entry.name}</p>
-                            <p className="mt-1 text-xs font-medium text-[#6B7280]">{entry.rnc || 'Empresa activa'}</p>
-                          </div>
-                          {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-[#2563EB]" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+            {isMasterPath ? (
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-xs font-black uppercase tracking-wider text-blue-600">
+                  <Crown size={12} />
+                  Super Admin SaaS
+                </div>
               </div>
+            ) : (
+              <div className="hidden items-center gap-3 lg:flex">
+                <div className="relative" ref={companyMenuRef}>
+                  <button
+                    onClick={() => {
+                      setIsCompanyMenuOpen(value => !value);
+                      setIsBranchMenuOpen(false);
+                    }}
+                    className={`flex h-11 items-center gap-3 rounded-2xl border bg-white px-4 text-left transition-all duration-200 hover:border-[#DBEAFE] hover:text-[#2563EB] hover:shadow-sm ${
+                      isCompanyMenuOpen ? 'border-[#93C5FD] text-[#2563EB] shadow-[0_10px_25px_rgba(37,99,235,0.12)]' : 'border-[#e5e7eb]'
+                    }`}
+                  >
+                    <Building2 size={18} className="text-[#6b7280]" />
+                    <span className="max-w-[240px] truncate text-[15px] font-medium text-[#111827]">{activeCompany?.name || company?.name || 'Empresa'}</span>
+                    <ChevronDown size={16} className={`text-[#6b7280] transition-transform duration-200 ${isCompanyMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isCompanyMenuOpen && (
+                    <div className="absolute left-0 top-[calc(100%+10px)] z-[110] w-[320px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+                      {availableCompanies.map(entry => {
+                        const isSelected = activeCompany?.id === entry.id;
+                        return (
+                          <button
+                            key={entry.id}
+                            onClick={() => handleSelectCompany(entry.id)}
+                            className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition-all duration-200 ${
+                              isSelected ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#111827] hover:translate-x-1 hover:bg-[#F8FAFC]'
+                            }`}
+                          >
+                            <div>
+                              <p className="text-[15px] font-semibold">{entry.name}</p>
+                              <p className="mt-1 text-xs font-medium text-[#6B7280]">{entry.rnc || 'Empresa activa'}</p>
+                            </div>
+                            {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-[#2563EB]" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
-              <div className="relative" ref={branchMenuRef}>
-                <button
-                  onClick={() => {
-                    setIsBranchMenuOpen(value => !value);
-                    setIsCompanyMenuOpen(false);
-                  }}
-                  className={`flex h-11 items-center gap-3 rounded-2xl border bg-white px-4 text-left transition-all duration-200 hover:border-[#DBEAFE] hover:text-[#2563EB] hover:shadow-sm ${
-                    isBranchMenuOpen ? 'border-[#93C5FD] text-[#2563EB] shadow-[0_10px_25px_rgba(37,99,235,0.12)]' : 'border-[#e5e7eb]'
-                  }`}
-                >
-                  <Building2 size={18} className="text-[#6b7280]" />
-                  <span className="max-w-[180px] truncate text-[15px] font-medium text-[#111827]">{activeBranch?.name || 'Sucursal'}</span>
-                  <ChevronDown size={16} className={`text-[#6b7280] transition-transform duration-200 ${isBranchMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isBranchMenuOpen && (
-                  <div className="absolute left-0 top-[calc(100%+10px)] z-[110] w-[300px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-                    {availableBranches.map(branch => {
-                      const isSelected = activeBranch?.id === branch.id;
-                      return (
-                        <button
-                          key={branch.id}
-                          onClick={() => handleSelectBranch(branch.id)}
-                          className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition-all duration-200 ${
-                            isSelected ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#111827] hover:translate-x-1 hover:bg-[#F8FAFC]'
-                          }`}
-                        >
-                          <div>
-                            <p className="text-[15px] font-semibold">{branch.name}</p>
-                            <p className="mt-1 text-xs font-medium text-[#6B7280]">{branch.address || 'Sucursal activa'}</p>
-                          </div>
-                          {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-[#2563EB]" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                <div className="relative" ref={branchMenuRef}>
+                  <button
+                    onClick={() => {
+                      setIsBranchMenuOpen(value => !value);
+                      setIsCompanyMenuOpen(false);
+                    }}
+                    className={`flex h-11 items-center gap-3 rounded-2xl border bg-white px-4 text-left transition-all duration-200 hover:border-[#DBEAFE] hover:text-[#2563EB] hover:shadow-sm ${
+                      isBranchMenuOpen ? 'border-[#93C5FD] text-[#2563EB] shadow-[0_10px_25px_rgba(37,99,235,0.12)]' : 'border-[#e5e7eb]'
+                    }`}
+                  >
+                    <Building2 size={18} className="text-[#6b7280]" />
+                    <span className="max-w-[180px] truncate text-[15px] font-medium text-[#111827]">{activeBranch?.name || 'Sucursal'}</span>
+                    <ChevronDown size={16} className={`text-[#6b7280] transition-transform duration-200 ${isBranchMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isBranchMenuOpen && (
+                    <div className="absolute left-0 top-[calc(100%+10px)] z-[110] w-[300px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
+                      {availableBranches.map(branch => {
+                        const isSelected = activeBranch?.id === branch.id;
+                        return (
+                          <button
+                            key={branch.id}
+                            onClick={() => handleSelectBranch(branch.id)}
+                            className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition-all duration-200 ${
+                              isSelected ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#111827] hover:translate-x-1 hover:bg-[#F8FAFC]'
+                            }`}
+                          >
+                            <span className="text-[15px] font-semibold">{branch.name}</span>
+                            {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-[#2563EB]" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="min-w-0 lg:hidden">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#2563eb]">{company?.name || 'Abundra Cloud'}</p>

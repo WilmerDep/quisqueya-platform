@@ -344,57 +344,53 @@ export const SuperAdminPage: React.FC = () => {
   if (currentUser?.role === Role.SUPER_ADMIN) {
     return (
       <div className="space-y-6 pb-24 lg:pb-0">
-        <section>
-          <div className={`${shellCardClass} overflow-hidden`}>
-            <div className="px-6 py-6 lg:px-8">
-              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                <div className="min-w-0">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] px-4 py-2 text-[12px] font-semibold text-[#2563EB]">
-                    <Crown size={14} />
-                    Super Admin SaaS
+        {activeTab === 'DASHBOARD' && (
+          <section>
+            <div className={`${shellCardClass} overflow-hidden`}>
+              <div className="px-6 py-6 lg:px-8">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="min-w-0">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] px-4 py-2 text-[12px] font-semibold text-[#2563EB]">
+                      <Crown size={14} />
+                      Super Admin SaaS
+                    </div>
+                    <h1 className="mt-4 text-[32px] font-semibold leading-[1.08] tracking-tight text-[#111827]">Control global de ABUNDRA</h1>
+                    <p className="mt-3 max-w-3xl text-[18px] font-medium leading-8 text-[#6B7280]">
+                      Monitorea empresas, usuarios globales, suscripciones, facturacion, auditoria y configuracion del sistema con la misma identidad visual del panel Admin Empresa.
+                    </p>
                   </div>
-                  <h1 className="mt-4 text-[32px] font-semibold leading-[1.08] tracking-tight text-[#111827]">Control global de ABUNDRA</h1>
-                  <p className="mt-3 max-w-3xl text-[18px] font-medium leading-8 text-[#6B7280]">
-                    Monitorea empresas, usuarios globales, suscripciones, facturacion, auditoria y configuracion del sistema con la misma identidad visual del panel Admin Empresa.
-                  </p>
-                </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <button
-                    type="button"
-                    onClick={() => navigateToSection('COMPANIES')}
-                    className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[16px] font-medium text-[#111827] shadow-sm ${motionButtonClass}`}
-                  >
-                    <Building2 size={18} className="text-[#2563EB]" />
-                    Empresas
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigateToSection('PLANS')}
-                    className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[16px] font-medium text-[#111827] shadow-sm ${motionButtonClass}`}
-                  >
-                    <Package size={18} className="text-[#2563EB]" />
-                    Planes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsCompanyModalOpen(true)}
-                    className="flex h-[54px] items-center justify-center gap-3 rounded-2xl bg-[#2563EB] px-6 text-[16px] font-medium text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8]"
-                  >
-                    <Plus size={18} />
-                    Nueva empresa
-                  </button>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCompanyModalOpen(true)}
+                      className="flex h-[54px] items-center justify-center gap-3 rounded-2xl bg-[#2563EB] px-6 text-[16px] font-medium text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8] cursor-pointer"
+                    >
+                      <Plus size={18} />
+                      Nueva empresa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateToSection('SYSTEM')}
+                      className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[16px] font-medium text-[#111827] shadow-sm ${motionButtonClass} cursor-pointer`}
+                    >
+                      <Settings size={18} className="text-[#2563EB]" />
+                      Configuracion
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-          {kpis.map(item => (
-            <MetricCard key={item.label} {...item} />
-          ))}
-        </section>
+        {activeTab === 'DASHBOARD' && (
+          <section className="grid grid-cols-1 gap-4 xl:grid-cols-4 animate-[platform-fade-in_180ms_ease-out]">
+            {kpis.map(item => (
+              <MetricCard key={item.label} {...item} />
+            ))}
+          </section>
+        )}
 
         <section className="space-y-5">
         {activeTab === 'DASHBOARD' ? (
