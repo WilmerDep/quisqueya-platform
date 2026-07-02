@@ -141,6 +141,8 @@ export interface Client {
   isBlocked?: boolean;
   status: ClientStatus;
   photo?: string;
+  latitude?: number;
+  longitude?: number;
   createdAt: string;
 }
 

@@ -19,7 +19,8 @@ import {
   User as UserIcon,
   Users2,
 } from 'lucide-react';
-import { getCompanyById, getGlobalActivity } from '../services/dataService';
+import gsap from 'gsap';
+import { getCompanyById, getGlobalActivity, getReportTemplates, upsertReportTemplatesInLocalStorage } from '../services/dataService';
 import { getBranchScope, getScopedUsers } from '../services/viewScope';
 import { ActivityEvent, ActivityType, Branch, ReportTemplate, Role, User } from '../types';
 import { formatCurrency } from '../utils';
@@ -320,7 +321,7 @@ export const ActivityPage: React.FC = () => {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>([]);
+  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>(() => getReportTemplates());
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedPdfTemplateId, setSelectedPdfTemplateId] = useState('');
@@ -340,6 +341,14 @@ export const ActivityPage: React.FC = () => {
     () => (currentUser ? getCompanyById(currentUser.companyId) : undefined),
     [currentUser],
   );
+
+
+  useEffect(() => {
+    gsap.fromTo('[data-activity-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+    gsap.fromTo('[data-activity-kpis]', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', delay: 0.1 });
+    gsap.fromTo('[data-activity-filters]', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', delay: 0.16 });
+    gsap.fromTo('[data-activity-content]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.22 });
+  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -376,8 +385,11 @@ export const ActivityPage: React.FC = () => {
     if (!currentUser) return;
     apiClient
       .listReportTemplates()
-      .then(response => setReportTemplates(response.data))
-      .catch(() => setReportTemplates([]));
+      .then(response => {
+        upsertReportTemplatesInLocalStorage(response.data);
+        setReportTemplates(response.data);
+      })
+      .catch(() => setReportTemplates(getReportTemplates()));
   }, [currentUser]);
 
   const branchMap = useMemo(() => new Map(branches.map(branch => [branch.id, branch.name])), [branches]);
@@ -731,7 +743,7 @@ export const ActivityPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
-      <section className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+      <section data-activity-hero className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <p className="text-[12px] font-black uppercase tracking-[0.34em] text-[#2563EB]">Actividad</p>
           <h1 className="mt-3 text-[46px] font-semibold leading-[0.98] tracking-[-0.04em] text-[#111827]">
@@ -755,7 +767,7 @@ export const ActivityPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <section data-activity-kpis className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {metricCards.map(card => {
           const Icon = card.icon;
           return (
@@ -784,7 +796,7 @@ export const ActivityPage: React.FC = () => {
         })}
       </section>
 
-      <section className="rounded-[30px] border border-[#E2E8F0] bg-white p-4 shadow-[0_20px_45px_rgba(15,23,42,0.05)]">
+      <section data-activity-filters className="rounded-[30px] border border-[#E2E8F0] bg-white p-4 shadow-[0_20px_45px_rgba(15,23,42,0.05)]">
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_220px_220px_220px_210px]">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={18} />
@@ -879,7 +891,7 @@ export const ActivityPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-[#E2E8F0] bg-white shadow-[0_20px_45px_rgba(15,23,42,0.05)] overflow-hidden">
+      <section data-activity-content className="rounded-[32px] border border-[#E2E8F0] bg-white shadow-[0_20px_45px_rgba(15,23,42,0.05)] overflow-hidden">
         <div className="border-b border-[#E2E8F0] px-6 py-6">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>

@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import crypto from 'crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
@@ -237,11 +237,100 @@ export class ReportsController {
 
   @Get('templates')
   async listTemplates(@CurrentUser() user: AuthUser) {
-    const rows = await this.prisma.reportTemplate.findMany({
+    let rows = await this.prisma.reportTemplate.findMany({
       where: { companyId: user.companyId },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
       take: 50,
     });
+
+    if (rows.length === 0) {
+      const defaultSections = ['logo', 'companyInfo', 'documentMeta', 'clientBlock', 'mainTable', 'totalsBlock', 'footer'];
+      const defaultLayout = {
+        logo: { x: 5, y: 4, visible: true },
+        companyInfo: { x: 60, y: 4, visible: true },
+        documentMeta: { x: 5, y: 16, visible: true },
+        clientBlock: { x: 5, y: 26, visible: true },
+        mainTable: { x: 5, y: 40, visible: true },
+        totalsBlock: { x: 55, y: 74, visible: true },
+        footer: { x: 5, y: 91, visible: true }
+      };
+
+      const defaultTemplates = [
+        {
+          id: crypto.randomUUID(),
+          companyId: user.companyId,
+          userId: user.id,
+          name: 'Financiera ejecutiva',
+          reportType: 'CLIENT_STATEMENT,PAYMENT_RECEIPT,ACTIVITY_HISTORY,COLLECTION_ROUTE,FINANCIAL_REPORT',
+          status: 'Activa',
+          isDefault: true,
+          sectionsJson: {
+            sections: defaultSections,
+            config: {
+              visualPreset: 'FACTURA_FINANCIERA',
+              paperSize: 'Carta',
+              orientation: 'Vertical',
+              marginPreset: 'Normal',
+              documentStyle: 'Reporte premium',
+              receiptOptions: { showNextInstallment: true, showRemainingBalance: true, includeSignature: true },
+              layoutPositions: defaultLayout
+            }
+          }
+        },
+        {
+          id: crypto.randomUUID(),
+          companyId: user.companyId,
+          userId: user.id,
+          name: 'Fiscal electronica',
+          reportType: 'CLIENT_STATEMENT,PAYMENT_RECEIPT,ACTIVITY_HISTORY,COLLECTION_ROUTE,FINANCIAL_REPORT',
+          status: 'Activa',
+          isDefault: false,
+          sectionsJson: {
+            sections: defaultSections,
+            config: {
+              visualPreset: 'FISCAL_ELECTRONICA',
+              paperSize: 'Carta',
+              orientation: 'Vertical',
+              marginPreset: 'Compacto',
+              documentStyle: 'Reporte premium',
+              receiptOptions: { showNextInstallment: true, showRemainingBalance: true, includeSignature: true },
+              layoutPositions: defaultLayout
+            }
+          }
+        },
+        {
+          id: crypto.randomUUID(),
+          companyId: user.companyId,
+          userId: user.id,
+          name: 'Corporativa clasica',
+          reportType: 'CLIENT_STATEMENT,PAYMENT_RECEIPT,ACTIVITY_HISTORY,COLLECTION_ROUTE,FINANCIAL_REPORT',
+          status: 'Activa',
+          isDefault: false,
+          sectionsJson: {
+            sections: defaultSections,
+            config: {
+              visualPreset: 'CORPORATIVA_CLASICA',
+              paperSize: 'A4',
+              orientation: 'Vertical',
+              marginPreset: 'Normal',
+              documentStyle: 'Reporte premium',
+              receiptOptions: { showNextInstallment: true, showRemainingBalance: true, includeSignature: true },
+              layoutPositions: defaultLayout
+            }
+          }
+        }
+      ];
+
+      await this.prisma.reportTemplate.createMany({
+        data: defaultTemplates
+      });
+
+      rows = await this.prisma.reportTemplate.findMany({
+        where: { companyId: user.companyId },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        take: 50,
+      });
+    }
 
     return ok(
       rows.map(row => {
@@ -297,27 +386,33 @@ export class ReportsController {
       throw new BadRequestException('Plantilla incompleta.');
     }
 
-    const template = await this.prisma.$transaction(async tx => {
-      if (isDefault) {
-        await tx.reportTemplate.updateMany({
-          where: { companyId: user.companyId, isDefault: true },
-          data: { isDefault: false },
-        });
-      }
+    let template;
+    try {
+      template = await this.prisma.$transaction(async tx => {
+        if (isDefault) {
+          await tx.reportTemplate.updateMany({
+            where: { companyId: user.companyId, isDefault: true },
+            data: { isDefault: false },
+          });
+        }
 
-      return tx.reportTemplate.create({
-        data: {
-          id: crypto.randomUUID(),
-          companyId: user.companyId,
-          userId: user.id,
-          name,
-          reportType,
-          status,
-          isDefault,
-          sectionsJson: { sections, config } as Prisma.InputJsonValue,
-        },
+        return tx.reportTemplate.create({
+          data: {
+            id: crypto.randomUUID(),
+            companyId: user.companyId,
+            userId: user.id,
+            name,
+            reportType,
+            status,
+            isDefault,
+            sectionsJson: { sections, config } as Prisma.InputJsonValue,
+          },
+        });
       });
-    });
+    } catch (transactionError: any) {
+      console.error('CRITICAL ERROR saving template in database transaction:', transactionError);
+      throw new BadRequestException(`Fallo de base de datos al guardar: ${transactionError.message || transactionError}`);
+    }
 
     return ok({
       id: template.id,
@@ -372,25 +467,31 @@ export class ReportsController {
         ? existingPayload.config
         : undefined;
 
-    const template = await this.prisma.$transaction(async tx => {
-      if (isDefault) {
-        await tx.reportTemplate.updateMany({
-          where: { companyId: user.companyId, isDefault: true, id: { not: templateId } },
-          data: { isDefault: false },
-        });
-      }
+    let template;
+    try {
+      template = await this.prisma.$transaction(async tx => {
+        if (isDefault) {
+          await tx.reportTemplate.updateMany({
+            where: { companyId: user.companyId, isDefault: true, id: { not: templateId } },
+            data: { isDefault: false },
+          });
+        }
 
-      return tx.reportTemplate.update({
-        where: { id: templateId },
-        data: {
-          name,
-          reportType,
-          status,
-          isDefault,
-          sectionsJson: { sections, config } as Prisma.InputJsonValue,
-        },
+        return tx.reportTemplate.update({
+          where: { id: templateId },
+          data: {
+            name,
+            reportType,
+            status,
+            isDefault,
+            sectionsJson: { sections, config } as Prisma.InputJsonValue,
+          },
+        });
       });
-    });
+    } catch (transactionError: any) {
+      console.error('CRITICAL ERROR updating template in database transaction:', transactionError);
+      throw new BadRequestException(`Fallo de base de datos al actualizar: ${transactionError.message || transactionError}`);
+    }
 
     return ok({
       id: template.id,
@@ -404,6 +505,23 @@ export class ReportsController {
       config,
       createdAt: template.createdAt.toISOString(),
     });
+  }
+
+  @Delete('templates/:templateId')
+  async deleteTemplate(
+    @CurrentUser() user: AuthUser,
+    @Param('templateId') templateId: string,
+  ) {
+    const existing = await this.prisma.reportTemplate.findFirst({
+      where: { id: templateId, companyId: user.companyId },
+    });
+    if (!existing) throw new BadRequestException('Plantilla no encontrada.');
+
+    await this.prisma.reportTemplate.delete({
+      where: { id: templateId },
+    });
+
+    return ok({ success: true, id: templateId });
   }
 
   @Get('summary')

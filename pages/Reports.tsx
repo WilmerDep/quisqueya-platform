@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
 import {
   Bar,
   BarChart,
@@ -41,6 +42,8 @@ import {
   upsertClientsInLocalStorage,
   upsertLoansInLocalStorage,
   upsertPaymentsInLocalStorage,
+  getReportTemplates,
+  upsertReportTemplatesInLocalStorage,
 } from '../services/dataService';
 import {
   buildPlatformPdfFileName,
@@ -147,21 +150,28 @@ const templatePresetOptions = Object.values(platformPdfVisualPresets).map(item =
 export const Reports: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const { currentUser, selectedBranchId, setSelectedBranchId } = useAuth();
+  const reportsSubview = useMemo<'MAIN' | 'PREVIEW' | 'TEMPLATE' | 'DOCUMENTS'>(() => {
+    const path = location.pathname.toLowerCase();
+    if (path.endsWith('/preview')) return 'PREVIEW';
+    if (path.endsWith('/templates')) return 'TEMPLATE';
+    if (path.endsWith('/documents')) return 'DOCUMENTS';
+    return 'MAIN';
+  }, [location.pathname]);
+
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<PaymentReceipt[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [collectors, setCollectors] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [company, setCompany] = useState<Company | undefined>(undefined);
-  const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedCollectorId, setSelectedCollectorId] = useState('');
   const [period, setPeriod] = useState<Period>('THIS_MONTH');
   const [activeTab, setActiveTab] = useState<ReportTab>('SUMMARY');
   const [apiSummary, setApiSummary] = useState<ReportSummary | null>(null);
   const [reportExports, setReportExports] = useState<ReportExport[]>([]);
   const [reportSchedules, setReportSchedules] = useState<ReportSchedule[]>([]);
-  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>([]);
+  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>(() => getReportTemplates());
   const [cashClosures, setCashClosures] = useState<CashClosure[]>([]);
   const [drillDownType, setDrillDownType] = useState<DrillDownType>(null);
   const [exportWorkspace, setExportWorkspace] = useState<ExportWorkspace>(null);
@@ -218,7 +228,6 @@ export const Reports: React.FC = () => {
     let allCollectors = getScopedUsers(currentUser, currentUser.branchId).filter(user => user.role === Role.COBRADOR && user.isActive);
     setCompany(getCompanyById(currentUser.companyId));
     setBranches(branchScope?.branches || []);
-    setSelectedBranchId(currentUser.branchId);
 
     if (isCollector) {
       allClients = allClients.filter(client => client.assignedUserId === currentUser.id);
@@ -292,9 +301,20 @@ export const Reports: React.FC = () => {
     if (!currentUser) return;
     apiClient
       .listReportTemplates()
-      .then(response => setReportTemplates(response.data))
-      .catch(() => setReportTemplates([]));
+      .then(response => {
+        upsertReportTemplatesInLocalStorage(response.data);
+        setReportTemplates(response.data);
+      })
+      .catch(() => setReportTemplates(getReportTemplates()));
   }, [currentUser]);
+
+
+  useEffect(() => {
+    if (reportsSubview !== 'MAIN') return;
+    gsap.fromTo('[data-reports-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+    gsap.fromTo('[data-reports-filters]', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', delay: 0.14 });
+    gsap.fromTo('[data-reports-content]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.2 });
+  }, [reportsSubview]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -803,15 +823,13 @@ export const Reports: React.FC = () => {
     };
   }, [activeBranch?.name, selectedGeneratedDocument]);
 
-  const reportsSubview = useMemo<'MAIN' | 'PREVIEW' | 'TEMPLATE' | 'DOCUMENTS'>(() => {
-    const path = location.pathname.toLowerCase();
-    if (path.endsWith('/preview')) return 'PREVIEW';
-    if (path.endsWith('/templates')) return 'TEMPLATE';
-    if (path.endsWith('/documents')) return 'DOCUMENTS';
-    return 'MAIN';
-  }, [location.pathname]);
+
 
   const openReportsSubview = (target: 'preview' | 'templates' | 'documents') => {
+    if (target === 'templates') {
+      navigate('/settings/templates');
+      return;
+    }
     navigate(`/reports/${target}`);
   };
 
@@ -2812,6 +2830,7 @@ export const Reports: React.FC = () => {
       const response = editingTemplateId
         ? await apiClient.updateReportTemplate(editingTemplateId, payload)
         : await apiClient.createReportTemplate(payload);
+      upsertReportTemplatesInLocalStorage([response.data]);
       setReportTemplates(current => {
         const filtered = current.filter(item => item.id !== response.data.id);
         const next = [response.data, ...filtered].slice(0, 50);
@@ -3653,7 +3672,7 @@ export const Reports: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 lg:pb-0">
-      <section>
+      <section data-reports-hero>
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
             <h1 className="text-[52px] font-black leading-none tracking-tight text-[#111827]">Reportes</h1>
@@ -3691,7 +3710,7 @@ export const Reports: React.FC = () => {
         </div>
       </section>
 
-      <section className="relative z-20 rounded-[32px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section data-reports-filters className="relative z-20 rounded-[32px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[220px_220px_220px_220px_minmax(280px,1fr)_auto]">
           <ReportFilterDropdown
             value={period}
@@ -3767,7 +3786,8 @@ export const Reports: React.FC = () => {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-6">
+      <div data-reports-content className="space-y-6">
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-6">
         {kpiCards.map(card => {
           const tone = kpiToneMap[card.tone];
           const Icon = card.icon;
@@ -5318,6 +5338,7 @@ export const Reports: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -40,6 +40,8 @@ import {
   Users,
   Wallet,
   X,
+  Globe,
+  UserRound,
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils';
 import {
@@ -788,6 +790,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <div className="border-b border-[#f3f4f6] px-5 py-4">
                     <p className="text-base font-semibold text-[#111827]">{currentUser.name}</p>
                     <p className="mt-1 text-sm text-[#6b7280]">{currentUser.role}</p>
+                  </div>
+                  <div className="border-b border-[#f3f4f6] px-3 py-2">
+                    <button
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        navigate('/settings/profile');
+                      }}
+                      className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-[14px] font-semibold text-[#374151] transition-all duration-200 hover:translate-x-1 hover:bg-[#F8FAFC] hover:text-[#2563EB]"
+                    >
+                      <UserRound size={16} />
+                      Mi Perfil y Ajustes
+                    </button>
                   </div>
                   <div className="px-5 py-4">
                     <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7280]">Cambio rapido</p>

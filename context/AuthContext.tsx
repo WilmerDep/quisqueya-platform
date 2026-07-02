@@ -13,6 +13,8 @@ interface AuthContextType {
   availableUsers: User[];
   refreshUser: () => void;
   isLoading: boolean;
+  selectedBranchId: string;
+  setSelectedBranchId: (branchId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
 
   const initAuth = useCallback(async () => {
     seedInitialData();
@@ -70,6 +73,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     initAuth();
   }, [initAuth]);
+
+  useEffect(() => {
+    if (currentUser && !selectedBranchId) {
+      setSelectedBranchId(currentUser.branchId);
+    }
+  }, [currentUser, selectedBranchId]);
 
   useEffect(() => {
     const handleAuthExpired = () => {
@@ -173,7 +182,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout, switchUser, availableUsers, refreshUser, isLoading }}>
+    <AuthContext.Provider value={{ currentUser, login, logout, switchUser, availableUsers, refreshUser, isLoading, selectedBranchId, setSelectedBranchId }}>
       {children}
     </AuthContext.Provider>
   );

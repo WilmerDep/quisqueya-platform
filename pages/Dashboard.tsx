@@ -21,13 +21,14 @@ import { useAuth } from '../context/AuthContext';
 import {
   getCompanyById,
   getGlobalActivity,
+  getRoutes,
   upsertCashMovementsInLocalStorage,
   upsertClientsInLocalStorage,
   upsertLoansInLocalStorage,
 } from '../services/dataService';
 import { getBranchScope, getScopedCashMovements, getScopedClients, getScopedLoans, getScopedUsers } from '../services/viewScope';
 import { apiClient } from '../services/apiClient';
-import { Branch, CashMovement, Client, Company, LoanStatus, Role } from '../types';
+import { Branch, CashMovement, Client, Company, LoanStatus, Role, RouteStatus } from '../types';
 import { formatCurrency } from '../utils';
 
 const toneMap = {
@@ -43,7 +44,7 @@ const motionButtonClass =
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, selectedBranchId, setSelectedBranchId } = useAuth();
   const pageRef = useRef<HTMLDivElement>(null);
   const [loans, setLoans] = useState<any[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -52,7 +53,6 @@ export const Dashboard: React.FC = () => {
   const [todayCollections, setTodayCollections] = useState(0);
   const [company, setCompany] = useState<Company | undefined>(undefined);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState('');
   const [hoveredComplianceLabel, setHoveredComplianceLabel] = useState<string | null>(null);
   const branchScope = useMemo(() => (currentUser ? getBranchScope(currentUser) : null), [currentUser]);
   const isCollector = currentUser?.role === Role.COBRADOR;
@@ -147,12 +147,51 @@ export const Dashboard: React.FC = () => {
     return { active, mora, completed, portfolio, lent };
   }, [scopedDashboardLoans]);
 
-  const recentActivity = useMemo(
-    () => (currentUser ? getGlobalActivity(currentUser.companyId).slice(0, 5) : []),
-    [currentUser, loans, clients, cashBalance],
-  );
+  const recentActivity = useMemo(() => {
+    if (!currentUser) return [];
+    const activities = getGlobalActivity(currentUser.companyId);
+    if (currentUser.role === Role.COBRADOR) {
+      return activities.filter(act => act.userId === currentUser.id).slice(0, 5);
+    }
+    return activities.slice(0, 5);
+  }, [currentUser, loans, clients, cashBalance]);
 
-  const promisesDue = Math.max(1, Math.round(stats.mora / 2) + 2);
+  const overdueInstallmentsCount = useMemo(() => {
+    return scopedDashboardLoans
+      .flatMap((loan: any) => loan.installments || [])
+      .filter((inst: any) => inst.status !== 'PAGADO' && new Date(inst.dueDate).getTime() < Date.now())
+      .length;
+  }, [scopedDashboardLoans]);
+
+  const openRoutesCount = useMemo(() => {
+    if (!currentUser) return 0;
+    const allRoutes = getRoutes(currentUser.companyId, selectedBranchId);
+    const todayStr = new Date().toISOString().split('T')[0];
+    return allRoutes.filter(route => 
+      route.date === todayStr &&
+      route.status !== RouteStatus.CLOSED &&
+      (currentUser.role !== Role.COBRADOR || route.collectorId === currentUser.id)
+    ).length;
+  }, [currentUser, selectedBranchId]);
+
+  const cashDiscrepancies = useMemo(() => {
+    return cashMovements.filter(m => 
+      (!selectedBranchId || m.branchId === selectedBranchId) && 
+      (currentUser?.role !== Role.COBRADOR || m.userId === currentUser.id) &&
+      m.note.toLowerCase().includes('diferencia')
+    ).length;
+  }, [cashMovements, selectedBranchId, currentUser]);
+
+  const expiringDocumentsCount = useMemo(() => {
+    const sevenDaysFromNow = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    return scopedDashboardLoans.filter(loan => {
+      if (loan.status !== LoanStatus.ACTIVO) return false;
+      const end = new Date(loan.endDate).getTime();
+      return end > Date.now() && end <= sevenDaysFromNow;
+    }).length;
+  }, [scopedDashboardLoans]);
+
+  const promisesDue = overdueInstallmentsCount;
   const dueToday = Math.max(
     0,
     scopedDashboardLoans.flatMap((loan: any) => loan.installments || []).filter((installment: any) => installment.status !== 'PAGADO').length,
@@ -221,18 +260,21 @@ export const Dashboard: React.FC = () => {
   ];
 
   const quickActions = [
-    { label: 'Crear ruta', detail: 'Asignar ruta de cobro', icon: Route, action: () => navigate('/routes') },
+    { label: 'Crear ruta', detail: 'Asignar ruta de cobro', icon: Route, action: () => navigate('/routes?view=create') },
     { label: 'Ver caja', detail: 'Movimientos y arqueo', icon: Banknote, action: () => navigate('/cash') },
     { label: 'Ver reportes', detail: 'Analisis y estadisticas', icon: FileText, action: () => navigate('/reports') },
   ];
 
-  const alertRows = [
-    { title: 'Promesas vencidas', detail: `Tienes ${promisesDue} promesas vencidas que requieren seguimiento.`, count: promisesDue, color: 'bg-[#FEE2E2] text-[#DC2626]', href: '/activity' },
-    { title: 'Cliente bloqueado', detail: `${Math.max(1, Math.round(stats.mora / 2))} clientes tienen prestamos bloqueados.`, count: Math.max(1, Math.round(stats.mora / 2)), color: 'bg-[#FEF3C7] text-[#F59E0B]', href: '/clients' },
-    { title: 'Ruta sin cerrar', detail: `Hay ${Math.max(1, Math.round(stats.active / 8))} ruta del dia de hoy sin cerrar.`, count: Math.max(1, Math.round(stats.active / 8)), color: 'bg-[#DBEAFE] text-[#2563EB]', href: '/routes' },
-    { title: 'Diferencia en caja', detail: 'Hay 1 diferencia en caja por conciliar.', count: 1, color: 'bg-[#EDE9FE] text-[#7C3AED]', href: '/cash' },
-    { title: 'Documentos por vencer', detail: '3 documentos estan por vencer en los proximos 7 dias.', count: 3, color: 'bg-[#F3F4F6] text-[#6B7280]', href: '/reports' },
-  ];
+  const alertRows = useMemo(() => {
+    const rawAlerts = [
+      { title: 'Promesas vencidas', detail: `Tienes ${overdueInstallmentsCount} promesas vencidas que requieren seguimiento.`, count: overdueInstallmentsCount, color: 'bg-[#FEE2E2] text-[#DC2626]', href: '/activity' },
+      { title: 'Cliente bloqueado', detail: `${stats.mora} clientes tienen prestamos bloqueados por mora.`, count: stats.mora, color: 'bg-[#FEF3C7] text-[#F59E0B]', href: '/clients' },
+      { title: 'Ruta sin cerrar', detail: `Hay ${openRoutesCount} rutas activas el dia de hoy sin cerrar.`, count: openRoutesCount, color: 'bg-[#DBEAFE] text-[#2563EB]', href: '/routes' },
+      { title: 'Diferencia en caja', detail: `Hay ${cashDiscrepancies} diferencias en caja por conciliar.`, count: cashDiscrepancies, color: 'bg-[#EDE9FE] text-[#7C3AED]', href: '/cash' },
+      { title: 'Documentos por vencer', detail: `${expiringDocumentsCount} documentos estan por vencer en los proximos 7 dias.`, count: expiringDocumentsCount, color: 'bg-[#F3F4F6] text-[#6B7280]', href: '/reports' },
+    ];
+    return rawAlerts.filter(alert => alert.count > 0);
+  }, [overdueInstallmentsCount, stats.mora, openRoutesCount, cashDiscrepancies, expiringDocumentsCount]);
 
   useEffect(() => {
     if (!pageRef.current) return;
@@ -272,7 +314,7 @@ export const Dashboard: React.FC = () => {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button
               className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[18px] font-medium text-[#111827] shadow-sm ${motionButtonClass}`}
-              onClick={() => navigate('/clients')}
+              onClick={() => navigate('/clients?new=true')}
             >
               <Users size={20} className="text-[#2563EB]" />
               Crear cliente
@@ -433,24 +475,34 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
           <div className="mt-5 space-y-3">
-            {alertRows.map(row => (
-              <button
-                key={row.title}
-                data-workspace-list-row
-                onClick={() => navigate(row.href)}
-                className="group grid w-full grid-cols-[auto_1fr_auto_auto] items-start gap-4 rounded-[20px] border border-transparent py-3 text-left transition-all duration-200 hover:bg-[#FCFDFE]"
-              >
-                <div className={`mt-1 flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:translate-x-2 ${row.color}`}>
-                  <AlertTriangle size={18} />
+            {alertRows.length > 0 ? (
+              alertRows.map(row => (
+                <button
+                  key={row.title}
+                  data-workspace-list-row
+                  onClick={() => navigate(row.href)}
+                  className="group grid w-full grid-cols-[auto_1fr_auto_auto] items-start gap-4 rounded-[20px] border border-transparent py-3 text-left transition-all duration-200 hover:bg-[#FCFDFE]"
+                >
+                  <div className={`mt-1 flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:translate-x-2 ${row.color}`}>
+                    <AlertTriangle size={18} />
+                  </div>
+                  <div className="transition-transform duration-200 group-hover:translate-x-2">
+                    <p className="text-[17px] font-medium text-[#111827]">{row.title}</p>
+                    <p className="mt-1 text-[14px] font-medium text-[#6B7280]">{row.detail}</p>
+                  </div>
+                  <div className={`mt-1 rounded-xl px-3 py-1 text-[14px] font-semibold transition-transform duration-200 group-hover:translate-x-2 ${row.color}`}>{row.count}</div>
+                  <ChevronRight size={18} className="mt-2 text-[#9CA3AF] transition-transform duration-200 group-hover:translate-x-2" />
+                </button>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ECFDF5] text-[#16A34A] mb-3">
+                  <ShieldCheck size={24} />
                 </div>
-                <div className="transition-transform duration-200 group-hover:translate-x-2">
-                  <p className="text-[17px] font-medium text-[#111827]">{row.title}</p>
-                  <p className="mt-1 text-[14px] font-medium text-[#6B7280]">{row.detail}</p>
-                </div>
-                <div className={`mt-1 rounded-xl px-3 py-1 text-[14px] font-semibold transition-transform duration-200 group-hover:translate-x-2 ${row.color}`}>{row.count}</div>
-                <ChevronRight size={18} className="mt-2 text-[#9CA3AF] transition-transform duration-200 group-hover:translate-x-2" />
-              </button>
-            ))}
+                <p className="text-[16px] font-semibold text-[#111827]">Sin alertas operativas</p>
+                <p className="mt-1 text-[14px] font-medium text-[#6B7280]">Todas las operaciones de la sucursal estan al dia.</p>
+              </div>
+            )}
           </div>
         </div>
 

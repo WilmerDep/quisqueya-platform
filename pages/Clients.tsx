@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import {
   ArrowDownRight,
@@ -129,15 +129,17 @@ const csvHeaderAliases: Record<string, string[]> = {
 
 export const Clients: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const location = useLocation();
+  const { currentUser, selectedBranchId, setSelectedBranchId } = useAuth();
   const pageRef = useRef<HTMLDivElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [company, setCompany] = useState<Company | undefined>(undefined);
   const [collectors, setCollectors] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState('');
-  const [selectedCollectorId, setSelectedCollectorId] = useState('');
+  const [selectedCollectorId, setSelectedCollectorId] = useState(() =>
+    currentUser?.role === Role.COBRADOR ? currentUser.id : ''
+  );
   const [selectedStatus, setSelectedStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -213,11 +215,15 @@ export const Clients: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [branchScope, currentUser, reloadClients]);
+  }, [currentUser, reloadClients, branchScope]);
 
   useEffect(() => {
-    setSelectedBranchId(currentUser.branchId);
-  }, [currentUser.branchId]);
+    const params = new URLSearchParams(location.search);
+    if (params.get('new') === 'true') {
+      setIsModalOpen(true);
+      navigate('/clients', { replace: true });
+    }
+  }, [location.search, navigate]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -393,7 +399,7 @@ export const Clients: React.FC = () => {
 
   const resetFilters = () => {
     setSelectedBranchId(canSeeAllCompanyUsers ? '' : currentUser.branchId);
-    setSelectedCollectorId('');
+    setSelectedCollectorId(currentUser?.role === Role.COBRADOR ? currentUser.id : '');
     setSelectedStatus('');
     setSearchTerm('');
     setCurrentPage(1);
@@ -743,7 +749,8 @@ export const Clients: React.FC = () => {
           <FilterDropdown
             value={selectedCollectorId}
             onChange={setSelectedCollectorId}
-            placeholder="Todos los cobradores"
+            placeholder={currentUser?.role === Role.COBRADOR ? currentUser.name : "Todos los cobradores"}
+            disabled={currentUser?.role === Role.COBRADOR}
             options={collectors.map(user => ({ value: user.id, label: user.name }))}
           />
           <FilterDropdown
@@ -783,17 +790,26 @@ export const Clients: React.FC = () => {
           <div className="flex items-center justify-between border-b border-[#E5E7EB] px-8 py-6">
             <div className="flex items-center gap-3">
               <h2 className="text-[22px] font-semibold text-[#111827]">Listado de clientes</h2>
-              <div className="flex items-center gap-3 rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-2">
-                <span className="text-[13px] font-semibold text-[#475569]">{filteredAndSortedClients.length} registros</span>
-                <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#E5E7EB]">
-                  <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${clientUsageRatio * 100}%` }} />
+              {currentUser.role === Role.ADMIN && (
+                <div className="flex items-center gap-3 rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-2">
+                  <span className="text-[13px] font-semibold text-[#475569]">{filteredAndSortedClients.length} registros</span>
+                  <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#E5E7EB]">
+                    <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${clientUsageRatio * 100}%` }} />
+                  </div>
+                  <span className="text-[12px] font-semibold text-[#94A3B8]">{clientLimit}</span>
                 </div>
-                <span className="text-[12px] font-semibold text-[#94A3B8]">{clientLimit}</span>
-              </div>
+              )}
+              {currentUser.role !== Role.ADMIN && (
+                <span className="rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-1.5 text-[13px] font-semibold text-[#475569]">
+                  {filteredAndSortedClients.length} {filteredAndSortedClients.length === 1 ? 'cliente asignado' : 'clientes asignados'}
+                </span>
+              )}
             </div>
-            <p className="text-[14px] font-medium text-[#94A3B8]">
-              {currentPlan ? `Plan ${currentPlan.name}` : 'Cartera operativa'}
-            </p>
+            {currentUser.role === Role.ADMIN && currentPlan && (
+              <p className="text-[14px] font-medium text-[#94A3B8]">
+                Plan {currentPlan.name}
+              </p>
+            )}
           </div>
 
           <div className="overflow-x-auto">

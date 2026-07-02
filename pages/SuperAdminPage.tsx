@@ -1,41 +1,136 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-    getCompanies, createCompany, getGlobalMetrics, 
-    updateCompany, getGlobalConfig, updateGlobalConfig,
-    getSaaSPlans, saveSaaSPlan, getNodesTelemetry, getMasterLogs
-} from '../services/dataService';
-import { Company, Role, SaaSPlan, GlobalConfig } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { 
-    Crown, Building, Plus, Search, Globe, Users, 
-    X, TrendingUp, TrendingDown, DollarSign, Zap, Settings, 
-    Monitor, Bell, Package, Tag, Edit3, Calendar,
-    Hammer, History, ArrowRight, Activity, ShieldCheck,
-    AlertCircle, Database, MapPin, Ghost, EyeOff, Sparkles,
-    ShieldAlert, Terminal, Clock, Download
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Activity,
+  AlertCircle,
+  ArrowUpRight,
+  Bell,
+  Building2,
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  Crown,
+  DollarSign,
+  Download,
+  Edit3,
+  FileClock,
+  FileText,
+  Ghost,
+  Globe,
+  Headphones,
+  History,
+  LifeBuoy,
+  MapPin,
+  MoreHorizontal,
+  Package,
+  Plus,
+  Search,
+  Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  TrendingUp,
+  Users,
+  WalletCards,
+  X,
 } from 'lucide-react';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
+import {
+  createCompany,
+  getAllUsers,
+  getCompanies,
+  getGlobalConfig,
+  getGlobalMetrics,
+  getMasterLogs,
+  getNodesTelemetry,
+  getPayments,
+  getSaaSPlans,
+  getUsers,
+  saveSaaSPlan,
+  updateCompany,
+  updateGlobalConfig,
+} from '../services/dataService';
+import { useAuth } from '../context/AuthContext';
+import { Company, GlobalConfig, Role, SaaSPlan, User } from '../types';
 import { formatCurrency, formatDate } from '../utils';
-import { 
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
-} from 'recharts';
+
+type SuperAdminTab =
+  | 'DASHBOARD'
+  | 'COMPANIES'
+  | 'GLOBAL_USERS'
+  | 'PLANS'
+  | 'BILLING'
+  | 'REPORTS'
+  | 'AUDIT'
+  | 'SYSTEM'
+  | 'HELP';
+
+const shellCardClass = 'rounded-[30px] border border-[#E5E7EB] bg-white shadow-sm';
+const motionButtonClass =
+  'transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB] hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]';
+
+const performanceData = [
+  { name: 'Lun', value: 120 },
+  { name: 'Mar', value: 230 },
+  { name: 'Mie', value: 190 },
+  { name: 'Jue', value: 450 },
+  { name: 'Vie', value: 380 },
+  { name: 'Sab', value: 620 },
+  { name: 'Dom', value: 540 },
+];
+
+const tabItems: Array<{ id: SuperAdminTab; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = [
+  { id: 'DASHBOARD', label: 'Dashboard', icon: Globe },
+  { id: 'COMPANIES', label: 'Empresas', icon: Building2 },
+  { id: 'GLOBAL_USERS', label: 'Usuarios Globales', icon: Users },
+  { id: 'PLANS', label: 'Planes y Suscripciones', icon: Package },
+  { id: 'BILLING', label: 'Facturacion', icon: CreditCard },
+  { id: 'REPORTS', label: 'Reportes Globales', icon: FileText },
+  { id: 'AUDIT', label: 'Auditoria', icon: History },
+  { id: 'SYSTEM', label: 'Configuracion del Sistema', icon: Settings },
+  { id: 'HELP', label: 'Centro de Ayuda', icon: Headphones },
+];
+
+const tabToSectionMap: Record<SuperAdminTab, string> = {
+  DASHBOARD: 'dashboard',
+  COMPANIES: 'companies',
+  GLOBAL_USERS: 'users',
+  PLANS: 'plans',
+  BILLING: 'billing',
+  REPORTS: 'reports',
+  AUDIT: 'audit',
+  SYSTEM: 'system',
+  HELP: 'help',
+};
+
+const sectionToTabMap: Record<string, SuperAdminTab> = {
+  dashboard: 'DASHBOARD',
+  companies: 'COMPANIES',
+  users: 'GLOBAL_USERS',
+  plans: 'PLANS',
+  billing: 'BILLING',
+  reports: 'REPORTS',
+  audit: 'AUDIT',
+  system: 'SYSTEM',
+  help: 'HELP',
+};
 
 export const SuperAdminPage: React.FC = () => {
+  const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, refreshUser } = useAuth();
+  const { currentUser } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [plans, setPlans] = useState<SaaSPlan[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [globalUsers, setGlobalUsers] = useState<User[]>([]);
   const [platformConfig, setPlatformConfig] = useState<GlobalConfig>(getGlobalConfig());
-  const [activeTab, setActiveTab] = useState<'NEXUS' | 'TENANTS' | 'PLANS' | 'SYSTEM' | 'AUDIT'>('NEXUS');
+  const [activeTab, setActiveTab] = useState<SuperAdminTab>('DASHBOARD');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isYearly, setIsYearly] = useState(false);
-  
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<SaaSPlan | null>(null);
-
-  // Form states
   const [provisionName, setProvisionName] = useState('');
   const [provisionPlanId, setProvisionPlanId] = useState('p2');
   const [provisionCycle, setProvisionCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
@@ -44,429 +139,1155 @@ export const SuperAdminPage: React.FC = () => {
   const refreshData = useCallback(() => {
     setCompanies(getCompanies());
     setPlans(getSaaSPlans());
+    setGlobalUsers(getAllUsers());
     setPlatformConfig(getGlobalConfig());
   }, []);
 
   useEffect(() => {
     if (currentUser && currentUser.role !== Role.SUPER_ADMIN) {
-        navigate('/');
-        return;
+      navigate('/');
+      return;
     }
+
     refreshData();
-    // Auto-refresh telemetry every 5 seconds
     const interval = setInterval(() => {
-      if (activeTab === 'NEXUS') refreshData();
+      if (activeTab === 'DASHBOARD') refreshData();
     }, 5000);
+
     return () => clearInterval(interval);
-  }, [currentUser?.id, currentUser?.role, navigate, refreshData, activeTab]);
+  }, [activeTab, currentUser?.id, currentUser?.role, navigate, refreshData]);
 
-  const metrics = useMemo(() => getGlobalMetrics(), [companies, activeTab]);
-  const filteredCompanies = companies.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()) && c.id !== 'SYSTEM');
-  const masterLogs = useMemo(() => getMasterLogs(), [activeTab, companies, platformConfig]);
-  const telemetria = useMemo(() => getNodesTelemetry(), [activeTab]);
+  const metrics = useMemo(() => getGlobalMetrics(), [companies]);
+  const masterLogs = useMemo(() => getMasterLogs(), [companies, platformConfig]);
+  const telemetry = useMemo(() => getNodesTelemetry(), [activeTab]);
+  const tenantCompanies = useMemo(() => companies.filter(company => company.id !== 'SYSTEM'), [companies]);
+  const tenantUsers = useMemo(() => globalUsers.filter(user => user.companyId !== 'SYSTEM'), [globalUsers]);
+  const companyUsers = useMemo(() => tenantUsers.filter(user => user.role !== Role.SUPER_ADMIN), [tenantUsers]);
 
-  const performanceData = [
-    { name: 'Lun', trans: 120 }, { name: 'Mar', trans: 230 }, { name: 'Mie', trans: 190 },
-    { name: 'Jue', trans: 450 }, { name: 'Vie', trans: 380 }, { name: 'Sab', trans: 620 }, { name: 'Dom', trans: 540 }
-  ];
+  const filteredCompanies = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return tenantCompanies;
+    return tenantCompanies.filter(company => company.name.toLowerCase().includes(query) || company.id.toLowerCase().includes(query));
+  }, [searchTerm, tenantCompanies]);
+
+  const filteredUsers = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return companyUsers;
+    return companyUsers.filter(user =>
+      user.name.toLowerCase().includes(query) ||
+      user.username.toLowerCase().includes(query) ||
+      (user.email || '').toLowerCase().includes(query),
+    );
+  }, [companyUsers, searchTerm]);
+
+  const billingRows = useMemo(() => {
+    return tenantCompanies.map(company => {
+      const plan = plans.find(item => item.id === company.planId);
+      const paid = company.status === 'ACTIVE';
+      return {
+        id: company.id,
+        companyName: company.name,
+        planName: plan?.name || 'Sin plan',
+        cycle: company.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual',
+        amount: company.subscriptionPrice,
+        status: paid ? 'Pagada' : company.status === 'TRIAL' ? 'Pendiente' : 'En mora',
+        dueDate: company.expiresAt,
+      };
+    });
+  }, [plans, tenantCompanies]);
+
+  const reportRows = useMemo(() => {
+    const activeCompanies = tenantCompanies.filter(company => company.status === 'ACTIVE').length;
+    const trialCompanies = tenantCompanies.filter(company => company.status === 'TRIAL').length;
+    const suspendedCompanies = tenantCompanies.filter(company => company.status === 'SUSPENDED').length;
+
+    return [
+      {
+        title: 'Reporte de ingresos globales',
+        detail: `MRR estimado ${formatCurrency(metrics.mrr)} con ${activeCompanies} empresas activas.`,
+        badge: 'Financiero',
+      },
+      {
+        title: 'Reporte de adopcion del SaaS',
+        detail: `${companyUsers.length} usuarios globales operando en ${tenantCompanies.length} tenants.`,
+        badge: 'Operativo',
+      },
+      {
+        title: 'Reporte de riesgo de cartera SaaS',
+        detail: `${trialCompanies} empresas en prueba y ${suspendedCompanies} suspendidas para seguimiento comercial.`,
+        badge: 'Riesgo',
+      },
+    ];
+  }, [companyUsers.length, metrics.mrr, tenantCompanies, tenantCompanies.length]);
+
+  const helpRows = useMemo(
+    () => [
+      { title: 'Guias de onboarding', detail: 'Documentacion para alta de empresas, usuarios globales y activacion inicial.', tag: 'Base de conocimiento' },
+      { title: 'Tickets prioritarios', detail: `${Math.max(1, tenantCompanies.length)} conversaciones listas para seguimiento de soporte SaaS.`, tag: 'Soporte' },
+      { title: 'Tutoriales del panel', detail: 'Recorridos para facturacion, auditoria, planes y configuracion global.', tag: 'Tutoriales' },
+    ],
+    [tenantCompanies.length],
+  );
+
+  const roleCounts = useMemo(() => {
+    const admins = companyUsers.filter(user => user.role === Role.ADMIN).length;
+    const supervisors = companyUsers.filter(user => user.role === Role.SUPERVISOR).length;
+    const collectors = companyUsers.filter(user => user.role === Role.COBRADOR).length;
+    return { admins, supervisors, collectors };
+  }, [companyUsers]);
+
+  const paymentsCount = useMemo(() => getPayments('ALL').length, [companies]);
+  const navigateToSection = useCallback(
+    (tab: SuperAdminTab) => {
+      const params = new URLSearchParams(location.search);
+      params.set('section', tabToSectionMap[tab]);
+      navigate(`/master?${params.toString()}`, { replace: false });
+    },
+    [location.search, navigate],
+  );
+
+  useEffect(() => {
+    const section = new URLSearchParams(location.search).get('section') || 'dashboard';
+    const nextTab = sectionToTabMap[section] || 'DASHBOARD';
+    if (activeTab !== nextTab) {
+      setActiveTab(nextTab);
+    }
+  }, [activeTab, location.search]);
 
   const handleUpdateConfig = () => {
-      updateGlobalConfig(platformConfig);
-      refreshData();
+    updateGlobalConfig(platformConfig);
+    refreshData();
   };
 
   const handleToggleCompany = (id: string, status: Company['status']) => {
-      const newStatus = status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-      updateCompany(id, { status: newStatus });
-      refreshData();
+    const nextStatus = status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+    updateCompany(id, { status: nextStatus });
+    refreshData();
   };
 
   const handleToggleGhost = (id: string, current: boolean) => {
-      updateCompany(id, { isGhostMode: !current });
-      refreshData();
+    updateCompany(id, { isGhostMode: !current });
+    refreshData();
   };
 
-  const handleProvision = (e: React.FormEvent) => {
-      e.preventDefault();
-      const data = { name: provisionName, planId: provisionPlanId, billingCycle: provisionCycle, subscriptionPrice: provisionPrice };
-      if (editingCompany) updateCompany(editingCompany.id, data as any);
-      else createCompany(data as any, currentUser!);
-      refreshData();
-      setIsCompanyModalOpen(false);
-      setEditingCompany(null);
+  const handleProvision = (event: React.FormEvent) => {
+    event.preventDefault();
+    const payload = {
+      name: provisionName,
+      planId: provisionPlanId,
+      billingCycle: provisionCycle,
+      subscriptionPrice: provisionPrice,
+    };
+
+    if (editingCompany) updateCompany(editingCompany.id, payload as Partial<Company>);
+    else if (currentUser) createCompany(payload, currentUser);
+
+    refreshData();
+    setIsCompanyModalOpen(false);
+    setEditingCompany(null);
   };
 
-  const handleUpdatePlan = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget);
-      const data = {
-          ...editingPlan!,
-          name: formData.get('name') as string || editingPlan!.name,
-          maxClients: Number(formData.get('maxClients')),
-          maxUsers: Number(formData.get('maxUsers')),
-          maxBranches: Number(formData.get('maxBranches')),
-          monthlyPrice: Number(formData.get('monthlyPrice')),
-          yearlyPrice: Number(formData.get('yearlyPrice')) || Number(formData.get('monthlyPrice')) * 10,
-      };
-      saveSaaSPlan(data);
-      refreshData();
-      setIsPlanModalOpen(false);
+  const handleUpdatePlan = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingPlan) return;
+
+    const formData = new FormData(event.currentTarget);
+    saveSaaSPlan({
+      ...editingPlan,
+      name: (formData.get('name') as string) || editingPlan.name,
+      maxClients: Number(formData.get('maxClients')),
+      maxUsers: Number(formData.get('maxUsers')),
+      maxBranches: Number(formData.get('maxBranches')),
+      monthlyPrice: Number(formData.get('monthlyPrice')),
+      yearlyPrice: Number(formData.get('yearlyPrice')) || Number(formData.get('monthlyPrice')) * 10,
+    });
+    refreshData();
+    setIsPlanModalOpen(false);
+    setEditingPlan(null);
   };
+
+  const kpis = [
+    {
+      label: 'MRR estimado',
+      value: formatCurrency(metrics.mrr),
+      helper: `${tenantCompanies.filter(company => company.status === 'ACTIVE').length} empresas facturando`,
+      trend: '+12%',
+      tone: 'blue' as const,
+      icon: DollarSign,
+    },
+    {
+      label: 'Cobros globales',
+      value: formatCurrency(metrics.totalRevenue),
+      helper: `${paymentsCount} pagos registrados`,
+      trend: '+8%',
+      tone: 'emerald' as const,
+      icon: WalletCards,
+    },
+    {
+      label: 'Usuarios globales',
+      value: `${companyUsers.length}`,
+      helper: `${roleCounts.admins} admins, ${roleCounts.supervisors} supervisores`,
+      trend: '+5%',
+      tone: 'blue' as const,
+      icon: Users,
+    },
+    {
+      label: 'Empresas activas',
+      value: `${metrics.totalTenants}`,
+      helper: `${tenantCompanies.filter(company => company.status === 'TRIAL').length} en prueba`,
+      trend: 'SaaS',
+      tone: 'amber' as const,
+      icon: Building2,
+    },
+  ];
+
+  if (currentUser?.role === Role.SUPER_ADMIN) {
+    return (
+      <div className="space-y-6 pb-24 lg:pb-0">
+        <section>
+          <div className={`${shellCardClass} overflow-hidden`}>
+            <div className="px-6 py-6 lg:px-8">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div className="min-w-0">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] px-4 py-2 text-[12px] font-semibold text-[#2563EB]">
+                    <Crown size={14} />
+                    Super Admin SaaS
+                  </div>
+                  <h1 className="mt-4 text-[32px] font-semibold leading-[1.08] tracking-tight text-[#111827]">Control global de ABUNDRA</h1>
+                  <p className="mt-3 max-w-3xl text-[18px] font-medium leading-8 text-[#6B7280]">
+                    Monitorea empresas, usuarios globales, suscripciones, facturacion, auditoria y configuracion del sistema con la misma identidad visual del panel Admin Empresa.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => navigateToSection('COMPANIES')}
+                    className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[16px] font-medium text-[#111827] shadow-sm ${motionButtonClass}`}
+                  >
+                    <Building2 size={18} className="text-[#2563EB]" />
+                    Empresas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateToSection('PLANS')}
+                    className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[16px] font-medium text-[#111827] shadow-sm ${motionButtonClass}`}
+                  >
+                    <Package size={18} className="text-[#2563EB]" />
+                    Planes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCompanyModalOpen(true)}
+                    className="flex h-[54px] items-center justify-center gap-3 rounded-2xl bg-[#2563EB] px-6 text-[16px] font-medium text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8]"
+                  >
+                    <Plus size={18} />
+                    Nueva empresa
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-4">
+          {kpis.map(item => (
+            <MetricCard key={item.label} {...item} />
+          ))}
+        </section>
+
+        <section className="space-y-5">
+        {activeTab === 'DASHBOARD' ? (
+          <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
+            <div className={`${shellCardClass} p-6`}>
+              <div className="flex items-center gap-3">
+                <TrendingUp size={20} className="text-[#2563EB]" />
+                <h2 className="text-[20px] font-semibold text-[#111827]">Monitor global</h2>
+              </div>
+              <p className="mt-2 text-[14px] font-medium text-[#6B7280]">Actividad y crecimiento agregado del SaaS durante la semana.</p>
+              <div className="mt-6 h-[290px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={performanceData}>
+                    <defs>
+                      <linearGradient id="super-admin-performance" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.22} />
+                        <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="name" stroke="#94A3B8" axisLine={false} tickLine={false} fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: '18px',
+                        border: '1px solid #E5E7EB',
+                        boxShadow: '0 18px 48px rgba(15,23,42,0.14)',
+                      }}
+                    />
+                    <Area type="monotone" dataKey="value" stroke="#2563EB" strokeWidth={3} fill="url(#super-admin-performance)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <div className={`${shellCardClass} p-6`}>
+                <div className="flex items-center gap-3">
+                  <MapPin size={20} className="text-[#2563EB]" />
+                  <h2 className="text-[20px] font-semibold text-[#111827]">Telemetria</h2>
+                </div>
+                <div className="mt-5 space-y-4">
+                  {telemetry.map(node => (
+                    <div key={node.id} className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[15px] font-semibold text-[#111827]">{node.id}</p>
+                          <p className="mt-1 text-[13px] font-medium text-[#6B7280]">{node.region}</p>
+                        </div>
+                        <StatusBadge label="Activo" tone="success" />
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        <ProgressRow label="CPU" value={`${node.cpu}%`} percent={node.cpu} color="#2563EB" />
+                        <ProgressRow label="RAM" value={`${node.ram}%`} percent={node.ram} color="#16A34A" />
+                        <ProgressRow label="DB" value={`${node.db}%`} percent={node.db} color="#F59E0B" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`${shellCardClass} p-6`}>
+                <div className="flex items-center gap-3">
+                  <Bell size={20} className="text-[#2563EB]" />
+                  <h2 className="text-[20px] font-semibold text-[#111827]">Resumen rapido</h2>
+                </div>
+                <div className="mt-5 space-y-3">
+                  <SummaryRow label="Facturacion mensual estimada" value={formatCurrency(metrics.mrr)} tone="blue" />
+                  <SummaryRow label="Capital gestionado" value={formatCurrency(metrics.totalPortfolio)} tone="neutral" />
+                  <SummaryRow label="Usuarios globales" value={`${companyUsers.length}`} tone="blue" />
+                  <SummaryRow label="Cobros acumulados" value={formatCurrency(metrics.totalRevenue)} tone="success" />
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'COMPANIES' ? (
+          <section className="space-y-5">
+            <SectionHeader
+              title="Empresas"
+              description="Gestion global de tenants, estado, plan contratado y controles de soporte."
+              actionLabel="Aprovisionar empresa"
+              onAction={() => {
+                setEditingCompany(null);
+                setProvisionName('');
+                setProvisionPlanId('p2');
+                setProvisionCycle('MONTHLY');
+                setProvisionPrice(3500);
+                setIsCompanyModalOpen(true);
+              }}
+            />
+
+            <div className={`${shellCardClass} p-5`}>
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+                <div className="relative">
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                  <input
+                    value={searchTerm}
+                    onChange={event => setSearchTerm(event.target.value)}
+                    placeholder="Buscar empresa por nombre o ID..."
+                    className="h-[54px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                  />
+                </div>
+                <div className="flex items-center justify-end">
+                  <div className="rounded-2xl border border-[#E5E7EB] bg-[#FCFDFF] px-4 py-3 text-right">
+                    <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Empresas visibles</p>
+                    <p className="mt-2 text-[24px] font-semibold text-[#111827]">{filteredCompanies.length}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {filteredCompanies.map(company => {
+                const plan = plans.find(item => item.id === company.planId);
+                const isGhost = !!company.isGhostMode;
+                return (
+                  <div key={company.id} className={`${shellCardClass} p-5 lg:p-6`}>
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex min-w-0 items-start gap-4">
+                        <div className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] text-[18px] font-semibold text-white ${isGhost ? 'bg-[#7C3AED]' : 'bg-[#2563EB]'}`}>
+                          {company.name[0]}
+                          {isGhost ? (
+                            <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#7C3AED] text-white">
+                              <Ghost size={12} />
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-[20px] font-semibold leading-tight text-[#111827]">{company.name}</h3>
+                            <StatusBadge label={company.status} tone={getCompanyTone(company.status)} />
+                            {company.status === 'TRIAL' ? <StatusBadge label="En prueba" tone="warning" /> : null}
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center gap-3 text-[13px] font-medium text-[#6B7280]">
+                            <InfoChip icon={Package} label={plan?.name || 'Sin plan'} />
+                            <InfoChip icon={Clock3} label={`Expira ${formatDate(company.expiresAt)}`} />
+                            <InfoChip icon={WalletCards} label={formatCurrency(company.subscriptionPrice)} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          title="Modo fantasma"
+                          onClick={() => handleToggleGhost(company.id, isGhost)}
+                          className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border ${isGhost ? 'border-[#DDD6FE] bg-[#F5F3FF] text-[#7C3AED]' : 'border-[#E5E7EB] bg-white text-[#6B7280]'} ${motionButtonClass}`}
+                        >
+                          <Ghost size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          title="Editar empresa"
+                          onClick={() => {
+                            setEditingCompany(company);
+                            setProvisionName(company.name);
+                            setProvisionPlanId(company.planId);
+                            setProvisionCycle(company.billingCycle);
+                            setProvisionPrice(company.subscriptionPrice || 0);
+                            setIsCompanyModalOpen(true);
+                          }}
+                          className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#6B7280] ${motionButtonClass}`}
+                        >
+                          <Edit3 size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCompany(company.id, company.status)}
+                          className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-[14px] font-semibold ${
+                            company.status === 'ACTIVE'
+                              ? 'border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]'
+                              : 'border border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]'
+                          } ${motionButtonClass}`}
+                        >
+                          {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'GLOBAL_USERS' ? (
+          <section className="space-y-5">
+            <SectionHeader
+              title="Usuarios Globales"
+              description="Vista consolidada del equipo distribuido en todas las empresas, con enfoque en adopcion y seguridad."
+            />
+            <div className={`${shellCardClass} overflow-hidden`}>
+              <div className="border-b border-[#E5E7EB] px-5 py-4">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+                  <div className="relative">
+                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                    <input
+                      value={searchTerm}
+                      onChange={event => setSearchTerm(event.target.value)}
+                      placeholder="Buscar por nombre, usuario o correo..."
+                      className="h-[54px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <MiniStat label="Admins" value={`${roleCounts.admins}`} />
+                    <MiniStat label="Supervisores" value={`${roleCounts.supervisors}`} />
+                    <MiniStat label="Cobradores" value={`${roleCounts.collectors}`} />
+                  </div>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-[#F8FAFC]">
+                    <tr className="text-left">
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Usuario</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Empresa</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Rol</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Estado</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Ultimo acceso</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map(user => (
+                      <tr key={user.id} className="border-t border-[#EEF2F7] hover:bg-[#FCFDFF]">
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2563EB] text-[12px] font-black uppercase text-white">
+                              {user.avatar || user.name.slice(0, 2)}
+                            </div>
+                            <div>
+                              <p className="text-[14px] font-semibold text-[#111827]">{user.name}</p>
+                              <p className="mt-1 text-[13px] font-medium text-[#6B7280]">@{user.username}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-[14px] font-medium text-[#111827]">{tenantCompanies.find(company => company.id === user.companyId)?.name || 'Sin empresa'}</td>
+                        <td className="px-5 py-4">
+                          <StatusBadge label={user.role} tone={getUserRoleTone(user.role)} />
+                        </td>
+                        <td className="px-5 py-4">
+                          <StatusBadge label={user.isActive ? 'Activo' : 'Suspendido'} tone={user.isActive ? 'success' : 'danger'} />
+                        </td>
+                        <td className="px-5 py-4 text-[13px] font-medium text-[#6B7280]">{user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Sin acceso reciente'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'PLANS' ? (
+          <section className="space-y-5">
+            <SectionHeader
+              title="Planes y Suscripciones"
+              description="Catalogo de planes, limites de recursos y precios del SaaS."
+            />
+            <div className="flex items-center justify-end">
+              <div className="flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white p-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsYearly(false)}
+                  className={`rounded-full px-4 py-2 text-[13px] font-semibold ${!isYearly ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#6B7280]'}`}
+                >
+                  Mensual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsYearly(true)}
+                  className={`rounded-full px-4 py-2 text-[13px] font-semibold ${isYearly ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#6B7280]'}`}
+                >
+                  Anual
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {plans.map(plan => (
+                <div key={plan.id} className={`${shellCardClass} flex flex-col p-6`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Plan SaaS</p>
+                      <h3 className="mt-3 text-[26px] font-semibold tracking-tight text-[#111827]">{plan.name}</h3>
+                    </div>
+                    {plan.isOffer ? <StatusBadge label={plan.offerText || 'Popular'} tone="blue" /> : null}
+                  </div>
+                  <p className="mt-5 text-[34px] font-semibold leading-none text-[#111827]">
+                    {formatCurrency(isYearly ? (plan.yearlyPrice || plan.monthlyPrice * 10) : plan.monthlyPrice)}
+                  </p>
+                  <p className="mt-2 text-[14px] font-medium text-[#6B7280]">{isYearly ? 'facturacion anual' : 'facturacion mensual'}</p>
+
+                  <div className="mt-6 grid gap-3">
+                    <MiniPanel label="Clientes" value={`${plan.maxClients}`} />
+                    <MiniPanel label="Usuarios" value={`${plan.maxUsers}`} />
+                    <MiniPanel label="Sucursales" value={`${plan.maxBranches}`} />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingPlan(plan);
+                      setIsPlanModalOpen(true);
+                    }}
+                    className={`mt-6 inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[15px] font-semibold text-[#111827] ${motionButtonClass}`}
+                  >
+                    <Edit3 size={16} />
+                    Editar plan
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'BILLING' ? (
+          <section className="space-y-5">
+            <SectionHeader
+              title="Facturacion"
+              description="Seguimiento de suscripciones, cobros globales y estado de renovacion por empresa."
+              actionLabel="Exportar resumen"
+            />
+            <div className={`${shellCardClass} overflow-hidden`}>
+              <div className="grid gap-4 border-b border-[#E5E7EB] px-5 py-5 lg:grid-cols-4">
+                <MiniStat label="MRR" value={formatCurrency(metrics.mrr)} />
+                <MiniStat label="Cobros" value={formatCurrency(metrics.totalRevenue)} />
+                <MiniStat label="Empresas activas" value={`${tenantCompanies.filter(company => company.status === 'ACTIVE').length}`} />
+                <MiniStat label="Pendientes" value={`${billingRows.filter(item => item.status !== 'Pagada').length}`} />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-[#F8FAFC]">
+                    <tr className="text-left">
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Empresa</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Plan</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Ciclo</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Monto</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Estado</th>
+                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Vencimiento</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {billingRows.map(row => (
+                      <tr key={row.id} className="border-t border-[#EEF2F7] hover:bg-[#FCFDFF]">
+                        <td className="px-5 py-4 text-[14px] font-semibold text-[#111827]">{row.companyName}</td>
+                        <td className="px-5 py-4 text-[14px] font-medium text-[#6B7280]">{row.planName}</td>
+                        <td className="px-5 py-4 text-[14px] font-medium text-[#111827]">{row.cycle}</td>
+                        <td className="px-5 py-4 text-[14px] font-semibold text-[#111827]">{formatCurrency(row.amount)}</td>
+                        <td className="px-5 py-4">
+                          <StatusBadge label={row.status} tone={row.status === 'Pagada' ? 'success' : row.status === 'Pendiente' ? 'warning' : 'danger'} />
+                        </td>
+                        <td className="px-5 py-4 text-[13px] font-medium text-[#6B7280]">{formatDate(row.dueDate)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'REPORTS' ? (
+          <section className="space-y-5">
+            <SectionHeader
+              title="Reportes Globales"
+              description="Lectura ejecutiva del SaaS con resumen financiero, operativo y de riesgo."
+            />
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_1fr]">
+              <div className={`${shellCardClass} p-6`}>
+                <div className="flex items-center gap-3">
+                  <FileText size={20} className="text-[#2563EB]" />
+                  <h2 className="text-[20px] font-semibold text-[#111827]">Panel de reportes</h2>
+                </div>
+                <div className="mt-5 space-y-4">
+                  {reportRows.map(row => (
+                    <div key={row.title} className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[16px] font-semibold text-[#111827]">{row.title}</p>
+                          <p className="mt-2 text-[14px] font-medium leading-7 text-[#6B7280]">{row.detail}</p>
+                        </div>
+                        <StatusBadge label={row.badge} tone={row.badge === 'Financiero' ? 'success' : row.badge === 'Operativo' ? 'blue' : 'warning'} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`${shellCardClass} p-6`}>
+                <div className="flex items-center gap-3">
+                  <Download size={20} className="text-[#2563EB]" />
+                  <h2 className="text-[20px] font-semibold text-[#111827]">Exportaciones sugeridas</h2>
+                </div>
+                <div className="mt-5 space-y-3">
+                  <ExportRow title="Financiero global" detail="MRR, cobros, cartera y suscripciones." />
+                  <ExportRow title="Uso por empresa" detail="Usuarios, actividad y adopcion por tenant." />
+                  <ExportRow title="Auditoria consolidada" detail="Eventos criticos y trazabilidad del sistema." />
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'AUDIT' ? (
+          <section className="space-y-5">
+            <SectionHeader
+              title="Auditoria"
+              description="Bitacora global de acciones criticas, cambios administrativos y eventos de seguridad."
+              actionLabel="Exportar log"
+            />
+            <div className="space-y-3">
+              {masterLogs.map(log => (
+                <div key={log.id} className={`${shellCardClass} p-5`}>
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex min-w-0 items-start gap-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
+                        <Terminal size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[16px] font-semibold text-[#111827]">{log.action}</p>
+                        <p className="mt-2 break-words rounded-[20px] bg-[#FCFDFF] px-4 py-3 text-[14px] font-medium leading-7 text-[#6B7280]">{log.detail}</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <p className="text-[13px] font-semibold text-[#111827]">{formatDate(log.timestamp)}</p>
+                      <p className="mt-1 text-[12px] font-medium text-[#94A3B8]">
+                        {new Date(log.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'SYSTEM' ? (
+          <section className="space-y-5">
+            <SectionHeader
+              title="Configuracion del Sistema"
+              description="Mantenimiento global, version del sistema y mensajes de difusion."
+              actionLabel="Guardar configuracion"
+              onAction={handleUpdateConfig}
+            />
+            <div className={`${shellCardClass} p-6 lg:p-8`}>
+              <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+                <div className="space-y-5">
+                  <div className="rounded-[24px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-[18px] ${platformConfig.maintenanceMode ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#DCFCE7] text-[#16A34A]'}`}>
+                          {platformConfig.maintenanceMode ? <ShieldAlert size={22} /> : <ShieldCheck size={22} />}
+                        </div>
+                        <div>
+                          <p className="text-[18px] font-semibold text-[#111827]">Modo mantenimiento</p>
+                          <p className="mt-1 text-[14px] font-medium text-[#6B7280]">Control global para restringir acceso temporalmente.</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPlatformConfig(current => ({ ...current, maintenanceMode: !current.maintenanceMode }))}
+                        className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-[14px] font-semibold ${
+                          platformConfig.maintenanceMode
+                            ? 'border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]'
+                            : 'border border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]'
+                        } ${motionButtonClass}`}
+                      >
+                        {platformConfig.maintenanceMode ? 'Activo' : 'Listo'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <FieldBlock label="Mensaje global">
+                    <input
+                      value={platformConfig.broadcastMessage}
+                      onChange={event => setPlatformConfig(current => ({ ...current, broadcastMessage: event.target.value }))}
+                      className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                    />
+                  </FieldBlock>
+
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <FieldBlock label="Fecha de mantenimiento">
+                      <input
+                        type="date"
+                        value={platformConfig.maintenanceDate}
+                        onChange={event => setPlatformConfig(current => ({ ...current, maintenanceDate: event.target.value }))}
+                        className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                      />
+                    </FieldBlock>
+                    <FieldBlock label="Version del sistema">
+                      <input
+                        value={platformConfig.systemVersion}
+                        onChange={event => setPlatformConfig(current => ({ ...current, systemVersion: event.target.value }))}
+                        className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                      />
+                    </FieldBlock>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <SidebarInfoCard title="Estado actual" icon={Activity}>
+                    <SummaryRow label="Version" value={platformConfig.systemVersion} tone="blue" />
+                    <SummaryRow label="Mantenimiento" value={platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'} tone={platformConfig.maintenanceMode ? 'danger' : 'success'} />
+                    <SummaryRow label="Broadcast" value={platformConfig.broadcastMessage || 'Sin mensaje'} tone="neutral" />
+                  </SidebarInfoCard>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'HELP' ? (
+          <section className="space-y-5">
+            <SectionHeader
+              title="Centro de Ayuda"
+              description="Soporte para empresas, material de onboarding y atencion operativa del SaaS."
+            />
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+              <div className={`${shellCardClass} p-6`}>
+                <div className="flex items-center gap-3">
+                  <LifeBuoy size={20} className="text-[#2563EB]" />
+                  <h2 className="text-[20px] font-semibold text-[#111827]">Cola de ayuda</h2>
+                </div>
+                <div className="mt-5 space-y-4">
+                  {helpRows.map(row => (
+                    <div key={row.title} className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[16px] font-semibold text-[#111827]">{row.title}</p>
+                          <p className="mt-2 text-[14px] font-medium leading-7 text-[#6B7280]">{row.detail}</p>
+                        </div>
+                        <StatusBadge label={row.tag} tone={row.tag === 'Soporte' ? 'warning' : row.tag === 'Tutoriales' ? 'blue' : 'success'} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <SidebarInfoCard title="Atajos de soporte" icon={Headphones}>
+                  <ActionListItem icon={FileClock} title="Tickets recientes" detail="Seguimiento a casos abiertos de empresas y administradores." />
+                  <ActionListItem icon={Sparkles} title="Tutoriales" detail="Guias visuales para adopcion del panel global." />
+                  <ActionListItem icon={AlertCircle} title="Incidentes" detail="Revision de alertas y mantenimiento del sistema." />
+                </SidebarInfoCard>
+              </div>
+            </div>
+          </section>
+        ) : null}
+        </section>
+
+        {isPlanModalOpen && editingPlan ? (
+          <ModalFrame title={`Editar plan: ${editingPlan.name}`} onClose={() => { setIsPlanModalOpen(false); setEditingPlan(null); }}>
+            <form onSubmit={handleUpdatePlan} className="space-y-5">
+              <FieldBlock label="Nombre">
+                <input name="name" defaultValue={editingPlan.name} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+              </FieldBlock>
+              <div className="grid gap-4 md:grid-cols-3">
+                <FieldBlock label="Max clientes">
+                  <input name="maxClients" type="number" defaultValue={editingPlan.maxClients} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                </FieldBlock>
+                <FieldBlock label="Max usuarios">
+                  <input name="maxUsers" type="number" defaultValue={editingPlan.maxUsers} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                </FieldBlock>
+                <FieldBlock label="Max sucursales">
+                  <input name="maxBranches" type="number" defaultValue={editingPlan.maxBranches} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                </FieldBlock>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <FieldBlock label="Precio mensual">
+                  <input name="monthlyPrice" type="number" defaultValue={editingPlan.monthlyPrice} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                </FieldBlock>
+                <FieldBlock label="Precio anual">
+                  <input name="yearlyPrice" type="number" defaultValue={editingPlan.yearlyPrice || editingPlan.monthlyPrice * 10} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                </FieldBlock>
+              </div>
+              <div className="flex justify-end">
+                <button type="submit" className="inline-flex h-[52px] items-center justify-center rounded-2xl bg-[#2563EB] px-6 text-[15px] font-semibold text-white transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8]">
+                  Guardar cambios
+                </button>
+              </div>
+            </form>
+          </ModalFrame>
+        ) : null}
+
+        {isCompanyModalOpen ? (
+          <ModalFrame title={editingCompany ? 'Editar empresa' : 'Nueva empresa'} onClose={() => { setIsCompanyModalOpen(false); setEditingCompany(null); }}>
+            <form onSubmit={handleProvision} className="space-y-5">
+              <FieldBlock label="Nombre comercial">
+                <input
+                  required
+                  value={provisionName}
+                  onChange={event => setProvisionName(event.target.value)}
+                  placeholder="Ej: ABUNDRA Capital"
+                  className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                />
+              </FieldBlock>
+              <div className="grid gap-4 md:grid-cols-2">
+                <FieldBlock label="Plan">
+                  <select
+                    value={provisionPlanId}
+                    onChange={event => {
+                      const value = event.target.value;
+                      setProvisionPlanId(value);
+                      const selectedPlan = plans.find(plan => plan.id === value);
+                      if (selectedPlan) {
+                        setProvisionPrice(provisionCycle === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
+                      }
+                    }}
+                    className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                  >
+                    {plans.map(plan => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                  </select>
+                </FieldBlock>
+                <FieldBlock label="Ciclo">
+                  <select
+                    value={provisionCycle}
+                    onChange={event => {
+                      const value = event.target.value as 'MONTHLY' | 'YEARLY';
+                      setProvisionCycle(value);
+                      const selectedPlan = plans.find(plan => plan.id === provisionPlanId);
+                      if (selectedPlan) {
+                        setProvisionPrice(value === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
+                      }
+                    }}
+                    className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                  >
+                    <option value="MONTHLY">Mensual</option>
+                    <option value="YEARLY">Anual</option>
+                  </select>
+                </FieldBlock>
+              </div>
+              <FieldBlock label="Precio pactado">
+                <input
+                  type="number"
+                  value={provisionPrice}
+                  onChange={event => setProvisionPrice(Number(event.target.value))}
+                  className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                />
+              </FieldBlock>
+              <div className="flex justify-end">
+                <button type="submit" className="inline-flex h-[52px] items-center justify-center rounded-2xl bg-[#2563EB] px-6 text-[15px] font-semibold text-white transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8]">
+                  {editingCompany ? 'Actualizar empresa' : 'Crear empresa'}
+                </button>
+              </div>
+            </form>
+          </ModalFrame>
+        ) : null}
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const MetricCard = ({
+  label,
+  value,
+  helper,
+  trend,
+  tone,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+  trend: string;
+  tone: 'blue' | 'emerald' | 'amber';
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+}) => {
+  const toneMap = {
+    blue: { iconWrap: 'bg-[#DBEAFE] text-[#2563EB]', note: 'text-[#2563EB]' },
+    emerald: { iconWrap: 'bg-[#DCFCE7] text-[#16A34A]', note: 'text-[#16A34A]' },
+    amber: { iconWrap: 'bg-[#FEF3C7] text-[#F59E0B]', note: 'text-[#F59E0B]' },
+  };
+  const style = toneMap[tone];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-300 space-y-6 pb-24 animate-fadeIn relative">
-      {/* Header Nexus Master */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b border-slate-900 pb-5 pt-2 px-4 md:px-6 relative z-20 bg-slate-950/70 backdrop-blur-md sticky top-0">
-        <div className="flex items-center gap-3">
-            <div className="h-11 w-11 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_24px_rgba(37,99,235,0.25)] text-white border border-blue-400/20 shrink-0">
-                <Crown size={22} className="animate-pulse" />
-            </div>
-            <div className="min-w-0">
-                <h1 className="text-lg md:text-xl font-black text-white tracking-tighter uppercase italic leading-none truncate">Nexus Core <span className="text-blue-500">Master</span></h1>
-                <p className="text-blue-500 font-black text-[9px] uppercase tracking-[0.18em] mt-1 flex items-center gap-2">
-                    <Activity size={10} className="animate-ping" /> TOTAL SYSTEM AUTHORITY
-                </p>
-            </div>
+    <div className={`${shellCardClass} relative overflow-hidden p-6`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className={`flex h-14 w-14 items-center justify-center rounded-[18px] ${style.iconWrap}`}>
+          <Icon size={24} />
         </div>
-        
-        <div className="w-full xl:w-auto overflow-x-auto no-scrollbar pb-2 xl:pb-0 [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)]">
-          <div className="flex xl:grid xl:grid-cols-5 bg-slate-900/80 p-1 rounded-xl border border-slate-800 gap-0.5 shadow-2xl flex-nowrap min-w-max xl:min-w-0 snap-x snap-mandatory">
-            {[
-              {id: 'NEXUS', label: 'Monitor', icon: Globe},
-              {id: 'TENANTS', label: 'Empresas', icon: Building},
-              {id: 'PLANS', label: 'Tiers', icon: Package},
-              {id: 'SYSTEM', label: 'Kernel', icon: Hammer},
-              {id: 'AUDIT', label: 'Auditoría', icon: History},
-            ].map(tab => (
-              <button 
-                  key={tab.id} 
-                  onClick={() => setActiveTab(tab.id as any)} 
-                  className={`flex-1 snap-start flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap 
-                        ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
-              >
-                <tab.icon size={14}/> <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
+        <div className={`inline-flex items-center gap-1 rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold ${style.note}`}>
+          <ArrowUpRight size={13} />
+          {trend}
         </div>
       </div>
-
-      {/* MONITOR GLOBAL */}
-      {activeTab === 'NEXUS' && (
-        <div className="animate-fadeIn space-y-6 px-4 md:px-6 pb-16">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                {[
-                    { label: 'MRR ESTIMADO', val: formatCurrency(metrics.mrr), icon: DollarSign, color: 'text-blue-500' },
-                    { label: 'COBROS TOTALES', val: formatCurrency(metrics.totalRevenue), icon: TrendingUp, color: 'text-emerald-500' },
-                    { label: 'CAPITAL EN CALLE', val: formatCurrency(metrics.totalPortfolio), icon: Globe, color: 'text-white' },
-                    { label: 'INSTANCIAS ACTIVAS', val: metrics.totalTenants, icon: Building, color: 'text-purple-500' },
-                ].map((kpi, idx) => (
-                    <div key={idx} className="bg-slate-900/40 p-4 md:p-5 rounded-[1.5rem] border border-slate-800/40 flex flex-col justify-between group hover:border-blue-500/20 transition-all shadow-xl">
-                        <div className="flex justify-between items-start mb-3">
-                            <div className={`p-2.5 bg-slate-800/50 rounded-lg ${kpi.color}`}><kpi.icon size={18}/></div>
-                            <TrendingUp size={14} className="text-slate-700" />
-                        </div>
-                        <div>
-                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{kpi.label}</p>
-                            <h3 className={`text-lg md:text-xl font-black tracking-tighter ${kpi.color}`}>{kpi.val}</h3>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
-                <div className="lg:col-span-8 bg-slate-900/40 p-5 md:p-6 rounded-[1.75rem] border border-slate-900 shadow-inner">
-                    <h3 className="text-base font-black text-white uppercase tracking-tighter mb-5 flex items-center gap-2.5">
-                        <TrendingUp size={18} className="text-blue-500"/> Tráfico de Operaciones Globales
-                    </h3>
-                    <div className="h-[240px] md:h-[280px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={performanceData}>
-                                <defs>
-                                    <linearGradient id="nexusGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="name" stroke="#475569" fontSize={9} fontWeight="bold" axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '11px' }} />
-                                <Area type="monotone" dataKey="trans" stroke="#3b82f6" strokeWidth={4} fillOpacity={1} fill="url(#nexusGrad)" dot={{r: 4, fill: '#3b82f6'}} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="lg:col-span-4 bg-slate-900/60 p-5 md:p-6 rounded-[1.75rem] border border-slate-800">
-                    <h3 className="text-base font-black text-white uppercase tracking-tighter mb-5 flex items-center gap-2.5">
-                        <MapPin size={18} className="text-purple-500"/> Telemetría de Servidores
-                    </h3>
-                    <div className="space-y-4 overflow-y-auto max-h-[320px] pr-2 custom-scrollbar">
-                        {telemetria.map(node => (
-                            <div key={node.id} className="p-4 bg-slate-950/50 rounded-[1.25rem] border border-slate-800 group hover:border-blue-500/30 transition-all">
-                                <div className="flex justify-between items-center mb-3">
-                                    <div>
-                                        <h4 className="text-xs font-black text-white uppercase tracking-tight">{node.id}</h4>
-                                        <p className="text-[9px] text-slate-500 font-bold uppercase">{node.region}</p>
-                                    </div>
-                                    <div className={`h-3 w-3 rounded-full animate-pulse bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]`}></div>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-[8px] font-black uppercase text-slate-600">
-                                        <span>CPU LOAD</span><span>{node.cpu}%</span>
-                                    </div>
-                                    <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-500 transition-all duration-1000" style={{width: `${node.cpu}%`}}></div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-      )}
-
-      {/* GESTIÓN DE EMPRESAS */}
-      {activeTab === 'TENANTS' && (
-          <div className="animate-fadeIn space-y-5 px-4 md:px-6 pb-16">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="flex-1 relative group w-full">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-                    <input type="text" placeholder="Buscar instancia..." className="w-full pl-12 pr-5 py-4 bg-slate-900 border border-slate-800 rounded-xl outline-none font-bold text-sm text-white focus:border-blue-500 transition-all shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                </div>
-                <button onClick={() => { setEditingCompany(null); setProvisionName(''); setProvisionPlanId('p2'); setProvisionCycle('MONTHLY'); setProvisionPrice(3500); setIsCompanyModalOpen(true); }} className="w-full md:w-auto bg-blue-600 text-white px-7 py-4 rounded-xl font-black text-[11px] tracking-widest uppercase shadow-lg flex items-center justify-center gap-2.5 active:scale-95 transition-all shrink-0"><Plus size={16}/> Aprovisionar</button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                  {filteredCompanies.map(comp => {
-                      const plan = plans.find(p => p.id === comp.planId);
-                      const isGhost = !!comp.isGhostMode;
-                      return (
-                        <div key={comp.id} className={`p-5 md:p-6 rounded-[1.75rem] border transition-all flex flex-col lg:flex-row justify-between items-center gap-5 ${isGhost ? 'bg-purple-900/10 border-purple-500/30 shadow-2xl' : 'bg-slate-900 border-slate-800 hover:border-blue-500/30 shadow-xl'}`}>
-                            <div className="flex items-center gap-4 w-full">
-                                <div className={`h-14 w-14 rounded-[1.25rem] flex items-center justify-center font-black text-xl shadow-inner shrink-0 relative ${isGhost ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}`}>
-                                    {comp.name[0]}
-                                    {isGhost && ( <div className="absolute -top-1 -right-1 bg-purple-500 text-white p-1.5 rounded-full border border-slate-950"><Ghost size={12}/></div> )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2.5 mb-2">
-                                        <h4 className={`text-lg md:text-xl font-black tracking-tighter uppercase truncate leading-none ${isGhost ? 'text-purple-400' : 'text-white'}`}>{comp.name}</h4>
-                                        <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${comp.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>{comp.status}</span>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-4 md:gap-6">
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Tag size={14} className="text-blue-500"/> {plan?.name}</p>
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Calendar size={14} className="text-blue-500"/> Expira: {formatDate(comp.expiresAt)}</p>
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Database size={14} className="text-blue-500"/> UID: {comp.id}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex gap-2 w-full lg:w-auto shrink-0 border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-800">
-                                <button onClick={() => handleToggleGhost(comp.id, isGhost)} className={`flex-1 lg:flex-none p-3 rounded-xl transition-all flex items-center justify-center border-2 ${isGhost ? 'bg-purple-600 border-purple-400 text-white shadow-xl' : 'bg-slate-800 border-transparent text-slate-500 hover:text-purple-400 hover:border-purple-400'}`} title="Protocolo Invisible">{isGhost ? <Ghost size={18}/> : <EyeOff size={18}/>}</button>
-                                <button onClick={() => { setEditingCompany(comp); setProvisionName(comp.name); setProvisionPlanId(comp.planId); setProvisionCycle(comp.billingCycle); setProvisionPrice(comp.subscriptionPrice || 0); setIsCompanyModalOpen(true); }} className="flex-1 lg:flex-none p-3 bg-slate-800 text-slate-300 rounded-xl hover:text-white transition-all shadow-lg"><Edit3 size={18}/></button>
-                                <button onClick={() => handleToggleCompany(comp.id, comp.status)} className={`flex-[2] lg:flex-none px-6 py-3 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all shadow-2xl ${comp.status === 'ACTIVE' ? 'bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white' : 'bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600 hover:text-white'}`}>{comp.status === 'ACTIVE' ? 'CORTAR ACCESO' : 'ACTIVAR NODO'}</button>
-                            </div>
-                        </div>
-                      );
-                  })}
-              </div>
-          </div>
-      )}
-
-      {/* KERNEL CONFIG */}
-      {activeTab === 'SYSTEM' && (
-        <div className="animate-fadeIn space-y-6 px-4 md:px-6 max-w-4xl mx-auto pb-16">
-            <div className="bg-slate-900 p-6 md:p-8 rounded-[2rem] border border-slate-800 space-y-8 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-5"><Hammer size={150}/></div>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-800">
-                    <div className="flex items-center gap-5">
-                        <div className={`h-14 w-14 rounded-[1.25rem] flex items-center justify-center border-2 transition-all shadow-inner ${platformConfig.maintenanceMode ? 'bg-red-600/10 text-red-500 border-red-500/30' : 'bg-emerald-600/10 text-emerald-500 border-emerald-500/30'}`}>
-                            {platformConfig.maintenanceMode ? <ShieldAlert size={26}/> : <ShieldCheck size={26}/>} 
-                        </div>
-                        <div>
-                            <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none mb-1">Protocolo de Bloqueo</h3>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Global Lockdown Control Authority</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={() => setPlatformConfig({...platformConfig, maintenanceMode: !platformConfig.maintenanceMode})}
-                        className={`w-full md:w-auto px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl ${platformConfig.maintenanceMode ? 'bg-red-600 text-white scale-105' : 'bg-slate-800 text-slate-500 hover:text-white'}`}
-                    >
-                        {platformConfig.maintenanceMode ? 'BLOQUEO ACTIVO' : 'INFRAESTRUCTURA LISTA'}
-                    </button>
-                </div>
-
-                <div className="space-y-5 relative z-10">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mensaje de Difusión Global</label>
-                        <input className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl outline-none font-bold text-sm text-white focus:border-blue-500 shadow-inner" value={platformConfig.broadcastMessage} onChange={e => setPlatformConfig({...platformConfig, broadcastMessage: e.target.value})} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha de Mantenimiento</label>
-                            <input type="date" className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl outline-none font-bold text-sm text-white shadow-inner" value={platformConfig.maintenanceDate} onChange={e => setPlatformConfig({...platformConfig, maintenanceDate: e.target.value})} />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Versión del Kernel</label>
-                            <input className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl outline-none font-black text-sm text-blue-500 shadow-inner" value={platformConfig.systemVersion} onChange={e => setPlatformConfig({...platformConfig, systemVersion: e.target.value})} />
-                        </div>
-                    </div>
-                </div>
-
-                <button onClick={handleUpdateConfig} className="w-full bg-blue-600 text-white py-5 rounded-[1.25rem] font-black text-[11px] tracking-[0.28em] uppercase shadow-2xl hover:bg-blue-700 active:scale-95 border-b-4 border-blue-900 transition-all flex items-center justify-center gap-3"><Zap size={18}/> SINCRONIZAR_NUCLEO_NEXUS</button>
-            </div>
-        </div>
-      )}
-
-      {/* AUDITORÍA MASTER */}
-      {activeTab === 'AUDIT' && (
-        <div className="animate-fadeIn px-4 md:px-6 pb-20 max-w-5xl mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-900 pb-5">
-                <div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic leading-none mb-1">Bitácora de Autoridad Master</h3>
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.25em] flex items-center gap-2"><History size={12}/> Transacciones Críticas del Kernel Nexus</p>
-                </div>
-                <button className="w-full md:w-auto p-4 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 shrink-0"><Download size={18}/> <span className="text-[10px] font-black uppercase tracking-widest">EXPORTAR .LOG</span></button>
-            </div>
-            
-            <div className="space-y-3">
-                {masterLogs.map(log => (
-                    <div key={log.id} className="p-5 bg-slate-900/60 rounded-[1.5rem] border border-slate-800/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 group hover:bg-slate-900 hover:border-blue-500/20 transition-all shadow-lg relative overflow-hidden">
-                        <div className="flex items-start md:items-center gap-5 flex-1 min-w-0">
-                            <div className="p-3 bg-slate-800 rounded-xl text-blue-500 border border-slate-700/50 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0 shadow-inner"><Terminal size={20}/></div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="text-base font-black text-white uppercase tracking-tight mb-2 group-hover:text-blue-400 transition-colors">{log.action}</h4>
-                                <p className="text-sm text-slate-500 font-mono italic opacity-90 leading-relaxed break-words bg-slate-950/30 p-4 rounded-xl border border-slate-800/50">{log.detail}</p>
-                            </div>
-                        </div>
-                        <div className="text-left md:text-right shrink-0 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-slate-800/60 flex flex-row md:flex-col justify-between items-center md:items-end">
-                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{formatDate(log.timestamp)}</p>
-                            <p className="text-[10px] font-bold text-slate-700 uppercase flex items-center gap-2 mt-1.5"><Clock size={12}/> {new Date(log.timestamp).toLocaleTimeString('es-DO')}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-      )}
-
-      {/* TIERS / PLANS */}
-      {activeTab === 'PLANS' && (
-          <div className="animate-fadeIn space-y-6 px-4 md:px-6 pb-16">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                 <div>
-                    <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none mb-1">Niveles de Suscripción</h3>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pricing Tiers Authority</p>
-                 </div>
-                 <div className="flex bg-slate-900/60 p-1.5 rounded-xl border border-slate-800 shadow-xl items-center gap-2">
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 ${!isYearly ? 'text-white' : 'text-slate-500'}`}>Mensual</span>
-                    <button 
-                        onClick={() => setIsYearly(!isYearly)}
-                        className="w-12 h-6 bg-blue-600 rounded-full p-1 transition-colors shadow-inner flex items-center relative"
-                    >
-                        <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${isYearly ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                    </button>
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 flex items-center gap-2 ${isYearly ? 'text-emerald-400' : 'text-slate-500'}`}>Anual <span className="bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded text-[8px] border border-emerald-500/20">-10%</span></span>
-                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {plans.map(plan => (
-                      <div key={plan.id} className="bg-slate-900/40 p-6 md:p-7 rounded-[2rem] border border-slate-800 shadow-2xl flex flex-col group hover:border-blue-500/20 transition-all">
-                          <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.25em] mb-3 flex items-center gap-2"><Zap size={12} className="animate-pulse" /> RESOURCE TIER</p>
-                          <h3 className="text-2xl font-black text-white tracking-tighter mb-6 uppercase italic leading-none">{plan.name}</h3>
-                          <div className="space-y-3 mb-8 flex-1">
-                                <div className="flex justify-between items-center p-4 bg-slate-950/40 rounded-2xl border border-slate-800/40">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Max Clientes</span>
-                                    <span className="text-xl font-black text-white tracking-tighter">{plan.maxClients}</span>
-                                </div>
-                                <div className="flex justify-between items-center p-4 bg-slate-950/40 rounded-2xl border border-slate-800/40">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Max Staff</span>
-                                    <span className="text-xl font-black text-white tracking-tighter">{plan.maxUsers}</span>
-                                </div>
-                                <div className="flex justify-between items-center p-4 bg-slate-950/40 rounded-2xl border border-slate-800/40">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sucursales</span>
-                                    <span className="text-xl font-black text-white tracking-tighter">{plan.maxBranches}</span>
-                                </div>
-                                <div className="flex justify-between items-center p-4 bg-slate-950/40 rounded-2xl border border-slate-800/40">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Precio ({isYearly ? 'Anual' : 'Mensual'})</span>
-                                    <span className={`text-xl font-black tracking-tighter ${isYearly ? 'text-emerald-400' : 'text-blue-500'}`}>{formatCurrency(isYearly ? (plan.yearlyPrice || plan.monthlyPrice * 10) : plan.monthlyPrice)}</span>
-                                </div>
-                          </div>
-                          <button onClick={() => { setEditingPlan(plan); setIsPlanModalOpen(true); }} className="w-full py-5 bg-slate-800 text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all active:scale-95 flex items-center justify-center gap-3 border-b-4 border-slate-950 shadow-xl">
-                            <Hammer size={18}/> RECALIBRAR RECURSOS
-                          </button>
-                      </div>
-                  ))}
-              </div>
-          </div>
-      )}
-
-      {/* MODALS */}
-      {isPlanModalOpen && editingPlan && (
-          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[500] flex items-center justify-center p-4">
-              <div className="bg-slate-900 rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden border border-slate-800 animate-scaleIn">
-                  <div className="p-6 bg-slate-800/30 border-b border-slate-800 flex justify-between items-center">
-                    <h3 className="text-lg font-black text-white uppercase tracking-tight italic">Tier: {editingPlan.name}</h3>
-                    <button onClick={() => { setIsPlanModalOpen(false); setEditingPlan(null); }} className="p-2.5 bg-slate-800 rounded-xl text-slate-500 hover:text-red-500 transition-all shadow-inner"><X size={20}/></button>
-                  </div>
-                  <form onSubmit={handleUpdatePlan} className="p-6 space-y-6">
-                      <div className="space-y-4">
-                        <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">MAX_CLIENTES</label><input name="maxClients" type="number" required className="w-full p-4 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-lg text-white focus:border-blue-500 shadow-inner" defaultValue={editingPlan.maxClients} /></div>
-                        <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">MAX_STAFF</label><input name="maxUsers" type="number" required className="w-full p-4 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-lg text-white focus:border-blue-500 shadow-inner" defaultValue={editingPlan.maxUsers} /></div>
-                        <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">MAX_SUCURSALES</label><input name="maxBranches" type="number" required className="w-full p-4 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-lg text-white focus:border-blue-500 shadow-inner" defaultValue={editingPlan.maxBranches || 1} /></div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">PRECIO_MO (DOP)</label><input name="monthlyPrice" type="number" required className="w-full p-4 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-lg text-blue-500 focus:border-blue-500 shadow-inner" defaultValue={editingPlan.monthlyPrice} /></div>
-                            <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">PRECIO_ANUAL (DOP)</label><input name="yearlyPrice" type="number" required className="w-full p-4 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-lg text-emerald-500 focus:border-emerald-500 shadow-inner" defaultValue={editingPlan.yearlyPrice || editingPlan.monthlyPrice * 10} /></div>
-                        </div>
-                      </div>
-                      <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-95 transition-all border-b-4 border-blue-800">Sincronizar Recursos</button>
-                  </form>
-              </div>
-          </div>
-      )}
-
-      {isCompanyModalOpen && (
-          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[500] flex items-center justify-center p-4">
-              <div className="bg-slate-900 rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden border border-slate-800 animate-scaleIn">
-                  <div className="p-6 bg-slate-800/30 border-b border-slate-800 flex justify-between items-center">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight italic">{editingCompany ? 'Recalibrar Nodo' : 'Provisión Nexus Core'}</h3>
-                    <button onClick={() => setIsCompanyModalOpen(false)} className="p-2.5 bg-slate-800 rounded-xl text-slate-500 hover:text-red-500 transition-all shadow-inner"><X size={22}/></button>
-                  </div>
-                  <form onSubmit={handleProvision} className="p-6 space-y-6">
-                      <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial (Legal RD)</label>
-                          <input required className="w-full p-4 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-lg text-white shadow-inner focus:border-blue-500" value={provisionName} onChange={e => setProvisionName(e.target.value)} placeholder="Ej: Presta Fácil RD" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">NIVEL_RECURSO</label>
-                            <select className="w-full p-4 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-[10px] uppercase text-white focus:border-blue-500" value={provisionPlanId} onChange={e => {
-                                const val = e.target.value;
-                                setProvisionPlanId(val);
-                                const p = plans.find(x => x.id === val);
-                                if(p) setProvisionPrice(provisionCycle === 'YEARLY' ? (p.yearlyPrice || p.monthlyPrice * 10) : p.monthlyPrice);
-                            }}>
-                              {plans.map(p => <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>)}
-                            </select>
-                        </div>
-                        <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">CICLO_PAGO</label>
-                            <select className="w-full p-4 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-[10px] uppercase text-white focus:border-blue-500" value={provisionCycle} onChange={e => {
-                                const val = e.target.value as 'MONTHLY' | 'YEARLY';
-                                setProvisionCycle(val);
-                                const p = plans.find(x => x.id === provisionPlanId);
-                                if(p) setProvisionPrice(val === 'YEARLY' ? (p.yearlyPrice || p.monthlyPrice * 10) : p.monthlyPrice);
-                            }}>
-                              <option value="MONTHLY">MENSUAL</option><option value="YEARLY">ANUAL</option>
-                            </select>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Precio Final Pactado (RD$)</label>
-                          <input type="number" className="w-full p-5 bg-slate-950 border-2 border-slate-800 rounded-xl outline-none font-black text-3xl text-blue-500 focus:border-blue-500 shadow-inner" value={provisionPrice} onChange={e => setProvisionPrice(Number(e.target.value))} />
-                      </div>
-                      <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-95 transition-all border-b-4 border-blue-800 flex items-center justify-center gap-3"><Zap size={18}/> {editingCompany ? 'RECALIBRAR_NODO' : 'PROVISIONAR_AHORA'}</button>
-                  </form>
-              </div>
-          </div>
-      )}
+      <div className="mt-8">
+        <p className="text-[15px] font-semibold text-[#111827]">{label}</p>
+        <p className="mt-3 text-[30px] font-semibold leading-none tracking-tight text-[#111827]">{value}</p>
+        <p className="mt-3 max-w-[220px] text-[14px] font-medium leading-6 text-[#6B7280]">{helper}</p>
+      </div>
     </div>
   );
+};
+
+const SectionHeader = ({
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) => (
+  <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+      <h2 className="text-[28px] font-semibold tracking-tight text-[#111827]">{title}</h2>
+      <p className="mt-2 text-[15px] font-medium leading-7 text-[#6B7280]">{description}</p>
+    </div>
+    {actionLabel ? (
+      <button
+        type="button"
+        onClick={onAction}
+        className={`inline-flex h-[50px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[14px] font-semibold text-[#111827] ${motionButtonClass}`}
+      >
+        <Download size={16} />
+        {actionLabel}
+      </button>
+    ) : null}
+  </div>
+);
+
+const SummaryRow = ({ label, value, tone }: { label: string; value: string; tone: 'blue' | 'success' | 'danger' | 'neutral' }) => {
+  const toneClass =
+    tone === 'blue'
+      ? 'text-[#2563EB]'
+      : tone === 'success'
+        ? 'text-[#16A34A]'
+        : tone === 'danger'
+          ? 'text-[#DC2626]'
+          : 'text-[#111827]';
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[#E5E7EB] px-4 py-3">
+      <p className="text-[14px] font-medium text-[#6B7280]">{label}</p>
+      <span className={`text-[14px] font-semibold ${toneClass}`}>{value}</span>
+    </div>
+  );
+};
+
+const ProgressRow = ({ label, value, percent, color }: { label: string; value: string; percent: number; color: string }) => (
+  <div className="space-y-2">
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[13px] font-medium text-[#6B7280]">{label}</span>
+      <span className="text-[13px] font-semibold text-[#111827]">{value}</span>
+    </div>
+    <div className="h-2 overflow-hidden rounded-full bg-[#E5E7EB]">
+      <div className="h-full rounded-full" style={{ width: `${percent}%`, backgroundColor: color }} />
+    </div>
+  </div>
+);
+
+const InfoChip = ({
+  icon: Icon,
+  label,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+}) => (
+  <span className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-[#FCFDFF] px-3 py-1.5">
+    <Icon size={14} className="text-[#2563EB]" />
+    {label}
+  </span>
+);
+
+const StatusBadge = ({ label, tone }: { label: string; tone: 'success' | 'warning' | 'danger' | 'blue' | 'neutral' }) => {
+  const toneMap = {
+    success: 'border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]',
+    warning: 'border-[#FDE68A] bg-[#FFFBEB] text-[#D97706]',
+    danger: 'border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]',
+    blue: 'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]',
+    neutral: 'border-[#E5E7EB] bg-[#F8FAFC] text-[#6B7280]',
+  };
+
+  return <span className={`inline-flex rounded-full border px-3 py-1 text-[12px] font-semibold ${toneMap[tone]}`}>{label}</span>;
+};
+
+const MiniStat = ({ label, value }: { label: string; value: string }) => (
+  <div className="rounded-2xl border border-[#E5E7EB] bg-[#FCFDFF] px-4 py-3 text-center">
+    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">{label}</p>
+    <p className="mt-2 text-[22px] font-semibold text-[#111827]">{value}</p>
+  </div>
+);
+
+const MiniPanel = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex items-center justify-between rounded-[18px] border border-[#E5E7EB] bg-[#FCFDFF] px-4 py-3">
+    <p className="text-[14px] font-medium text-[#6B7280]">{label}</p>
+    <p className="text-[16px] font-semibold text-[#111827]">{value}</p>
+  </div>
+);
+
+const ExportRow = ({ title, detail }: { title: string; detail: string }) => (
+  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-4">
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-[15px] font-semibold text-[#111827]">{title}</p>
+        <p className="mt-2 text-[14px] font-medium leading-7 text-[#6B7280]">{detail}</p>
+      </div>
+      <button type="button" className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#6B7280] ${motionButtonClass}`}>
+        <Download size={16} />
+      </button>
+    </div>
+  </div>
+);
+
+const SidebarInfoCard = ({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  children: React.ReactNode;
+}) => (
+  <div className={`${shellCardClass} p-6`}>
+    <div className="flex items-center gap-3">
+      <Icon size={20} className="text-[#2563EB]" />
+      <h2 className="text-[20px] font-semibold text-[#111827]">{title}</h2>
+    </div>
+    <div className="mt-5 space-y-3">{children}</div>
+  </div>
+);
+
+const ActionListItem = ({
+  icon: Icon,
+  title,
+  detail,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  title: string;
+  detail: string;
+}) => (
+  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-4">
+    <div className="flex items-start gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
+        <Icon size={16} />
+      </div>
+      <div>
+        <p className="text-[15px] font-semibold text-[#111827]">{title}</p>
+        <p className="mt-2 text-[14px] font-medium leading-7 text-[#6B7280]">{detail}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const FieldBlock = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="space-y-2">
+    <label className="text-[12px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">{label}</label>
+    {children}
+  </div>
+);
+
+const ModalFrame = ({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) => (
+  <div className="fixed inset-0 z-[500] flex items-center justify-center bg-[#0F172A]/45 px-4 py-6 backdrop-blur-[2px]">
+    <div className="w-full max-w-2xl overflow-hidden rounded-[32px] border border-[#E5E7EB] bg-white shadow-[0_40px_120px_rgba(15,23,42,0.22)]">
+      <div className="flex items-center justify-between border-b border-[#EEF2F7] px-6 py-5">
+        <h3 className="text-[22px] font-semibold tracking-tight text-[#111827]">{title}</h3>
+        <button
+          type="button"
+          onClick={onClose}
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#6B7280] ${motionButtonClass}`}
+        >
+          <X size={18} />
+        </button>
+      </div>
+      <div className="px-6 py-6">{children}</div>
+    </div>
+  </div>
+);
+
+const getCompanyTone = (status: Company['status']): 'success' | 'warning' | 'danger' | 'neutral' => {
+  if (status === 'ACTIVE') return 'success';
+  if (status === 'TRIAL') return 'warning';
+  if (status === 'SUSPENDED' || status === 'CANCELLED') return 'danger';
+  return 'neutral';
+};
+
+const getUserRoleTone = (role: User['role']): 'success' | 'blue' | 'warning' => {
+  if (role === Role.COBRADOR) return 'success';
+  if (role === Role.SUPERVISOR) return 'warning';
+  return 'blue';
 };

@@ -14,12 +14,15 @@ import {
   removeBranchFromLocalStorage,
   upsertBranchesInLocalStorage,
   upsertCompaniesInLocalStorage,
+  updateUser,
+  upsertUsersInLocalStorage,
 } from '../services/dataService';
 import { Branch, Company, CompanyConfig, Role } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { apiClient, ApiRequestError, ApiUnavailableError } from '../services/apiClient';
 import { readSession } from '../services/authService';
 import { optimizeImageFile } from '../services/imageOptimizer';
+import gsap from 'gsap';
 import { emitPlatformToast, openPlatformCriticalModal, setPlatformLoading } from '../services/platformEvents';
 import { PlatformStateCard } from '../components/PlatformStateCard';
 import {
@@ -38,6 +41,7 @@ import {
   Trash2,
   TrendingUp,
   Wallet,
+  UserRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { formatCurrency } from '../utils';
@@ -121,6 +125,7 @@ const getSettingsNotice = (reason: SettingsFallbackReason | null) => {
 };
 
 const subviews = [
+  { id: 'profile', label: 'Mi Perfil', path: '/settings/profile', icon: UserRound },
   { id: 'overview', label: 'Resumen', path: '/settings', icon: Sliders },
   { id: 'identity', label: 'Marca', path: '/settings/identity', icon: ImageIcon },
   { id: 'collections', label: 'Cobro', path: '/settings/collections', icon: Wallet },
@@ -143,9 +148,10 @@ const SectionShell: React.FC<{
   description: string;
   actions?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ eyebrow, title, description, actions, children }) => (
+  isMainView?: boolean;
+}> = ({ eyebrow, title, description, actions, children, isMainView }) => (
   <div className="space-y-6 pb-24 lg:pb-0">
-    <section>
+    <section data-settings-hero={isMainView ? "" : undefined}>
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <p className="text-[12px] font-black uppercase tracking-[0.24em] text-[#2563EB]">{eyebrow}</p>
@@ -274,31 +280,39 @@ const Field: React.FC<{ label: string; helper?: string; children: React.ReactNod
 const SubviewTabs: React.FC<{
   activeSubview: SubviewId;
   onNavigate: (path: string) => void;
-}> = ({ activeSubview, onNavigate }) => (
-  <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-2 shadow-sm">
-    <div className="flex flex-wrap gap-2">
-      {subviews.map(item => {
-        const active = item.id === activeSubview;
-        const Icon = item.icon;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onNavigate(item.path)}
-            className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${
-              active
-                ? 'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB] shadow-[0_12px_28px_rgba(37,99,235,0.12)]'
-                : 'border-[#E2E8F0] bg-white text-[#64748B] hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB]'
-            }`}
-          >
-            <Icon size={15} />
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
-  </section>
-);
+  canManageSettings: boolean;
+}> = ({ activeSubview, onNavigate, canManageSettings }) => {
+  const visibleSubviews = useMemo(() => {
+    if (!canManageSettings) return subviews.filter(item => item.id === 'profile');
+    return subviews;
+  }, [canManageSettings]);
+
+  return (
+    <section data-settings-menu className="rounded-[28px] border border-[#E5E7EB] bg-white p-2 shadow-sm">
+      <div className="flex flex-wrap gap-2">
+        {visibleSubviews.map(item => {
+          const active = item.id === activeSubview;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onNavigate(item.path)}
+              className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${
+                active
+                  ? 'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB] shadow-[0_12px_28px_rgba(37,99,235,0.12)]'
+                  : 'border-[#E2E8F0] bg-white text-[#64748B] hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB]'
+              }`}
+            >
+              <Icon size={15} />
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
 
 const MoraTypePicker: React.FC<{
   value: CompanyConfig['moraType'];
@@ -363,6 +377,16 @@ const ConfigurationPage: React.FC = () => {
     rnc: '',
     logo: '',
   });
+
+  const [profileForm, setProfileForm] = useState({
+    name: currentUser?.name || '',
+    phone: currentUser?.phone || '',
+    photo: currentUser?.photo || '',
+  });
+
+  const [themePreference, setThemePreference] = useState(() => localStorage.getItem('pref-theme') || 'LIGHT');
+  const [densityPreference, setDensityPreference] = useState(() => localStorage.getItem('pref-density') || 'COMFORTABLE');
+  const [whatsappNotifyPreference, setWhatsappNotifyPreference] = useState(() => localStorage.getItem('pref-whatsapp') === 'true');
 
   const [branchForm, setBranchForm] = useState({
     name: '',
@@ -450,6 +474,12 @@ const ConfigurationPage: React.FC = () => {
   }, [refreshData]);
 
   useEffect(() => {
+    gsap.fromTo('[data-settings-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+    gsap.fromTo('[data-settings-menu]', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out', delay: 0.1 });
+    gsap.fromTo('[data-settings-panel]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.18 });
+  }, []);
+
+  useEffect(() => {
     if (isApiSessionActive) {
       localConfigToastShownRef.current = false;
       localBranchesToastShownRef.current = false;
@@ -482,6 +512,73 @@ const ConfigurationPage: React.FC = () => {
   const resetBranchForm = () => {
     setEditingBranch(null);
     setBranchForm({ name: '', address: '', managerName: '', monthlyGoal: 0, phone: '', logo: '' });
+  };
+
+  const handleProfilePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    void optimizeImageFile(file)
+      .then(photo => setProfileForm(current => ({ ...current, photo })))
+      .catch(() => pushSettingsToast('No pudimos procesar la foto', 'Intenta con un formato diferente o una imagen más ligera.', 'error'));
+  };
+
+  const handleSaveProfile = async () => {
+    if (!currentUser) return;
+    setIsSaving(true);
+    setPlatformLoading({ active: true, label: 'Guardando perfil' });
+
+    try {
+      // Guardar preferencias visuales y operativas en localStorage
+      localStorage.setItem('pref-theme', themePreference);
+      localStorage.setItem('pref-density', densityPreference);
+      localStorage.setItem('pref-whatsapp', String(whatsappNotifyPreference));
+
+      // Guardar datos del usuario de forma persistente en la BD de localStorage
+      updateUser(currentUser.id, {
+        name: profileForm.name,
+        phone: profileForm.phone,
+        photo: profileForm.photo,
+      });
+
+      // Actualizar objeto en sesión actual
+      currentUser.name = profileForm.name;
+      currentUser.phone = profileForm.phone;
+      currentUser.photo = profileForm.photo;
+      
+      // Intentar enviar actualización del perfil al backend si aplica
+      try {
+        const response = await apiClient.updateProfile({
+          name: profileForm.name,
+          phone: profileForm.phone,
+          photo: profileForm.photo,
+        });
+        if (response.data) {
+          upsertUsersInLocalStorage([response.data]);
+        }
+      } catch {
+        // En modo local o de simulacion
+      }
+
+      // Aplicar preferencias en caliente en el DOM
+      const root = document.documentElement;
+      if (themePreference === 'DARK') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+
+      emitPlatformToast({
+        title: 'Perfil y preferencias guardados',
+        message: 'Tus datos y configuración visual de la plataforma han sido actualizados.',
+        tone: 'success',
+      });
+      refreshData();
+    } catch (error) {
+      pushSettingsToast('Error al guardar perfil', error instanceof Error ? error.message : 'No se pudo guardar la configuración.', 'error');
+    } finally {
+      setIsSaving(false);
+      setPlatformLoading({ active: false });
+    }
   };
 
   const handleSaveConfig = async () => {
@@ -704,7 +801,7 @@ const ConfigurationPage: React.FC = () => {
     );
   };
 
-  if (!currentUser || !canManageSettings) {
+  if (!currentUser || (!canManageSettings && activeSubview !== 'profile')) {
     return (
       <div className="space-y-6 pb-24 lg:pb-0">
         <section className="mx-auto max-w-[640px] pt-16">
@@ -728,6 +825,149 @@ const ConfigurationPage: React.FC = () => {
       <ActionButton label="Sucursales" icon={<Building size={18} />} onClick={() => navigate('/settings/branches')} />
     </>
   );
+
+  if (activeSubview === 'profile') {
+    return (
+      <SectionShell
+        eyebrow="Ajustes de usuario"
+        title="Mi Perfil y Preferencias"
+        description="Gestiona tus datos personales, foto de perfil y personaliza la experiencia visual de tu sesión en la plataforma."
+        actions={
+          <ActionButton
+            label={isSaving ? 'Guardando...' : 'Guardar perfil'}
+            icon={<ArrowRight size={18} />}
+            onClick={() => void handleSaveProfile()}
+            primary
+            disabled={isSaving}
+          />
+        }
+      >
+        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} canManageSettings={canManageSettings} />
+        <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+          <Panel title="Información personal" description="Identificación operativa del usuario en la plataforma.">
+            <div className="grid gap-6 xl:grid-cols-[200px_1fr]">
+              <div className="flex flex-col items-center rounded-[24px] border border-[#E5E7EB] bg-[#FCFDFF] p-6 text-center">
+                <div className="relative">
+                  <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-[24px] border-4 border-[#E5E7EB] bg-white">
+                    {profileForm.photo ? (
+                      <img src={profileForm.photo} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      <UserRound size={64} className="text-[#CBD5E1]" />
+                    )}
+                  </div>
+                  <label className="absolute bottom-0 right-0 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl bg-[#111827] text-white shadow-lg transition-all duration-200 hover:translate-x-1">
+                    <Camera size={15} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleProfilePhotoUpload} />
+                  </label>
+                </div>
+                <p className="mt-4 text-[12px] font-medium text-[#64748B]">Sube tu foto para identificarte en rutas, cobros y auditorías.</p>
+              </div>
+
+              <div className="grid gap-5">
+                <Field label="Nombre completo" helper="Tu nombre visible para otros usuarios y en recibos oficiales.">
+                  <input
+                    className={inputClassName}
+                    value={profileForm.name}
+                    onChange={event => setProfileForm(current => ({ ...current, name: cleanTextInput(event.target.value) }))}
+                  />
+                </Field>
+                <Field label="Teléfono de contacto" helper="Teléfono celular para notificaciones o alertas rápidas.">
+                  <input
+                    className={inputClassName}
+                    value={profileForm.phone}
+                    onChange={event => setProfileForm(current => ({ ...current, phone: formatPhoneInput(event.target.value) }))}
+                    placeholder="809-555-4400"
+                    inputMode="numeric"
+                  />
+                </Field>
+                <div className="flex justify-end pt-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveProfile()}
+                    disabled={isSaving}
+                    className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-6 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Panel>
+
+          <div className="space-y-6">
+            <Panel title="Personalización visual" description="Personaliza tu espacio de trabajo.">
+              <div className="space-y-5">
+                <Field label="Tema de la plataforma" helper="Elige cómo se adaptan los colores a tu pantalla.">
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {[
+                      { value: 'LIGHT', label: 'Claro☀️' },
+                      { value: 'DARK', label: 'Oscuro🌙' },
+                    ].map(opt => {
+                      const active = themePreference === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setThemePreference(opt.value)}
+                          className={`rounded-xl border px-3 py-2.5 text-center text-sm font-semibold transition-all duration-200 ${
+                            active
+                              ? 'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB] shadow-sm'
+                              : 'border-[#E5E7EB] bg-white text-[#475569] hover:border-[#DBEAFE]'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                <Field label="Densidad de tablas" helper="Controla la separación de las filas de datos.">
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {[
+                      { value: 'COMFORTABLE', label: 'Cómodo (Normal)' },
+                      { value: 'COMPACT', label: 'Compacto (Móvil)' },
+                    ].map(opt => {
+                      const active = densityPreference === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setDensityPreference(opt.value)}
+                          className={`rounded-xl border px-3 py-2.5 text-center text-sm font-semibold transition-all duration-200 ${
+                            active
+                              ? 'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB] shadow-sm'
+                              : 'border-[#E5E7EB] bg-white text-[#475569] hover:border-[#DBEAFE]'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+
+                <div className="border-t border-[#F1F5F9] pt-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={whatsappNotifyPreference}
+                      onChange={event => setWhatsappNotifyPreference(event.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-[#111827]">Enviar WhatsApp automático</p>
+                      <p className="text-xs text-[#64748B] mt-0.5">Disparar plantilla de recibo al registrar un cobro en vivo.</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </Panel>
+          </div>
+        </section>
+      </SectionShell>
+    );
+  }
 
   if (activeSubview === 'identity') {
     return (
@@ -1191,82 +1431,85 @@ const ConfigurationPage: React.FC = () => {
       title="Centro de configuracion"
       description="Controla identidad, reglas financieras, conducta, mensajeria y sucursales desde un solo modulo administrativo."
       actions={<ActionButton label="Ir a sucursales" icon={<Building size={18} />} onClick={() => navigate('/settings/branches')} primary />}
+      isMainView={true}
     >
-      <SettingsKpiGrid
-        branchesCount={branches.length}
-        branchMonthlyGoal={branchMonthlyGoal}
-        defaultMoraAmount={configForm.defaultMoraAmount}
-        graceDays={configForm.graceDays}
-        whatsappReady={whatsappReady}
-      />
-      <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} />
-      {sessionModeBanner}
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Panel title="Areas de configuracion" description="Accede a las subvistas del modulo con el mismo patron del resto del sistema.">
-          <div className="grid gap-4 md:grid-cols-2">
-            {subviews.filter(item => item.id !== 'overview').map(item => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => navigate(item.path)}
-                  className="group rounded-[28px] border border-[#E5E7EB] bg-white p-5 text-left shadow-sm transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#FCFDFF]"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="mt-5 text-[20px] font-black tracking-tight text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">{item.label}</h3>
-                  <p className="mt-2 text-[14px] font-medium text-[#64748B]">
-                    {item.id === 'identity' && 'Logotipo, nombre legal, RNC y activos de marca.'}
-                    {item.id === 'collections' && 'Mora, dias de gracia y pie de recibo.'}
-                    {item.id === 'scoring' && 'Umbrales de riesgo y conducta operativa.'}
-                    {item.id === 'whatsapp' && 'Mensajes base para clientes y recibos.'}
-                    {item.id === 'branches' && 'Sucursales, metas y responsables visibles.'}
-                    {item.id === 'templates' && 'Diseñador de PDF con drag & drop y configuración visual.'}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </Panel>
+      <div data-settings-panel className="space-y-6">
+        <SettingsKpiGrid
+          branchesCount={branches.length}
+          branchMonthlyGoal={branchMonthlyGoal}
+          defaultMoraAmount={configForm.defaultMoraAmount}
+          graceDays={configForm.graceDays}
+          whatsappReady={whatsappReady}
+        />
+        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} />
+        {sessionModeBanner}
+        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <Panel title="Areas de configuracion" description="Accede a las subvistas del modulo con el mismo patron del resto del sistema.">
+            <div className="grid gap-4 md:grid-cols-2">
+              {subviews.filter(item => item.id !== 'overview').map(item => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => navigate(item.path)}
+                    className="group rounded-[28px] border border-[#E5E7EB] bg-white p-5 text-left shadow-sm transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#FCFDFF]"
+                  >
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
+                      <Icon size={18} />
+                    </div>
+                    <h3 className="mt-5 text-[20px] font-black tracking-tight text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">{item.label}</h3>
+                    <p className="mt-2 text-[14px] font-medium text-[#64748B]">
+                      {item.id === 'identity' && 'Logotipo, nombre legal, RNC y activos de marca.'}
+                      {item.id === 'collections' && 'Mora, dias de gracia y pie de recibo.'}
+                      {item.id === 'scoring' && 'Umbrales de riesgo y conducta operativa.'}
+                      {item.id === 'whatsapp' && 'Mensajes base para clientes y recibos.'}
+                      {item.id === 'branches' && 'Sucursales, metas y responsables visibles.'}
+                      {item.id === 'templates' && 'Diseñador de PDF con drag & drop y configuración visual.'}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </Panel>
 
-        <div className="space-y-6">
-          <Panel title="Estado actual" description="Lectura rapida de la empresa visible.">
-            <div className="space-y-4">
-              <div className="rounded-[24px] border border-[#E5E7EB] px-5 py-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#94A3B8]">Empresa</p>
-                <p className="mt-2 text-[18px] font-bold text-[#111827]">{company?.name || 'PrestaFacil RD'}</p>
+          <div className="space-y-6">
+            <Panel title="Estado actual" description="Lectura rapida de la empresa visible.">
+              <div className="space-y-4">
+                <div className="rounded-[24px] border border-[#E5E7EB] px-5 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#94A3B8]">Empresa</p>
+                  <p className="mt-2 text-[18px] font-bold text-[#111827]">{company?.name || 'PrestaFacil RD'}</p>
+                </div>
+                <div className="rounded-[24px] border border-[#E5E7EB] px-5 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#94A3B8]">Sucursal principal</p>
+                  <p className="mt-2 text-[18px] font-bold text-[#111827]">{branches[0]?.name || 'Sede Principal'}</p>
+                </div>
+                <div className="rounded-[24px] border border-[#E5E7EB] px-5 py-4">
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#94A3B8]">Politica de mora</p>
+                  <p className="mt-2 text-[18px] font-bold text-[#111827]">{getMoraTypeLabel(configForm.moraType)}</p>
+                  <p className="mt-1 text-[13px] font-medium text-[#64748B]">{getMoraTypeSummary(configForm.moraType)}</p>
+                </div>
               </div>
-              <div className="rounded-[24px] border border-[#E5E7EB] px-5 py-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#94A3B8]">Sucursal principal</p>
-                <p className="mt-2 text-[18px] font-bold text-[#111827]">{branches[0]?.name || 'Sede Principal'}</p>
+            </Panel>
+            <Panel title="Acciones recomendadas" description="Proximo paso sugerido para completar el modulo.">
+              <div className="space-y-3">
+                <button type="button" onClick={() => navigate('/settings/identity')} className={`inline-flex h-12 w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] ${horizontalMotionClass}`}>
+                  Completar marca y RNC
+                  <ArrowRight size={16} />
+                </button>
+                <button type="button" onClick={() => navigate('/settings/collections')} className={`inline-flex h-12 w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] ${horizontalMotionClass}`}>
+                  Revisar reglas de cobro
+                  <ArrowRight size={16} />
+                </button>
+                <button type="button" onClick={() => navigate('/settings/branches')} className={`inline-flex h-12 w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] ${horizontalMotionClass}`}>
+                  Validar sucursales visibles
+                  <ArrowRight size={16} />
+                </button>
               </div>
-              <div className="rounded-[24px] border border-[#E5E7EB] px-5 py-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#94A3B8]">Politica de mora</p>
-                <p className="mt-2 text-[18px] font-bold text-[#111827]">{getMoraTypeLabel(configForm.moraType)}</p>
-                <p className="mt-1 text-[13px] font-medium text-[#64748B]">{getMoraTypeSummary(configForm.moraType)}</p>
-              </div>
-            </div>
-          </Panel>
-          <Panel title="Acciones recomendadas" description="Proximo paso sugerido para completar el modulo.">
-            <div className="space-y-3">
-              <button type="button" onClick={() => navigate('/settings/identity')} className={`inline-flex h-12 w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] ${horizontalMotionClass}`}>
-                Completar marca y RNC
-                <ArrowRight size={16} />
-              </button>
-              <button type="button" onClick={() => navigate('/settings/collections')} className={`inline-flex h-12 w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] ${horizontalMotionClass}`}>
-                Revisar reglas de cobro
-                <ArrowRight size={16} />
-              </button>
-              <button type="button" onClick={() => navigate('/settings/branches')} className={`inline-flex h-12 w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] ${horizontalMotionClass}`}>
-                Validar sucursales visibles
-                <ArrowRight size={16} />
-              </button>
-            </div>
-          </Panel>
-        </div>
-      </section>
+            </Panel>
+          </div>
+        </section>
+      </div>
     </SectionShell>
   );
 };

@@ -287,6 +287,7 @@ export const PdfTemplateBuilder: React.FC<{
   const [showNextInstallment, setShowNextInstallment] = useState(true);
   const [showRemainingBalance, setShowRemainingBalance] = useState(true);
   const [includeSignature, setIncludeSignature] = useState(true);
+  const [isDefault, setIsDefault] = useState(false);
   
   const [blocks, setBlocks] = useState<BlockPosition[]>(DEFAULT_BLOCKS);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
@@ -296,7 +297,41 @@ export const PdfTemplateBuilder: React.FC<{
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDeleteTemplate = async () => {
+    if (!selectedTemplateId) return;
+    setPlatformLoading({ active: true, label: 'Eliminando plantilla...' });
+    try {
+      await apiClient.deleteReportTemplate(selectedTemplateId);
+      const { deleteReportTemplateInLocalStorage } = await import('../services/dataService');
+      deleteReportTemplateInLocalStorage(selectedTemplateId);
+
+      emitPlatformToast({
+        title: 'Plantilla eliminada',
+        message: 'La plantilla PDF se borro correctamente.',
+        tone: 'success',
+      });
+
+      setSelectedTemplateId('');
+      setName('Mi Plantilla de Reporte');
+      setBlocks(DEFAULT_BLOCKS);
+      setIsDefault(false);
+      setIsDirty(false);
+      setShowDeleteModal(false);
+      loadTemplates();
+    } catch (err: any) {
+      const msg = err?.message || err?.response?.data?.message || 'No pudimos eliminar la plantilla en este momento.';
+      emitPlatformToast({
+        title: 'Error de eliminacion',
+        message: msg,
+        tone: 'error',
+      });
+    } finally {
+      setPlatformLoading({ active: false });
+    }
+  };
 
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ x: number; y: number; blockX: number; blockY: number } | null>(null);
@@ -334,6 +369,7 @@ export const PdfTemplateBuilder: React.FC<{
     setSelectedTemplateId(template.id);
     setName(template.name);
     setReportTypes(template.reportType ? template.reportType.split(',') : ['CLIENT_STATEMENT']);
+    setIsDefault(template.isDefault);
     
     if (template.config) {
       setPaperSize(template.config.paperSize === 'Oficio' ? 'Carta' : template.config.paperSize || 'Carta');
@@ -365,6 +401,7 @@ export const PdfTemplateBuilder: React.FC<{
     setSelectedTemplateId('');
     setName('Nueva Plantilla Personalizada');
     setBlocks(DEFAULT_BLOCKS);
+    setIsDefault(false);
     setIsDirty(true);
   };
 
@@ -409,6 +446,7 @@ export const PdfTemplateBuilder: React.FC<{
       name,
       reportType: reportTypes.join(','),
       status: 'Activa',
+      isDefault,
       sections: blocks.filter(b => b.visible).map(b => b.id),
       config,
     };
@@ -426,8 +464,9 @@ export const PdfTemplateBuilder: React.FC<{
       }
       setIsDirty(false);
       loadTemplates(targetId);
-    } catch {
-      emitPlatformToast({ title: 'Error de guardado', message: 'No pudimos guardar los cambios en el servidor.', tone: 'error' });
+    } catch (apiError: any) {
+      const errorMessage = apiError?.message || apiError?.response?.data?.message || 'No pudimos guardar los cambios en el servidor.';
+      emitPlatformToast({ title: 'Error de guardado', message: errorMessage, tone: 'error' });
     } finally {
       setIsSaving(false);
       setPlatformLoading({ active: false });
@@ -591,6 +630,16 @@ export const PdfTemplateBuilder: React.FC<{
 
         {/* Botón Guardar con estilo e impacto visual de la SaaS */}
         <div className="flex items-center gap-3">
+          {selectedTemplateId && (
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="inline-flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-600 transition-all duration-200 hover:translate-x-0.5 hover:bg-red-100 hover:text-red-700 cursor-pointer shadow-sm"
+              title="Eliminar plantilla permanentemente"
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
           <button
             type="submit"
             form="pdf-builder-form"
@@ -626,6 +675,25 @@ export const PdfTemplateBuilder: React.FC<{
                 }}
                 placeholder="Ej: Plantilla de Facturas"
               />
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="space-y-0.5">
+                <p className="text-[12px] font-bold text-slate-700">Predeterminada</p>
+                <p className="text-[10px] font-semibold text-slate-400">Usar por defecto en vistas y descargas</p>
+              </div>
+              <label className="relative inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  checked={isDefault}
+                  onChange={event => {
+                    setIsDefault(event.target.checked);
+                    setIsDirty(true);
+                  }}
+                  className="peer sr-only"
+                />
+                <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
+              </label>
             </div>
 
             <div className="space-y-2">
@@ -936,6 +1004,60 @@ export const PdfTemplateBuilder: React.FC<{
               >
                 <Check size={14} />
                 Salir sin guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación Crítica de Eliminación (Estilo SaaS Premium) */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-[platform-fade-in_150ms_ease-out]">
+          <div className="relative w-full max-w-[420px] rounded-[32px] bg-white p-7 shadow-[0_32px_80px_rgba(15,23,42,0.18)] border border-slate-100 animate-[platform-scale-in_200ms_ease-out]">
+            {/* Botón de cerrar X */}
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(false)}
+              className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 transition-all hover:bg-red-50 hover:text-[#DC2626] hover:border-red-100 cursor-pointer shadow-sm"
+            >
+              <X size={18} strokeWidth={2.2} />
+            </button>
+
+            {/* Icono de Papelera en Círculo Rojo */}
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-red-50 text-red-600 border border-red-100 mb-5 transition-transform duration-200">
+              <Trash2 size={28} strokeWidth={2.2} />
+            </div>
+
+            {/* Contenido del Modal */}
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400 text-center">Accion irrevocable</p>
+            <h3 className="text-[20px] font-black tracking-tight text-slate-900 text-center mt-2.5">
+              ¿Eliminar esta plantilla?
+            </h3>
+            
+            <p className="text-[13.5px] font-semibold text-slate-500 text-center mt-3 max-w-[320px] mx-auto leading-relaxed">
+              Estás a punto de borrar la plantilla <span className="font-bold text-slate-800">"{name}"</span>. Esta acción no se puede deshacer y dejará de estar disponible en toda la plataforma.
+            </p>
+
+            {/* Separador */}
+            <div className="my-6 border-t border-slate-100" />
+
+            {/* Acciones */}
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-[13px] font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition-all duration-200 hover:translate-x-0.5"
+              >
+                <X size={14} />
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteTemplate}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#DC2626] px-5 text-[13px] font-bold text-white shadow-[0_12px_24px_rgba(220,38,38,0.22)] hover:bg-red-700 cursor-pointer transition-all duration-200 hover:translate-x-0.5"
+              >
+                <Trash2 size={14} />
+                Eliminar plantilla
               </button>
             </div>
           </div>

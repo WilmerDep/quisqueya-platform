@@ -2,7 +2,8 @@ import {
   Client, Loan, Installment, LoanStatus, PaymentReceipt, 
   Frequency, User, Role, Ficha, FichaType, ActivityEvent, 
   ClientStatus, Branch, Company, RouteStatus, CollectionRoute, RouteItem,
-  VisitLog, PaymentPromise, CashMovement, CompanyConfig, SaaSPlan, GlobalConfig, PlanFeature
+  VisitLog, PaymentPromise, CashMovement, CompanyConfig, SaaSPlan, GlobalConfig, PlanFeature,
+  ReportTemplate
 } from '../types';
 import { generateSchedule } from '../utils';
 
@@ -21,7 +22,8 @@ const STORAGE_KEYS = {
   PROMISES: 'prestard_promises',
   CASH: 'prestard_cash',
   GLOBAL_CONFIG: 'prestard_global_config',
-  MASTER_LOGS: 'prestard_master_logs'
+  MASTER_LOGS: 'prestard_master_logs',
+  REPORT_TEMPLATES: 'prestard_report_templates'
 };
 
 export const getFromStorage = <T>(key: string, defaultValue: T): T => {
@@ -1126,4 +1128,25 @@ export const hasFeature = (cid: string, f: string) => {
     const plan = getCompanyPlan(cid);
     if (!plan) return true;
     return plan.features.includes(f as PlanFeature);
+};
+
+export const getReportTemplates = () => getFromStorage<ReportTemplate[]>(STORAGE_KEYS.REPORT_TEMPLATES, []);
+export const upsertReportTemplatesInLocalStorage = (templates: ReportTemplate[]) => {
+  const current = getReportTemplates();
+  const next = [...current];
+  templates.forEach(t => {
+    const idx = next.findIndex(x => x.id === t.id);
+    if (idx !== -1) {
+      next[idx] = { ...next[idx], ...t };
+    } else {
+      next.push(t);
+    }
+  });
+  saveToStorage(STORAGE_KEYS.REPORT_TEMPLATES, next);
+};
+
+export const deleteReportTemplateInLocalStorage = (templateId: string) => {
+  const current = getReportTemplates();
+  const next = current.filter(t => t.id !== templateId);
+  saveToStorage(STORAGE_KEYS.REPORT_TEMPLATES, next);
 };

@@ -1,4 +1,4 @@
-import { Branch, CashMovement, Client, Loan, User } from '../types';
+import { Branch, CashMovement, Client, Loan, Role, User } from '../types';
 import {
   getBranches,
   getCashMovements,
@@ -37,17 +37,45 @@ export const getScopedUsers = (user: User, branchId?: string) => {
 export const getScopedClients = (user: User, branchId?: string) => {
   const scope = getBranchScope(user);
   const effectiveBranchId = branchId || scope.defaultBranchId;
-  return getClients(user.companyId).filter(item => scope.visibleBranchIds.includes(item.branchId) && (!effectiveBranchId || item.branchId === effectiveBranchId));
+  const isCollector = user.role === Role.COBRADOR;
+
+  return getClients(user.companyId).filter(item => {
+    const matchesBranch = scope.visibleBranchIds.includes(item.branchId) && (!effectiveBranchId || item.branchId === effectiveBranchId);
+    if (!matchesBranch) return false;
+    if (isCollector) {
+      return item.assignedUserId === user.id;
+    }
+    return true;
+  });
 };
 
 export const getScopedLoans = (user: User, branchId?: string) => {
   const scope = getBranchScope(user);
   const effectiveBranchId = branchId || scope.defaultBranchId;
-  return getLoans(user.companyId).filter(item => scope.visibleBranchIds.includes(item.branchId) && (!effectiveBranchId || item.branchId === effectiveBranchId));
+  const isCollector = user.role === Role.COBRADOR;
+
+  // Obtener primero los IDs de clientes permitidos
+  const allowedClientIds = new Set(getScopedClients(user, effectiveBranchId).map(c => c.id));
+
+  return getLoans(user.companyId).filter(item => {
+    const matchesBranch = scope.visibleBranchIds.includes(item.branchId) && (!effectiveBranchId || item.branchId === effectiveBranchId);
+    if (!matchesBranch) return false;
+    return allowedClientIds.has(item.clientId);
+  });
 };
 
 export const getScopedCashMovements = (user: User, branchId?: string): CashMovement[] => {
   const scope = getBranchScope(user);
   const effectiveBranchId = branchId || scope.defaultBranchId;
-  return getCashMovements(user.companyId, effectiveBranchId).filter(item => scope.visibleBranchIds.includes(item.branchId));
+  const isCollector = user.role === Role.COBRADOR;
+
+  return getCashMovements(user.companyId, effectiveBranchId).filter(item => {
+    const matchesBranch = scope.visibleBranchIds.includes(item.branchId);
+    if (!matchesBranch) return false;
+    if (isCollector) {
+      // Un cobrador solo ve sus propios movimientos de caja
+      return item.userId === user.id;
+    }
+    return true;
+  });
 };

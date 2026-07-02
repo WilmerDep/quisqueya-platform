@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import {
@@ -26,6 +27,7 @@ import {
   Users,
   Wallet,
   X,
+  Satellite,
 } from 'lucide-react';
 import {
   closeRoute,
@@ -39,6 +41,8 @@ import {
   upsertClientsInLocalStorage,
   upsertLoansInLocalStorage,
   upsertRoutesInLocalStorage,
+  getReportTemplates,
+  upsertReportTemplatesInLocalStorage,
 } from '../services/dataService';
 import { getBranchScope, getScopedUsers } from '../services/viewScope';
 import { Branch, CollectionRoute, ReportTemplate, Role, RouteItem, RouteStatus, User } from '../types';
@@ -48,6 +52,7 @@ import { CollectionModal } from '../components/CollectionModal';
 import { apiClient, ApiRequestError, ApiUnavailableError } from '../services/apiClient';
 import { Badge } from '../components/ui/Badge';
 import { ClientAvatar } from '../components/ui/ClientAvatar';
+import { LiveRouteMap } from '../components/LiveRouteMap';
 import {
   buildPlatformPdfFileName,
   createPlatformPdfDoc,
@@ -96,13 +101,17 @@ type RouteRow = {
 export const RoutesPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const { currentUser, selectedBranchId, setSelectedBranchId } = useAuth();
   const pageRef = useRef<HTMLDivElement>(null);
-  const [routes, setRoutes] = useState<CollectionRoute[]>([]);
+  const [routes, setRoutes] = useState<CollectionRoute[]>(() => {
+    if (!currentUser) return [];
+    return getRoutes(currentUser.companyId, selectedBranchId || currentUser.branchId);
+  });
   const [collectors, setCollectors] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState('');
-  const [selectedCollectorFilter, setSelectedCollectorFilter] = useState('');
+  const [selectedCollectorFilter, setSelectedCollectorFilter] = useState(() =>
+    currentUser?.role === Role.COBRADOR ? currentUser.id : ''
+  );
   const [selectedStatus, setSelectedStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,9 +128,34 @@ export const RoutesPage: React.FC = () => {
   const [pendingInstallments, setPendingInstallments] = useState<any[]>([]);
   const [selectedInstallments, setSelectedInstallments] = useState<string[]>([]);
   const [formError, setFormError] = useState('');
-  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>([]);
+  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>(() => getReportTemplates());
   const [selectedPdfTemplateId, setSelectedPdfTemplateId] = useState('');
   const [hoveredRouteSegment, setHoveredRouteSegment] = useState<string | null>(null);
+  
+  const [currentView, setCurrentView] = useState<'list' | 'detail' | 'tracking'>('list');
+  const [initialSelectedClientId, setInitialSelectedClientId] = useState<string | null>(null);
+
+  const isTrackingLive = useMemo(() => {
+    return currentView === 'tracking';
+  }, [currentView]);
+
+  const handleToggleTracking = (active: boolean) => {
+    if (active) {
+      setCurrentView('tracking');
+    } else {
+      setCurrentView('detail');
+    }
+  };
+
+  const handleSelectRoute = (routeId: string | null) => {
+    setActiveRouteId(routeId);
+    if (routeId) {
+      setCurrentView('detail');
+      setDetailTab('summary');
+    } else {
+      setCurrentView('list');
+    }
+  };
 
   const isCollector = currentUser?.role === Role.COBRADOR;
   const company = useMemo(
@@ -137,7 +171,6 @@ export const RoutesPage: React.FC = () => {
 
   useEffect(() => {
     if (!currentUser) return;
-    setSelectedBranchId(currentUser.branchId);
     setBranches(branchScope.branches);
   }, [branchScope, currentUser]);
 
@@ -149,17 +182,20 @@ export const RoutesPage: React.FC = () => {
     if (!currentUser) return;
     apiClient
       .listReportTemplates()
-      .then(response => setReportTemplates(response.data))
-      .catch(() => setReportTemplates([]));
+      .then(response => {
+        upsertReportTemplatesInLocalStorage(response.data);
+        setReportTemplates(response.data);
+      })
+      .catch(() => {
+        setReportTemplates(getReportTemplates());
+      });
   }, [currentUser]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedBranchId, selectedCollectorFilter, selectedStatus]);
 
-  useEffect(() => {
-    setDetailTab('summary');
-  }, [activeRouteId]);
+
 
   const availablePdfTemplates = useMemo(
     () => reportTemplates.filter(template => template.status !== 'Archivada' && template.reportType && template.reportType.split(',').includes('COLLECTION_ROUTE')),
@@ -201,6 +237,18 @@ export const RoutesPage: React.FC = () => {
   }, [availablePdfTemplates, currentUser?.companyId, fallbackPdfTemplate, selectedPdfTemplateId]);
 
   useEffect(() => {
+    const routeState = (location.state || {}) as { trackingRouteId?: string; clientId?: string };
+    if (routeState.trackingRouteId) {
+      setActiveRouteId(routeState.trackingRouteId);
+      if (routeState.clientId) {
+        setInitialSelectedClientId(routeState.clientId);
+      }
+      setCurrentView('tracking');
+      navigate('/routes', { replace: true });
+    }
+  }, [location.state, navigate]);
+
+  useEffect(() => {
     if (!pageRef.current) return;
 
     const ctx = gsap.context(() => {
@@ -220,7 +268,7 @@ export const RoutesPage: React.FC = () => {
     }, pageRef);
 
     return () => ctx.revert();
-  }, [activeRouteId]);
+  }, [currentView]);
 
   const loadBaseData = async () => {
     if (!currentUser) return;
@@ -1099,6 +1147,52 @@ export const RoutesPage: React.FC = () => {
     );
   }
 
+  if (activeRouteId && isTrackingLive) {
+    if (!activeRouteData) {
+      return createPortal(
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#1B2333] text-white font-sans">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent mx-auto"></div>
+            <p className="text-[11px] font-black tracking-[0.2em] text-slate-400 uppercase">Cargando consola GPS...</p>
+          </div>
+        </div>,
+        document.body
+      );
+    }
+
+    const activeCollector = collectors.find(user => user.id === activeRouteData.collectorId);
+    const activeRow = routeRows.find(row => row.id === activeRouteData.id);
+    const routeCode = activeRow?.code || `RT-${activeRouteData.id.slice(0, 4).toUpperCase()}`;
+
+    return createPortal(
+      <LiveRouteMap 
+        items={activeRouteData.items.map(item => {
+          const client = getClientById(item.clientId);
+          return {
+            id: item.clientId,
+            clientName: item.clientName,
+            amountToCollect: item.amountToCollect,
+            order: item.order,
+            visitStatus: item.visitStatus as any,
+            address: item.address || 'Dirección de entrega',
+            photo: client?.photo,
+            latitude: client?.latitude ? Number(client.latitude) : undefined,
+            longitude: client?.longitude ? Number(client.longitude) : undefined
+          };
+        })}
+        collectorName={activeCollector?.name}
+        collectorPhone={activeCollector?.phone}
+        onBack={() => {
+          handleToggleTracking(false);
+          setInitialSelectedClientId(null);
+        }}
+        routeCode={routeCode}
+        initialSelectedClientId={initialSelectedClientId}
+      />,
+      document.body
+    );
+  }
+
   if (activeRouteId && activeRouteData) {
     const activeCollector = collectors.find(user => user.id === activeRouteData.collectorId);
     const activeBranchData = branches.find(branch => branch.id === activeRouteData.branchId);
@@ -1335,7 +1429,10 @@ export const RoutesPage: React.FC = () => {
                             <div className="group/tooltip relative">
                               <button
                                 type="button"
-                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.address)}`, '_blank')}
+                                onClick={() => {
+                                  setInitialSelectedClientId(item.clientId);
+                                  handleToggleTracking(true);
+                                }}
                                 className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#111827] ${horizontalMotionClass}`}
                                 aria-label="Abrir mapa"
                               >
@@ -1428,32 +1525,23 @@ export const RoutesPage: React.FC = () => {
               )}
 
               {detailTab === 'map' && (
-                <div className="px-6 py-6">
-                  <div className="overflow-hidden rounded-[24px] border border-dashed border-[#E5E7EB] bg-[#F8FAFC] p-6">
-                    <div className="overflow-hidden rounded-[20px] border border-[#DBEAFE] bg-white shadow-[0_18px_36px_rgba(37,99,235,0.08)]">
-                      <iframe
-                        title="Mapa de cobertura de la ruta"
-                        src={mapEmbedUrl}
-                        className="h-[320px] w-full border-0"
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                      />
-                    </div>
-                    <div className="mt-4 flex items-center justify-between gap-4 rounded-[20px] bg-white px-4 py-3">
-                      <div>
-                        <p className="text-[14px] font-semibold text-[#111827]">Cobertura actual de la ruta</p>
-                        <p className="mt-1 text-[13px] font-medium text-[#64748B]">Mini mapa operativo; el live tracking estilo Uber lo integramos en la siguiente fase.</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${mapTarget}`, '_blank')}
-                      className={`mt-4 inline-flex items-center gap-2 text-[14px] font-semibold text-[#2563EB] ${horizontalMotionClass}`}
-                    >
-                      <MapPin size={16} />
-                      Ver mapa completo
-                    </button>
+                <div className="px-6 py-12 text-center max-w-md mx-auto">
+                  <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <span className="absolute h-full w-full animate-ping rounded-full bg-blue-400 opacity-30" />
+                    <Satellite size={28} />
                   </div>
+                  <h3 className="mt-6 text-[22px] font-black tracking-tight text-[#111827]">Live GPS tracking</h3>
+                  <p className="mt-2 text-[14px] font-medium text-[#64748B] leading-relaxed">
+                    Despliega la consola satelital interactiva a ancho completo en tu monitor para monitorear la ruta en tiempo real estilo Uber.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleTracking(true)}
+                    className="mt-6 inline-flex h-12 items-center gap-2 rounded-2xl bg-blue-600 px-6 text-[14px] font-bold text-white shadow-[0_16px_36px_rgba(37,99,235,0.24)] hover:bg-blue-700 transition cursor-pointer"
+                  >
+                    <Navigation size={16} className="fill-current" />
+                    Abrir consola en ancho completo
+                  </button>
                 </div>
               )}
 
@@ -1581,26 +1669,29 @@ export const RoutesPage: React.FC = () => {
               </div>
             </article>
 
-            <article data-routes-panel className="rounded-[32px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+            <article data-routes-panel className="rounded-[32px] border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all duration-200 hover:border-[#DBEAFE] hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
               <h2 className="text-[28px] font-black tracking-tight text-[#111827]">Mapa / recorrido</h2>
-              <div className="mt-5 overflow-hidden rounded-[24px] border border-dashed border-[#E5E7EB] bg-[#F8FAFC] p-6">
-                <div className="overflow-hidden rounded-[20px] border border-[#DBEAFE] bg-white shadow-[0_18px_36px_rgba(37,99,235,0.08)]">
-                  <iframe
-                    title="Mini mapa de la ruta"
-                    src={mapEmbedUrl}
-                    className="h-44 w-full border-0"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+              <p className="mt-2 text-[15px] font-medium text-[#64748B]">Monitoreo satelital activo de cobros.</p>
+              <div className="mt-5 rounded-[24px] border border-slate-100 bg-slate-50 p-5">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <span className="absolute h-full w-full animate-ping rounded-full bg-blue-400 opacity-40" />
+                    <Satellite size={18} />
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-bold text-slate-800">Señal GPS en línea</p>
+                    <p className="text-[12px] font-medium text-slate-500">Rastreo activo estilo Uber habilitado</p>
+                  </div>
                 </div>
-                <p className="mt-3 text-[13px] font-medium text-[#64748B]">Mini mapa operativo de la ruta actual. El live tracking lo montamos cuando integremos la capa GPS.</p>
                 <button
                   type="button"
-                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeBranchData?.address || activeBranchData?.name || 'Ruta')}`, '_blank')}
-                  className="mt-4 inline-flex items-center gap-2 text-[14px] font-semibold text-[#2563EB]"
+                  onClick={() => {
+                    handleToggleTracking(true);
+                  }}
+                  className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-xs font-bold text-white hover:bg-blue-700 transition cursor-pointer"
                 >
-                  <MapPin size={16} />
-                  Ver mapa completo
+                  <Navigation size={14} className="fill-current" />
+                  Abrir Live Tracking
                 </button>
               </div>
             </article>
@@ -1720,7 +1811,8 @@ export const RoutesPage: React.FC = () => {
           <FilterDropdown
             value={selectedCollectorFilter}
             onChange={setSelectedCollectorFilter}
-            placeholder="Todos los cobradores"
+            placeholder={currentUser?.role === Role.COBRADOR ? currentUser.name : "Todos los cobradores"}
+            disabled={currentUser?.role === Role.COBRADOR}
             options={collectors.map(collector => ({ value: collector.id, label: collector.name }))}
           />
           <FilterDropdown
@@ -1740,7 +1832,13 @@ export const RoutesPage: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={resetFilters}
+            onClick={() => {
+              setSelectedBranchId(canSeeAllCompanyUsers ? '' : currentUser.branchId);
+              setSelectedCollectorFilter(currentUser?.role === Role.COBRADOR ? currentUser.id : '');
+              setSelectedStatus('');
+              setSearchTerm('');
+              setCurrentPage(1);
+            }}
             className={`inline-flex h-[56px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[15px] font-semibold text-[#111827] ${horizontalMotionClass}`}
           >
             <Filter size={18} />
@@ -1791,7 +1889,15 @@ export const RoutesPage: React.FC = () => {
                 <div key={row.id} data-routes-row className="group px-4 py-3 transition-colors duration-200 hover:bg-[#FCFDFF]">
                   <div className="grid grid-cols-[minmax(220px,1.55fr)_minmax(140px,0.8fr)_minmax(120px,0.72fr)_minmax(120px,0.72fr)_96px_72px] items-center gap-4 rounded-[24px] px-2 py-2">
                     <div className="min-w-0 transition-transform duration-200 group-hover:translate-x-2">
-                      <button type="button" onClick={() => setActiveRouteId(row.id)} className="min-w-0 text-left">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          isCollector
+                            ? navigate('/collect-today', { state: { focusClientId: row.route.items[0]?.clientId } })
+                            : handleSelectRoute(row.id)
+                        }
+                        className="min-w-0 text-left"
+                      >
                         <p className="truncate text-[17px] font-bold text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">{row.code}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-medium text-[#64748B]">
                           <span>{formatDate(row.route.date)}</span>
@@ -1825,7 +1931,11 @@ export const RoutesPage: React.FC = () => {
                       <div className="group/tooltip relative">
                         <button
                           type="button"
-                          onClick={() => setActiveRouteId(row.id)}
+                          onClick={() =>
+                            isCollector
+                              ? navigate('/collect-today', { state: { focusClientId: row.route.items[0]?.clientId } })
+                              : handleSelectRoute(row.id)
+                          }
                           className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#111827] ${horizontalMotionClass}`}
                           aria-label="Abrir ruta"
                         >
@@ -1919,7 +2029,7 @@ export const RoutesPage: React.FC = () => {
                     <button
                       key={route.id}
                       type="button"
-                      onClick={() => setActiveRouteId(route.id)}
+                      onClick={() => handleSelectRoute(route.id)}
                       data-routes-row
                       className={`group flex w-full flex-col rounded-[26px] border bg-white p-5 text-left shadow-sm ${horizontalMotionClass}`}
                     >

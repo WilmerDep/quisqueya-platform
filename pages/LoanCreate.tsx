@@ -186,6 +186,18 @@ export const LoanCreate: React.FC = () => {
   const scoreValue =
     selectedClient?.creditRating === 'BUENA' ? 82 : selectedClient?.creditRating === 'MALA' ? 48 : 65;
 
+  const hasSundayDue = useMemo(() => {
+    return schedule.some(item => {
+      // Ajustar zona horaria local de la fecha
+      const date = new Date(item.dueDate + 'T00:00:00');
+      return date.getDay() === 0;
+    });
+  }, [schedule]);
+
+  const paymentRatioRisk = useMemo(() => {
+    return quotaAmount > amount * 0.12 && scoreValue < 70;
+  }, [quotaAmount, amount, scoreValue]);
+
   const validationRows = [
     { label: 'Cliente activo', value: selectedClient?.status === ClientStatus.APPROVED ? 'Correcto' : 'Pendiente', ok: selectedClient?.status === ClientStatus.APPROVED },
     { label: 'Sin bloqueo vigente', value: selectedClient?.isBlocked ? 'Bloqueado' : 'Correcto', ok: !selectedClient?.isBlocked },
@@ -753,6 +765,26 @@ export const LoanCreate: React.FC = () => {
                   </div>
                 ))}
               </div>
+
+              {(hasSundayDue || paymentRatioRisk) && (
+                <div className="mt-6 space-y-3 border-t border-[#F1F5F9] pt-5">
+                  <p className="text-[12px] font-black uppercase tracking-[0.15em] text-[#94A3B8]">Alertas de Riesgo</p>
+                  
+                  {hasSundayDue && (
+                    <div className="flex items-start gap-2 rounded-2xl bg-[#FFFBEB] p-3 text-[13px] font-medium text-[#92400E] border border-[#FDE68A]">
+                      <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                      <span>Algunas cuotas coinciden con Domingo. Se recomienda ajustar la fecha de inicio.</span>
+                    </div>
+                  )}
+
+                  {paymentRatioRisk && (
+                    <div className="flex items-start gap-2 rounded-2xl bg-[#FEE2E2] p-3 text-[13px] font-medium text-[#B91C1C] border border-[#FCA5A5]">
+                      <AlertTriangle size={16} className="shrink-0 mt-0.5 text-[#DC2626]" />
+                      <span>Cuota elevada para el score del cliente. Riesgo de impago potencial.</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
 
             <section className="rounded-[30px] border border-[#E5E7EB] bg-white p-7 shadow-sm">

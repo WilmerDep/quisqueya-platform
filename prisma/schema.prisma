@@ -323,6 +323,7 @@ model CollectionRoute {
   branch      Branch      @relation(fields: [branchId], references: [id])
   collector   User        @relation(fields: [collectorId], references: [id])
   items       RouteItem[]
+  trackingPoints RouteTrackingPoint[]
 
   @@index([companyId, branchId, date], map: "idx_routes_company_branch_date")
   @@index([companyId], map: "idx_routes_company")
@@ -543,4 +544,21 @@ model SyncQueue {
   @@index([companyId], map: "idx_sync_company")
   @@index([userId, status], map: "idx_sync_user_status")
   @@map("sync_queue")
+}
+
+model RouteTrackingPoint {
+  id          String   @id @db.VarChar(64)
+  routeId     String   @map("route_id") @db.VarChar(64)
+  collectorId String   @map("collector_id") @db.VarChar(64)
+  latitude    Decimal  @db.Decimal(10, 7)
+  longitude   Decimal  @db.Decimal(10, 7)
+  accuracy    Decimal  @db.Decimal(5, 2)
+  speed       Decimal  @db.Decimal(5, 2)
+  heading     Decimal  @db.Decimal(5, 2)
+  battery     Int
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  route       CollectionRoute @relation(fields: [routeId], references: [id])
+
+  @@index([routeId], map: "idx_tracking_route")
+  @@map("route_tracking_points")
 }

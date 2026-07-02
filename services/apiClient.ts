@@ -145,8 +145,10 @@ const request = async <T>(path: string, options: RequestInit = {}, allowRetry = 
     if (error instanceof ApiRequestError && error.status === 401 && allowRetry) {
       const nextToken = await refreshAccessToken();
       if (nextToken) {
-        const nextHeaders = new Headers(options.headers || {});
-        nextHeaders.set('Authorization', `Bearer ${nextToken}`);
+        const nextHeaders = {
+          ...(options.headers || {}),
+          Authorization: `Bearer ${nextToken}`,
+        };
         return request<T>(
           path,
           {
@@ -420,6 +422,13 @@ export const apiClient = {
       method: 'PATCH',
       headers: authHeaders(),
       body: JSON.stringify(payload),
+    });
+  },
+  
+  async deleteReportTemplate(templateId: string): Promise<{ success: boolean; id: string }> {
+    return request<{ success: boolean; id: string }>(`/reports/templates/${templateId}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
     });
   },
 

@@ -19,6 +19,8 @@ import {
   upsertLoansInLocalStorage,
   upsertPaymentsInLocalStorage,
   voidPayment,
+  getReportTemplates,
+  upsertReportTemplatesInLocalStorage,
 } from '../services/dataService';
 import { getBranchScope, getScopedUsers } from '../services/viewScope';
 import {
@@ -131,7 +133,7 @@ export const ClientProfile: React.FC = () => {
   const [payments, setPayments] = useState<PaymentReceipt[]>([]);
   const [visits, setVisits] = useState<VisitLog[]>([]);
   const [promises, setPromises] = useState<PaymentPromise[]>([]);
-  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>([]);
+  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>(() => getReportTemplates());
   const [selectedPdfTemplateId, setSelectedPdfTemplateId] = useState<string>('');
   const [company, setCompany] = useState<Company | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<TabKey>('RESUMEN');
@@ -156,6 +158,13 @@ export const ClientProfile: React.FC = () => {
   const branchScope = useMemo(() => (currentUser ? getBranchScope(currentUser) : null), [currentUser]);
   const visibleBranchIds = branchScope?.visibleBranchIds || [];
 
+  const visibleTabs = useMemo(() => {
+    if (isCollector) {
+      return tabs.filter(t => t.key !== 'EDITAR' && t.key !== 'FICHAS');
+    }
+    return tabs;
+  }, [isCollector]);
+
   useEffect(() => {
     if (currentUser) {
       setUsers(getScopedUsers(currentUser));
@@ -167,19 +176,20 @@ export const ClientProfile: React.FC = () => {
 
   useEffect(() => {
     if (!currentUser) return;
-
+ 
     let cancelled = false;
     void apiClient
       .listReportTemplates()
       .then(response => {
         if (cancelled) return;
+        upsertReportTemplatesInLocalStorage(response.data);
         setReportTemplates(response.data);
       })
       .catch(() => {
         if (cancelled) return;
-        setReportTemplates([]);
+        setReportTemplates(getReportTemplates());
       });
-
+ 
     return () => {
       cancelled = true;
     };
@@ -214,14 +224,16 @@ export const ClientProfile: React.FC = () => {
     let clientPayments = getClientPayments(clientId);
 
     try {
-      const [clientsResponse, loansResponse, paymentsResponse] = await Promise.all([
+      const [clientsResponse, loansResponse, paymentsResponse, templatesResponse] = await Promise.all([
         apiClient.listClients(),
         apiClient.listLoans(),
         apiClient.listPayments(),
+        apiClient.listReportTemplates(),
       ]);
       upsertClientsInLocalStorage(clientsResponse.data);
       upsertLoansInLocalStorage(loansResponse.data);
       upsertPaymentsInLocalStorage(paymentsResponse.data);
+      setReportTemplates(templatesResponse.data);
       localClient = clientsResponse.data.find(item => item.id === clientId);
       clientLoans = loansResponse.data.filter(loan => loan.clientId === clientId);
       const loanIds = new Set(clientLoans.map(loan => loan.id));
@@ -1098,14 +1110,16 @@ export const ClientProfile: React.FC = () => {
           <div className="flex items-start gap-5">
             <ClientAvatar
               client={client}
-              className="h-28 w-28 rounded-2xl"
+              className="h-28 w-28 rounded-2xl shadow-[0_10px_25px_rgba(37,99,235,0.08)]"
               textClassName="text-[42px] font-black text-[#2563EB]"
             />
             <div className="min-w-0">
-              <p className="text-[42px] font-black tracking-tight text-[#111827]">
+              <p className="text-[36px] font-black tracking-tight text-[#111827]">
                 {client.firstName} {client.lastName}
               </p>
-              <p className="text-lg font-medium text-[#6B7280]">{client.nickname || '-'}</p>
+              {client.nickname && (
+                <p className="text-md font-bold italic text-[#2563EB] mt-0.5">{client.nickname}</p>
+              )}
               <div className="mt-4 flex flex-wrap gap-5 text-sm font-medium text-[#374151]">
                 <span className="inline-flex items-center gap-2">
                   <Phone size={16} className="text-[#2563EB]" />
@@ -1117,7 +1131,7 @@ export const ClientProfile: React.FC = () => {
                 </span>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-medium text-[#374151]">
-                <span className="text-[#64748B]">Cobrador asignado</span>
+                <span className="text-[#64748B]">Cobrador asignado:</span>
                 <span className="inline-flex items-center gap-2 rounded-full bg-[#F8FAFC] px-3 py-1">
                   <UserRound size={14} className="text-[#2563EB]" />
                   {assignedOfficial?.name || 'Sin asignar'}
@@ -1131,8 +1145,41 @@ export const ClientProfile: React.FC = () => {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <HeaderBadge label="Estado" value={client.isBlocked ? 'Bloqueado' : 'Activo'} tone={client.isBlocked ? 'warn' : 'ok'} />
-            <HeaderBadge label="Score" value={`${portfolioSummary.score}/100`} tone="ok" />
+            <div className="rounded-[22px] border border-[#F1F5F9] bg-[#FCFDFF] p-5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#94A3B8]">Estado Operativo</span>
+              <div className="mt-3">
+                {client.isBlocked ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#FEE2E2] px-3 py-1.5 text-[14px] font-black text-[#DC2626]">
+                    <XCircle size={16} className="text-[#DC2626]" />
+                    Bloqueado
+                  </span>
+                ) : loans.some(loan => loan.status === 'En Mora') ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#FEF3C7] px-3 py-1.5 text-[14px] font-black text-[#D97706]">
+                    <AlertTriangle size={16} className="text-[#D97706]" />
+                    En Mora
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#DCFCE7] px-3 py-1.5 text-[14px] font-black text-[#16A34A]">
+                    <CheckCircle2 size={16} className="text-[#16A34A]" />
+                    Al Día
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-[#F1F5F9] bg-[#FCFDFF] p-5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#94A3B8]">Calificación Crediticia</span>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-[28px] font-black text-[#111827]">{portfolioSummary.score} <span className="text-xs font-medium text-[#94A3B8]">/100</span></span>
+                {client.creditRating === FichaType.BUENA ? (
+                  <span className="rounded-lg bg-[#DCFCE7] px-2.5 py-0.5 text-[11px] font-bold text-[#16A34A]">BUENA</span>
+                ) : client.creditRating === FichaType.MALA ? (
+                  <span className="rounded-lg bg-[#FEE2E2] px-2.5 py-0.5 text-[11px] font-bold text-[#DC2626]">MALA</span>
+                ) : (
+                  <span className="rounded-lg bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-bold text-[#D97706]">REGULAR</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1150,7 +1197,7 @@ export const ClientProfile: React.FC = () => {
           <div className="rounded-[30px] border border-[#E5E7EB] bg-white shadow-sm">
             <div className="border-b border-[#E5E7EB] px-5 py-5">
               <div className="hidden xl:flex xl:flex-wrap xl:gap-3">
-                {tabs.map(tab => (
+                {visibleTabs.map(tab => (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
@@ -1167,7 +1214,7 @@ export const ClientProfile: React.FC = () => {
               </div>
               <div className="overflow-x-auto xl:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex min-w-max items-center gap-2 whitespace-nowrap pb-1">
-                  {tabs.map(tab => (
+                  {visibleTabs.map(tab => (
                     <button
                       key={tab.key}
                       onClick={() => setActiveTab(tab.key)}
@@ -1894,8 +1941,8 @@ export const ClientProfile: React.FC = () => {
                               </td>
                             </tr>
                           ) : (statementView === 'statement' ? loans : recentPayments).map(item => (
-                            <tr key={'loanId' in item ? item.id : item.id} className="border-t border-[#F1F5F9] text-[14px] font-medium text-[#374151]">
-                              {'loanId' in item ? (
+                             <tr key={item.id} className="border-t border-[#F1F5F9] text-[14px] font-medium text-[#374151]">
+                               {statementView === 'statement' ? (
                                 <>
                                   <td className="px-5 py-4 font-semibold text-[#111827]">{getShortId(item.id)}</td>
                                   <td className="px-5 py-4">{formatCurrency(item.amount)}</td>

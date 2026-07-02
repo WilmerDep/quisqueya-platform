@@ -26,11 +26,13 @@ import {
   Users,
   Wallet,
   X,
+  MoreVertical,
 } from 'lucide-react';
 import {
   closeRoute,
   createRoute,
   getClientById,
+  getClientPromises,
   getPendingInstallmentsForRoute,
   getRoutes,
   updateRouteItem,
@@ -101,7 +103,9 @@ export const CollectTodayPage: React.FC = () => {
   const [collectors, setCollectors] = useState<User[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState('');
-  const [selectedCollectorFilter, setSelectedCollectorFilter] = useState('');
+  const [selectedCollectorFilter, setSelectedCollectorFilter] = useState(() =>
+    currentUser?.role === Role.COBRADOR ? currentUser.id : ''
+  );
   const [selectedStatus, setSelectedStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,8 +118,17 @@ export const CollectTodayPage: React.FC = () => {
   const [routeDate, setRouteDate] = useState(new Date().toISOString().split('T')[0]);
   const [pendingInstallments, setPendingInstallments] = useState<any[]>([]);
   const [selectedInstallments, setSelectedInstallments] = useState<string[]>([]);
+  const [activeDropdownRowKey, setActiveDropdownRowKey] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
   const [focusStateApplied, setFocusStateApplied] = useState(false);
+
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setActiveDropdownRowKey(null);
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   const isCollector = currentUser?.role === Role.COBRADOR;
   const branchScope = useMemo(() => getBranchScope(currentUser), [currentUser]);
@@ -178,6 +191,10 @@ export const CollectTodayPage: React.FC = () => {
       list = getRoutes(currentUser.companyId, activeBranchId);
     }
 
+    if (currentUser.role === Role.COBRADOR) {
+      list = list.filter(route => route.collectorId === currentUser.id);
+    }
+
     setRoutes(list);
     const scopedUsers = getScopedUsers(currentUser, activeBranchId).filter(user => user.role === Role.COBRADOR && user.isActive);
     setCollectors(
@@ -185,7 +202,15 @@ export const CollectTodayPage: React.FC = () => {
         ? scopedUsers.filter(user => user.branchId === activeBranchId)
         : scopedUsers.filter(user => user.branchId === currentUser.branchId),
     );
-    setPendingInstallments(getPendingInstallmentsForRoute(currentUser.companyId, activeBranchId));
+
+    let rawPending = getPendingInstallmentsForRoute(currentUser.companyId, activeBranchId);
+    if (currentUser.role === Role.COBRADOR) {
+      rawPending = rawPending.filter(item => {
+        const cl = getClientById(item.clientId);
+        return cl?.assignedUserId === currentUser.id;
+      });
+    }
+    setPendingInstallments(rawPending);
 
     if (currentUser.role === Role.COBRADOR) {
       const active = list.find(route => route.collectorId === currentUser.id && route.status === RouteStatus.IN_PROGRESS);
@@ -234,7 +259,7 @@ export const CollectTodayPage: React.FC = () => {
     void loadBaseData();
   };
 
-  const requestVisitConfirmation = (item: RouteItem) => {
+  const requestVisitConfirmation = (routeId: string, item: RouteItem | { id: string; clientName: string; amountToCollect: number }) => {
     openPlatformCriticalModal({
       id: `collect-today-visit-${item.id}`,
       title: '¿Registrar visita sin cobro?',
@@ -247,11 +272,11 @@ export const CollectTodayPage: React.FC = () => {
         { label: 'Monto pendiente', value: formatCurrency(item.amountToCollect) },
         { label: 'Resultado', value: 'No estaba', tone: 'warning' },
       ],
-      onConfirm: () => handleUpdateVisitResult(activeRouteId, item.id, 'NO ESTABA', 'VISITED'),
+      onConfirm: () => handleUpdateVisitResult(routeId, item.id, 'NO ESTABA', 'VISITED'),
     });
   };
 
-  const requestNoPayConfirmation = (item: RouteItem) => {
+  const requestNoPayConfirmation = (routeId: string, item: RouteItem | { id: string; clientName: string; amountToCollect: number }) => {
     openPlatformCriticalModal({
       id: `collect-today-no-pay-${item.id}`,
       title: '¿Marcar esta parada como no pago?',
@@ -264,7 +289,7 @@ export const CollectTodayPage: React.FC = () => {
         { label: 'Monto pendiente', value: formatCurrency(item.amountToCollect) },
         { label: 'Estado nuevo', value: 'No pago', tone: 'danger' },
       ],
-      onConfirm: () => handleUpdateVisitResult(activeRouteId, item.id, 'NO PAGÓ', 'FAILED'),
+      onConfirm: () => handleUpdateVisitResult(routeId, item.id, 'NO PAGÓ', 'FAILED'),
     });
   };
 
@@ -327,7 +352,7 @@ export const CollectTodayPage: React.FC = () => {
 
   const resetFilters = () => {
     setSelectedBranchId(canSeeAllCompanyUsers ? '' : currentUser.branchId);
-    setSelectedCollectorFilter('');
+    setSelectedCollectorFilter(currentUser?.role === Role.COBRADOR ? currentUser.id : '');
     setSelectedStatus('');
     setSearchTerm('');
   };
@@ -626,6 +651,7 @@ export const CollectTodayPage: React.FC = () => {
             {[...activeRouteData.items].sort((a, b) => a.order - b.order).map(item => (
               <div
                 key={item.id}
+                id={`stop-${item.clientId}`}
                 className={`rounded-[26px] border p-5 transition-all ${
                   item.visitStatus === 'PENDING'
                     ? 'border-[#E5E7EB] bg-white hover:border-[#DBEAFE] hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]'
@@ -646,7 +672,7 @@ export const CollectTodayPage: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-3">
                     <Badge status={item.visitStatus === 'PAID' ? 'Cobrado' : item.visitStatus === 'FAILED' ? 'No pago' : item.visitStatus === 'VISITED' ? 'Visitado' : 'Pendiente'} />
                     <button
-                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.address)}`, '_blank')}
+                      onClick={() => navigate('/routes', { state: { trackingRouteId: activeRouteId, clientId: item.clientId } })}
                       className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] ${horizontalMotionClass}`}
                     >
                       <Navigation size={16} />
@@ -672,14 +698,14 @@ export const CollectTodayPage: React.FC = () => {
                       Registrar cobro
                     </button>
                     <button
-                      onClick={() => requestVisitConfirmation(item)}
+                      onClick={() => requestVisitConfirmation(activeRouteId!, item)}
                       className={`inline-flex h-[54px] cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[15px] font-semibold text-[#111827] ${horizontalMotionClass}`}
                     >
                       <UserCheck size={17} />
                       Registrar visita
                     </button>
                     <button
-                      onClick={() => requestNoPayConfirmation(item)}
+                      onClick={() => requestNoPayConfirmation(activeRouteId!, item)}
                       className="inline-flex h-[54px] cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[#FECACA] bg-white px-5 text-[15px] font-semibold text-[#DC2626] transition-all duration-200 hover:translate-x-1 hover:bg-[#FEF2F2]"
                     >
                       <AlertTriangle size={17} />
@@ -795,7 +821,8 @@ export const CollectTodayPage: React.FC = () => {
           <FilterDropdown
             value={selectedCollectorFilter}
             onChange={setSelectedCollectorFilter}
-            placeholder="Todos los cobradores"
+            placeholder={isCollector ? currentUser.name : "Todos los cobradores"}
+            disabled={isCollector}
             options={collectors.map(collector => ({ value: collector.id, label: collector.name }))}
           />
           <FilterDropdown
@@ -824,7 +851,7 @@ export const CollectTodayPage: React.FC = () => {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(330px,0.9fr)]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[2.1fr_0.7fr]">
         <article data-collect-panel className="rounded-[32px] border border-[#E5E7EB] bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b border-[#E5E7EB] px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -847,114 +874,233 @@ export const CollectTodayPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-[minmax(340px,1.85fr)_minmax(118px,0.62fr)_minmax(118px,0.58fr)_104px_88px] gap-4 px-6 py-4 text-[12px] font-semibold uppercase tracking-[0.18em] text-[#94A3B8]">
-            <span>Cliente</span>
-            <span className="text-center">Cobrador</span>
-            <span className="text-center">Monto</span>
-            <span className="text-center">Estado</span>
-            <span className="text-center">Accion</span>
-          </div>
+          <div className="w-full">
+            <div className="grid grid-cols-[minmax(320px,2fr)_110px_100px_90px_90px_110px_100px] gap-4 px-6 py-4 text-[12px] font-semibold uppercase tracking-[0.18em] text-[#94A3B8]">
+              <span>Cliente</span>
+              <span className="text-center">Cobrador</span>
+              <span className="text-center">Monto</span>
+              <span className="text-center">Atraso</span>
+              <span className="text-center">Score</span>
+              <span className="text-center">Estado</span>
+              <span className="text-center">Acciones</span>
+            </div>
 
-          <div className="divide-y divide-[#EEF2F7]">
-            {filteredQueueRows.length === 0 ? (
-              <div className="px-6 py-16 text-center">
-                <MapIcon size={40} className="mx-auto text-[#CBD5E1]" />
-                <p className="mt-4 text-[16px] font-semibold text-[#64748B]">No hay cuentas para los filtros actuales.</p>
-              </div>
-            ) : (
-              paginatedQueueRows.map(row => (
-                <div key={row.key} data-collect-row className="group px-4 py-3 transition-colors duration-200 hover:bg-[#FCFDFF]">
-                  {(() => {
-                    const client = getClientById(row.clientId);
-                    return (
-                  <div className="grid grid-cols-[minmax(340px,1.85fr)_minmax(118px,0.62fr)_minmax(118px,0.58fr)_104px_88px] items-center gap-4 rounded-[24px] px-2 py-2">
-                    <div className="min-w-0 transition-transform duration-200 group-hover:translate-x-2">
-                      <button
-                        onClick={() => navigate(`/clients/${row.clientId}`)}
-                        className="flex min-w-0 items-center gap-4 text-left"
-                      >
-                        <ClientAvatar
-                          client={client || { firstName: row.clientName, lastName: '', photo: '' }}
-                          className="h-12 w-12 rounded-2xl shadow-[0_10px_22px_rgba(37,99,235,0.12)]"
-                          textClassName="text-[16px] font-black text-[#2563EB]"
-                        />
-                        <div className="min-w-0">
-                          <p className="truncate text-[16px] font-bold text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">
-                            {row.clientName}
-                          </p>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-medium text-[#64748B]">
-                            <span>{row.clientPhone}</span>
-                            <span className="text-[#CBD5E1]">•</span>
-                            <span className={`font-semibold ${row.isMora ? 'text-[#DC2626]' : 'text-[#94A3B8]'}`}>
-                              {row.dueDate ? formatDate(row.dueDate) : 'Hoy'}
-                            </span>
-                          </div>
-                          <p className="mt-1 truncate text-[12px] font-medium text-[#94A3B8]">{row.address}</p>
-                        </div>
-                      </button>
-                    </div>
-
-                    <div className="text-center transition-transform duration-200 group-hover:translate-x-2">
-                      <p className="line-clamp-1 text-[13px] font-semibold text-[#111827]">{row.collectorName}</p>
-                      <p className="mt-1 text-[11px] font-medium text-[#64748B]">
-                        {row.source === 'SIN_RUTA'
-                          ? 'Sin ruta'
-                          : row.routeStatus === RouteStatus.IN_PROGRESS
-                            ? 'En curso'
-                            : 'Ruta abierta'}
-                      </p>
-                    </div>
-
-                    <div className="text-center transition-transform duration-200 group-hover:translate-x-2">
-                      <p className="text-[16px] font-bold text-[#111827]">{formatCurrency(row.amount)}</p>
-                      <p className={`mt-1 text-[11px] font-medium ${row.source === 'SIN_RUTA' ? 'text-[#F59E0B]' : 'text-[#64748B]'}`}>
-                        {row.source === 'SIN_RUTA' ? 'Sin asignar' : 'En ruta'}
-                      </p>
-                    </div>
-
-                    <div className="flex justify-center transition-transform duration-200 group-hover:translate-x-2">
-                      <Badge
-                        status={
-                          row.visitStatus === 'PAID'
-                            ? 'Cobrado'
-                            : row.visitStatus === 'FAILED'
-                              ? 'No pago'
-                              : row.visitStatus === 'VISITED'
-                                ? 'Visitado'
-                                : row.isMora
-                                  ? 'En mora'
-                                  : row.source === 'SIN_RUTA'
-                                    ? 'Sin asignar'
-                                    : 'Pendiente'
-                        }
-                      />
-                    </div>
-
-                    <div className="flex justify-center">
-                      {row.routeId && (row.collectorId === currentUser.id || !isCollector) ? (
-                        <button
-                          onClick={() => setActiveRouteId(row.routeId!)}
-                          className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#111827] ${horizontalMotionClass}`}
-                          aria-label="Abrir cuenta"
-                        >
-                          <ChevronRight size={16} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => navigate(`/clients/${row.clientId}`)}
-                          className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#111827] ${horizontalMotionClass}`}
-                          aria-label="Ver cliente"
-                        >
-                          <Eye size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                    );
-                  })()}
+            <div className="divide-y divide-[#EEF2F7]">
+              {filteredQueueRows.length === 0 ? (
+                <div className="px-6 py-16 text-center">
+                  <MapIcon size={40} className="mx-auto text-[#CBD5E1]" />
+                  <p className="mt-4 text-[16px] font-semibold text-[#64748B]">No hay cuentas para los filtros actuales.</p>
                 </div>
-              ))
-            )}
+              ) : (
+                paginatedQueueRows.map(row => (
+                  <div key={row.key} data-collect-row className="group px-4 py-3 transition-colors duration-200 hover:bg-[#FCFDFF]">
+                    {(() => {
+                      const client = getClientById(row.clientId);
+                      const rating = client?.creditRating || 'REGULAR';
+                      const ratingColor = rating === 'BUENA' ? 'text-[#16A34A] bg-[#DCFCE7]' : rating === 'MALA' ? 'text-[#DC2626] bg-[#FEE2E2]' : 'text-[#F59E0B] bg-[#FEF3C7]';
+                      
+                      // Cálculo de días de atraso
+                      let delayDays = 0;
+                      if (row.dueDate) {
+                        const due = new Date(row.dueDate).getTime();
+                        const today = new Date().setHours(0,0,0,0);
+                        if (due < today) {
+                          delayDays = Math.round((today - due) / (1000 * 60 * 60 * 24));
+                        }
+                      }
+
+                      // Buscar promesas activas del cliente
+                      const clientPromises = getClientPromises ? getClientPromises(row.clientId) : [];
+                      const activePromise = clientPromises.find((p: any) => p.status === 'PENDIENTE');
+
+                      const hasMultipleActions = row.routeId && row.visitStatus === 'PENDING' && (row.collectorId === currentUser.id || !isCollector);
+
+                      return (
+                    <div className="grid grid-cols-[minmax(320px,2fr)_110px_100px_90px_90px_110px_100px] items-center gap-4 rounded-[24px] px-2 py-2">
+                      <div className="min-w-0 transition-transform duration-200 group-hover:translate-x-2">
+                        <button
+                          onClick={() => {
+                            const stopEl = document.getElementById(`stop-${row.clientId}`);
+                            if (stopEl) {
+                              stopEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              // Resaltado visual con destello
+                              stopEl.classList.add('!bg-yellow-50', 'border-yellow-300');
+                              setTimeout(() => {
+                                stopEl.classList.remove('!bg-yellow-50', 'border-yellow-300');
+                              }, 1800);
+                            } else {
+                              navigate(`/clients/${row.clientId}`);
+                            }
+                          }}
+                          className="flex min-w-0 items-center gap-3 text-left"
+                        >
+                          <ClientAvatar
+                            client={client || { firstName: row.clientName, lastName: '', photo: '' }}
+                            className="h-12 w-12 shrink-0 rounded-full shadow-[0_10px_22px_rgba(37,99,235,0.12)]"
+                            textClassName="text-[16px] font-black text-[#2563EB]"
+                          />
+                          <div className="min-w-0">
+                            <p className="break-words whitespace-normal line-clamp-2 text-[15px] font-bold text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">
+                              {row.clientName}
+                            </p>
+                            {client?.nickname && (
+                              <p className="text-[12px] font-medium italic text-[#2563EB]">
+                                {client.nickname}
+                              </p>
+                            )}
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-medium text-[#64748B]">
+                              <span>{row.clientPhone}</span>
+                              {activePromise && (
+                                <span className="rounded-md bg-[#EDE9FE] px-1.5 py-0.5 text-[10px] font-bold text-[#7C3AED]">
+                                  Promesa
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-0.5 truncate text-[11px] font-medium text-[#94A3B8]">
+                              📍 {client?.address?.split(',')[1] || client?.address?.split(';')[0] || row.address || 'Sin sector'}
+                            </p>
+                          </div>
+                        </button>
+                      </div>
+
+                      <div className="text-center transition-transform duration-200 group-hover:translate-x-2">
+                        <p className="line-clamp-1 text-[13px] font-semibold text-[#111827]">{row.collectorName}</p>
+                        <p className="mt-0.5 text-[11px] font-medium text-[#64748B]">
+                          {row.source === 'SIN_RUTA'
+                            ? 'Sin ruta'
+                            : row.routeStatus === RouteStatus.IN_PROGRESS
+                              ? 'En curso'
+                              : 'Ruta abierta'}
+                        </p>
+                      </div>
+
+                      <div className="text-center transition-transform duration-200 group-hover:translate-x-2">
+                        <p className="text-[15px] font-bold text-[#111827]">{formatCurrency(row.amount)}</p>
+                        <p className={`mt-0.5 text-[11px] font-medium ${row.source === 'SIN_RUTA' ? 'text-[#F59E0B]' : 'text-[#64748B]'}`}>
+                          {row.source === 'SIN_RUTA' ? 'Sin asignar' : 'En ruta'}
+                        </p>
+                      </div>
+
+                      <div className="text-center transition-transform duration-200 group-hover:translate-x-2">
+                        {delayDays > 0 ? (
+                          <span className="inline-flex rounded-full bg-[#FEE2E2] px-2 py-0.5 text-[11px] font-bold text-[#DC2626]">
+                            {delayDays} días
+                          </span>
+                        ) : (
+                          <span className="text-[12px] font-medium text-[#94A3B8]">Al día</span>
+                        )}
+                      </div>
+
+                      <div className="flex justify-center transition-transform duration-200 group-hover:translate-x-2">
+                        <span className={`rounded-lg px-2.5 py-0.5 text-[11px] font-bold ${ratingColor}`}>
+                          {rating}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-center transition-transform duration-200 group-hover:translate-x-2">
+                        <Badge
+                          status={
+                            row.visitStatus === 'PAID'
+                              ? 'Cobrado'
+                              : row.visitStatus === 'FAILED'
+                                ? 'No pago'
+                                : row.visitStatus === 'VISITED'
+                                  ? 'Visitado'
+                                  : row.isMora
+                                    ? 'En mora'
+                                    : row.source === 'SIN_RUTA'
+                                      ? 'Sin asignar'
+                                      : 'Pendiente'
+                          }
+                        />
+                      </div>
+
+                      <div className="relative flex justify-center">
+                        {hasMultipleActions ? (
+                          <>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setActiveDropdownRowKey(activeDropdownRowKey === row.key ? null : row.key);
+                              }}
+                              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#64748B] hover:text-[#2563EB] ${horizontalMotionClass}`}
+                              title="Acciones"
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+
+                            {activeDropdownRowKey === row.key && (
+                              <div 
+                                onClick={(event) => event.stopPropagation()}
+                                className="absolute right-0 top-10 z-50 w-52 rounded-2xl border border-[#E5E7EB] bg-white p-2 shadow-[0_16px_36px_rgba(15,23,42,0.12)] animate-in fade-in slide-in-from-top-2 duration-150"
+                              >
+                                <div className="flex flex-col gap-1">
+                                  <button
+                                    onClick={() => {
+                                      const route = routes.find(item => item.id === row.routeId);
+                                      const routeItem = route?.items.find(item => item.id === row.itemId);
+                                      if (routeItem) {
+                                        setActiveRouteId(row.routeId);
+                                        setShowCollectionModal(routeItem);
+                                      }
+                                      setActiveDropdownRowKey(null);
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-bold text-[#2563EB] hover:bg-[#EFF6FF] whitespace-nowrap"
+                                  >
+                                    <Banknote size={15} />
+                                    Registrar Cobro
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      requestVisitConfirmation(row.routeId!, { id: row.itemId!, clientName: row.clientName, amountToCollect: row.amount });
+                                      setActiveDropdownRowKey(null);
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-semibold text-[#64748B] hover:bg-[#F8FAFC] whitespace-nowrap"
+                                  >
+                                    <UserCheck size={15} />
+                                    Registrar Visita
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      requestNoPayConfirmation(row.routeId!, { id: row.itemId!, clientName: row.clientName, amountToCollect: row.amount });
+                                      setActiveDropdownRowKey(null);
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-semibold text-[#DC2626] hover:bg-[#FEF2F2] whitespace-nowrap"
+                                  >
+                                    <AlertTriangle size={15} />
+                                    No Pago
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      navigate(`/clients/${row.clientId}`);
+                                      setActiveDropdownRowKey(null);
+                                    }}
+                                    className="border-t border-[#F3F4F6] mt-1 pt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[13px] font-semibold text-[#111827] hover:bg-[#F8FAFC] whitespace-nowrap"
+                                  >
+                                    <Eye size={15} />
+                                    Ver perfil
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => navigate(`/clients/${row.clientId}`)}
+                            className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white px-3 text-[12px] font-bold text-[#111827] ${horizontalMotionClass}`}
+                          >
+                            <Eye size={14} />
+                            Ver perfil
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                      );
+                    })()}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           {filteredQueueRows.length > pageSize && (
@@ -1097,10 +1243,10 @@ export const CollectTodayPage: React.FC = () => {
               </div>
               <button
                 onClick={() => navigate('/reports')}
-                className={`inline-flex h-10 items-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] ${horizontalMotionClass}`}
+                className={`inline-flex h-9 shrink-0 whitespace-nowrap items-center justify-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white px-3 text-[13px] font-semibold text-[#111827] ${horizontalMotionClass}`}
               >
                 Ver reportes
-                <ArrowRight size={16} />
+                <ArrowRight size={14} />
               </button>
             </div>
 

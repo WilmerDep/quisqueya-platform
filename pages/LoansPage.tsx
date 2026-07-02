@@ -49,13 +49,12 @@ const loanKpiToneMap = {
 
 export const LoansPage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, selectedBranchId, setSelectedBranchId } = useAuth();
   const pageRef = useRef<HTMLDivElement>(null);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [company, setCompany] = useState<Company | undefined>(undefined);
-  const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedFrequency, setSelectedFrequency] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,7 +85,6 @@ export const LoansPage: React.FC = () => {
     loadData();
     setBranches(branchScope.branches);
     setCompany(getCompanyById(currentUser.companyId));
-    setSelectedBranchId(currentUser.branchId);
 
     return () => {
       cancelled = true;
@@ -463,20 +461,44 @@ const LoanRow = ({
   };
 
   return (
-    <tr data-loan-row className="border-t border-[#F1F5F9] text-sm font-medium text-[#374151]">
+    <tr data-loan-row className="group border-t border-[#F1F5F9] text-sm font-medium text-[#374151]">
       <td className="px-6 py-5">
-        <div className="flex items-center gap-4">
-          <ClientAvatar
-            client={client}
-            className="h-12 w-12 rounded-[18px] bg-[#DBEAFE]"
-            textClassName="text-lg font-black text-[#2563EB]"
-            alt={client ? `${client.firstName} ${client.lastName}` : 'Prestamo'}
-          />
-          <div className="min-w-0">
-            <p className="truncate text-[15px] font-semibold text-[#111827]">{client ? `${client.firstName} ${client.lastName}` : loan.id.slice(0, 8).toUpperCase()}</p>
-            <p className="mt-1 text-sm font-medium text-[#6B7280]">{client?.cedula || 'Sin cedula'} • {client?.phone || 'Sin telefono'}</p>
-            <p className="mt-1 text-sm font-medium text-[#94A3B8]">{loan.id.slice(0, 8).toUpperCase()}</p>
-          </div>
+        <div className="min-w-0 transition-transform duration-200 group-hover:translate-x-2">
+          {client ? (
+            <button
+              onClick={() => navigate(`/clients/${client.id}`)}
+              className="flex min-w-0 items-center gap-4 text-left cursor-pointer"
+            >
+              <ClientAvatar
+                client={client}
+                className="h-12 w-12 rounded-full shadow-[0_10px_22px_rgba(37,99,235,0.12)]"
+                textClassName="text-lg font-black text-[#2563EB]"
+                alt={`${client.firstName} ${client.lastName}`}
+              />
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-bold text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">
+                  {client.firstName} {client.lastName}
+                </p>
+                <p className="mt-1 text-sm font-medium text-[#6B7280]">
+                  {client.cedula} • {client.phone}
+                </p>
+                <p className="mt-1 text-[12px] font-semibold text-[#94A3B8]">{loan.id.slice(0, 8).toUpperCase()}</p>
+              </div>
+            </button>
+          ) : (
+            <div className="flex min-w-0 items-center gap-4 text-left">
+              <ClientAvatar
+                className="h-12 w-12 rounded-full shadow-[0_10px_22px_rgba(37,99,235,0.12)]"
+                textClassName="text-lg font-black text-[#2563EB]"
+                alt="Prestamo"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-bold text-[#111827]">
+                  {loan.id.slice(0, 8).toUpperCase()}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </td>
       <td className="px-4 py-5 text-center">{loan.frequency}</td>

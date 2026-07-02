@@ -27,7 +27,9 @@ import {
   Wallet,
   WalletCards,
   X,
+  AlertTriangle,
 } from 'lucide-react';
+import gsap from 'gsap';
 import { addCashMovement, upsertCashMovementsInLocalStorage } from '../services/dataService';
 import { apiClient } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
@@ -89,11 +91,10 @@ const categoryLabelMap: Record<CashMovement['category'], string> = {
 export const CashManagement: React.FC = () => {
   const historyPageSize = 10;
   const movementPageSize = 10;
-  const { currentUser } = useAuth();
+  const { currentUser, selectedBranchId: selectedBranch, setSelectedBranchId: setSelectedBranch } = useAuth();
   const [movements, setMovements] = useState<CashMovement[]>([]);
   const [closures, setClosures] = useState<CashClosure[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<string>('');
   const [activeTab, setActiveTab] = useState<CashTab>('RESUMEN');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,9 +120,15 @@ export const CashManagement: React.FC = () => {
   const canSeeAllCompanyUsers = branchScope?.canSeeAllCompanyUsers || false;
 
   useEffect(() => {
+    gsap.fromTo('[data-cash-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+    gsap.fromTo('[data-cash-kpis]', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', delay: 0.1 });
+    gsap.fromTo('[data-cash-filters]', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', delay: 0.16 });
+    gsap.fromTo('[data-cash-content]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.22 });
+  }, []);
+
+  useEffect(() => {
     if (!currentUser) return;
     setBranches(branchScope?.branches || []);
-    setSelectedBranch(currentUser.branchId);
   }, [branchScope, currentUser]);
 
   useEffect(() => {
@@ -184,11 +191,16 @@ export const CashManagement: React.FC = () => {
     return { income, outcome, balance, expected, operations, pendingReview, entries, exits };
   }, [movements]);
 
-  const closingDifference = useMemo(() => {
+  const countedCashAmount = useMemo(() => {
+    if (!countedCash.trim()) return null;
     const parsed = Number(countedCash);
-    if (!countedCash || !Number.isFinite(parsed)) return null;
-    return parsed - stats.balance;
-  }, [countedCash, stats.balance]);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [countedCash]);
+
+  const closingDifference = useMemo(() => {
+    if (countedCashAmount === null) return null;
+    return countedCashAmount - stats.balance;
+  }, [countedCashAmount, stats.balance]);
 
   const historyTotalPages = Math.max(1, Math.ceil(filteredMovements.length / historyPageSize));
   const normalizedHistoryPage = Math.min(currentHistoryPage, historyTotalPages);
@@ -345,8 +357,8 @@ export const CashManagement: React.FC = () => {
       return;
     }
 
-    if (closingDifference !== null && closingDifference !== 0 && !closingNote.trim()) {
-      setClosureError('Agrega una observacion para justificar la diferencia detectada en el cierre.');
+    if (closingDifference !== null && closingDifference !== 0 && closingNote.trim().length < 15) {
+      setClosureError('Debes justificar el descuadre detalladamente en observaciones (mínimo 15 caracteres).');
       return;
     }
 
@@ -411,7 +423,7 @@ export const CashManagement: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 lg:pb-0">
-      <section>
+      <section data-cash-hero>
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
             <h1 className="text-[52px] font-black leading-none tracking-tight text-[#111827]">Caja</h1>
@@ -457,7 +469,7 @@ export const CashManagement: React.FC = () => {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+      <section data-cash-kpis className="grid grid-cols-1 gap-4 xl:grid-cols-5">
         {kpis.map(kpi => {
           const Icon = kpi.icon;
           const tone = kpiToneMap[kpi.tone];
@@ -489,7 +501,7 @@ export const CashManagement: React.FC = () => {
         })}
       </section>
 
-      <section className="relative z-30 rounded-[32px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section data-cash-filters className="relative z-30 rounded-[32px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[210px_210px_230px_minmax(260px,1fr)_auto]">
           {isAdmin ? (
             <FilterDropdown
@@ -542,7 +554,7 @@ export const CashManagement: React.FC = () => {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-6">
+      <section data-cash-content className="grid grid-cols-1 gap-6">
         <article className="rounded-[32px] border border-[#E5E7EB] bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b border-[#E5E7EB] px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -733,9 +745,22 @@ export const CashManagement: React.FC = () => {
                 <section className="rounded-[28px] border border-[#E5E7EB] bg-white p-5">
                   <h3 className="text-[24px] font-black tracking-tight text-[#111827]">Resumen de cierre</h3>
                   <div className="mt-5 grid gap-4 md:grid-cols-3">
-                    <MiniSummaryCard label="Monto teorico" value={formatCurrency(stats.balance)} tone="blue" />
-                    <MiniSummaryCard label="Monto contado" value={countedCash ? formatCurrency(Number(countedCash)) : 'Pendiente'} tone="amber" />
-                    <MiniSummaryCard label="Diferencia" value={closingDifference === null ? 'Sin arqueo' : formatCurrency(closingDifference)} tone={closingDifference && closingDifference !== 0 ? 'red' : 'green'} />
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[#94A3B8]">Monto teórico</p>
+                      <p className="mt-2 text-[24px] font-black text-[#2563EB]">{formatCurrency(stats.balance)}</p>
+                    </div>
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[#94A3B8]">Monto contado</p>
+                      <p className="mt-2 text-[24px] font-black text-[#111827]">
+                        {countedCashAmount !== null ? formatCurrency(countedCashAmount) : 'Pendiente'}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+                      <p className="text-xs font-bold uppercase tracking-wider text-[#94A3B8]">Diferencia</p>
+                      <p className={`mt-2 text-[24px] font-black ${closingDifference === null ? 'text-[#94A3B8]' : closingDifference === 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+                        {closingDifference === null ? 'Sin arqueo' : formatCurrency(closingDifference)}
+                      </p>
+                    </div>
                   </div>
                 </section>
 
@@ -746,24 +771,44 @@ export const CashManagement: React.FC = () => {
                       <ChecklistItem label="Revisar salidas del dia" complete />
                       <ChecklistItem label="Validar notas y referencias" complete={stats.pendingReview === 0} />
                       <ChecklistItem label="Confirmar monto contado" complete={closingDifference !== null} />
-                      <ChecklistItem label="Consolidar observaciones" complete={closingNote.trim().length > 0} />
+                      <ChecklistItem label="Consolidar observaciones" complete={closingDifference === null || closingDifference === 0 ? closingNote.trim().length > 0 : closingNote.trim().length >= 15} />
                     </div>
                     <div>
                       <label className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#94A3B8]">Monto contado real</label>
                       <input
                         type="number"
                         value={countedCash}
-                        onChange={event => setCountedCash(event.target.value)}
+                        onChange={event => {
+                          setCountedCash(event.target.value);
+                          setClosureError('');
+                        }}
                         placeholder="0.00"
                         className="mt-2 h-[72px] w-full rounded-[28px] border border-[#E5E7EB] bg-white px-6 text-[28px] font-semibold tracking-tight text-[#111827] outline-none focus:border-[#93C5FD]"
                       />
                       <label className="mt-4 block text-[12px] font-semibold uppercase tracking-[0.18em] text-[#94A3B8]">Observaciones del cierre</label>
                       <textarea
                         value={closingNote}
-                        onChange={event => setClosingNote(event.target.value)}
+                        onChange={event => {
+                          setClosingNote(event.target.value);
+                          setClosureError('');
+                        }}
                         placeholder="Describe incidencias, justificaciones o hallazgos del cierre..."
                         className="mt-2 h-32 w-full rounded-[24px] border border-[#E5E7EB] bg-white px-5 py-4 text-[15px] font-medium text-[#111827] outline-none placeholder:text-[#94A3B8] focus:border-[#93C5FD]"
                       />
+                      {closingDifference !== null && closingDifference !== 0 && (
+                        <div className={`mt-4 flex items-start gap-3 rounded-[20px] p-4 border ${closingDifference > 0 ? 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1E40AF]' : 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'}`}>
+                          <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+                          <div className="text-[14px] font-medium leading-6">
+                            <p className="font-bold">Descuadre de caja detectado</p>
+                            <p className="mt-1">
+                              Existe una diferencia de <span className="font-bold">{formatCurrency(closingDifference)}</span> ({closingDifference > 0 ? 'Sobrante' : 'Faltante'}) entre el monto teórico y el contado.
+                            </p>
+                            <p className="mt-1 text-[13px] opacity-90">
+                              Es obligatorio que justifiques este descuadre en observaciones escribiendo al menos <span className="font-bold">15 caracteres</span> ({closingNote.trim().length}/15).
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -776,15 +821,20 @@ export const CashManagement: React.FC = () => {
                         Guarda el arqueo de la caja actual y registra el resultado en el historial operativo de la sucursal.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={requestCloseCashConfirmation}
-                      disabled={isClosingCash}
-                      className="inline-flex h-[56px] min-w-[220px] items-center justify-center rounded-2xl bg-[#2563EB] px-6 text-[16px] font-semibold text-white shadow-[0_24px_48px_rgba(37,99,235,0.24)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <FileText size={18} className="mr-2" />
-                      {isClosingCash ? 'Guardando cierre...' : 'Cerrar caja y guardar historial'}
-                    </button>
+                    {(() => {
+                      const isDisabled = isClosingCash || !countedCash || (closingDifference !== null && closingDifference !== 0 && closingNote.trim().length < 15);
+                      return (
+                        <button
+                          type="button"
+                          onClick={requestCloseCashConfirmation}
+                          disabled={isDisabled}
+                          className="inline-flex h-[56px] min-w-[220px] items-center justify-center rounded-2xl bg-[#2563EB] px-6 text-[16px] font-semibold text-white shadow-[0_24px_48px_rgba(37,99,235,0.24)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] disabled:shadow-none disabled:hover:translate-x-0"
+                        >
+                          <FileText size={18} className="mr-2" />
+                          {isClosingCash ? 'Guardando cierre...' : 'Cerrar caja y guardar historial'}
+                        </button>
+                      );
+                    })()}
                   </div>
                   {closureError && (
                     <div className="mt-4 rounded-[20px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] font-semibold text-[#B91C1C]">
@@ -801,8 +851,8 @@ export const CashManagement: React.FC = () => {
                       <DetailLine label="Entradas del dia" value={formatCurrency(stats.income)} accent="text-[#16A34A]" />
                       <DetailLine label="Salidas del dia" value={formatCurrency(stats.outcome)} accent="text-[#DC2626]" />
                       <DetailLine label="Monto teorico" value={formatCurrency(stats.balance)} accent="text-[#2563EB]" />
-                      <DetailLine label="Monto contado" value={countedCash ? formatCurrency(Number(countedCash)) : 'Pendiente'} />
-                      <DetailLine label="Diferencia" value={closingDifference === null ? 'Pendiente' : formatCurrency(closingDifference)} accent={closingDifference && closingDifference !== 0 ? 'text-[#DC2626]' : 'text-[#16A34A]'} />
+                      <DetailLine label="Monto contado" value={countedCashAmount !== null ? formatCurrency(countedCashAmount) : 'Pendiente'} />
+                      <DetailLine label="Diferencia" value={closingDifference === null ? 'Pendiente' : formatCurrency(closingDifference)} accent={closingDifference !== null && closingDifference !== 0 ? 'text-[#DC2626]' : 'text-[#16A34A]'} />
                     </div>
                   </section>
 
@@ -811,7 +861,7 @@ export const CashManagement: React.FC = () => {
                     <p className="mt-2 text-[15px] font-medium text-[#64748B]">Validaciones base antes de cerrar la caja.</p>
                     <div className="mt-6 space-y-5">
                       <MetricRow label="Operaciones conciliadas" value={`${stats.operations - stats.pendingReview}/${Math.max(stats.operations, 1)}`} accent="bg-[#16A34A]" percent={stats.operations > 0 ? Math.round(((stats.operations - stats.pendingReview) / stats.operations) * 100) : 100} />
-                      <MetricRow label="Saldo verificado" value={countedCash ? `${formatCurrency(Number(countedCash))} / ${formatCurrency(stats.balance)}` : formatCurrency(stats.balance)} accent="bg-[#2563EB]" percent={closingDifference === null ? 35 : closingDifference === 0 ? 100 : 55} />
+                      <MetricRow label="Saldo verificado" value={countedCashAmount !== null ? `${formatCurrency(countedCashAmount)} / ${formatCurrency(stats.balance)}` : formatCurrency(stats.balance)} accent="bg-[#2563EB]" percent={closingDifference === null ? 35 : closingDifference === 0 ? 100 : 55} />
                       <MetricRow label="Pendientes revision" value={`${stats.pendingReview}`} accent="bg-[#F59E0B]" percent={stats.operations > 0 ? Math.round((stats.pendingReview / stats.operations) * 100) : 0} />
                     </div>
                   </section>

@@ -23,6 +23,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import gsap from 'gsap';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -127,6 +128,13 @@ export const UsersManagement: React.FC = () => {
     if (currentUser.role === Role.SUPERVISOR) return [Role.COBRADOR];
     return [];
   }, [currentUser.role]);
+
+  useEffect(() => {
+    gsap.fromTo('[data-users-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+    gsap.fromTo('[data-users-insights]', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', delay: 0.1 });
+    gsap.fromTo('[data-users-filters]', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', delay: 0.16 });
+    gsap.fromTo('[data-users-list]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.22 });
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -454,7 +462,7 @@ export const UsersManagement: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 lg:pb-0">
-      <section>
+      <section data-users-hero>
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
             <h1 className="text-[52px] font-black leading-none tracking-tight text-[#111827]">Usuarios</h1>
@@ -525,7 +533,7 @@ export const UsersManagement: React.FC = () => {
         </section>
       ) : null}
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-4">
+      <section data-users-insights className="grid grid-cols-1 gap-4 xl:grid-cols-4">
         {kpis.map(card => {
           const tone =
             card.tone === 'emerald'
@@ -558,7 +566,7 @@ export const UsersManagement: React.FC = () => {
         })}
       </section>
 
-      <section className="relative z-20 rounded-[32px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <section data-users-filters className="relative z-20 rounded-[32px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(280px,1.1fr)_220px_220px_220px_176px]">
           <div className="flex h-[56px] items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-5 transition-all duration-200 hover:border-[#DBEAFE] focus-within:border-[#93C5FD] focus-within:shadow-[0_10px_24px_rgba(37,99,235,0.10)]">
             <Search size={18} className="pointer-events-none text-[#6B7280]" />
@@ -574,7 +582,7 @@ export const UsersManagement: React.FC = () => {
         </div>
       </section>
 
-      <section className="space-y-6">
+      <section data-users-list className="space-y-6">
         <section className="rounded-[32px] border border-[#E5E7EB] bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b border-[#E5E7EB] px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
