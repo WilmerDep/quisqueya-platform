@@ -1145,9 +1145,9 @@ export const SuperAdminPage: React.FC = () => {
                       setPlanFilter('Todos los planes');
                       setActiveFilterDropdown(null);
                     }}
-                    className="inline-flex h-[56px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[15px] font-semibold text-[#111827] hover:bg-slate-50 transition-all cursor-pointer"
+                    className="inline-flex h-[56px] items-center justify-center gap-2 rounded-2xl bg-[#EFF6FF] px-5 text-[15px] font-semibold text-[#2563EB] transition-all duration-200 hover:translate-x-1 hover:bg-[#BFDBFE]/30 hover:text-[#1D4ED8] hover:shadow-[0_16px_36px_rgba(37,99,235,0.08)] cursor-pointer"
                   >
-                    <Filter size={18} className="text-[#6B7280]" />
+                    <Filter size={18} className="text-[#2563EB]" />
                     Limpiar filtros
                   </button>
                 </div>
@@ -1167,7 +1167,7 @@ export const SuperAdminPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto pb-28">
                     <table className="min-w-full divide-y divide-slate-100 text-left">
                       <thead>
                         <tr className="text-[12.5px] font-bold uppercase tracking-wider text-slate-400">
