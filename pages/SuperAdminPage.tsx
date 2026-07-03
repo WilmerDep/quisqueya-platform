@@ -408,7 +408,7 @@ export const SuperAdminPage: React.FC = () => {
               return (
                 <div
                   key={item.label}
-                  className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                  className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] ${style.bg}`}>
@@ -583,14 +583,14 @@ export const SuperAdminPage: React.FC = () => {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-4 p-4 rounded-[22px] bg-red-50/50 border border-red-100">
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-[22px] bg-red-50/50 border border-red-100 transition-all duration-200 hover:translate-x-1 hover:shadow-sm">
                     <div className="space-y-1.5">
                       <p className="text-[14.5px] font-bold text-[#DC2626] leading-tight">Empresas en mora crítica</p>
                       <p className="text-[13px] font-medium text-slate-600">Hay 5 tenants con pagos de suscripción pendientes por más de 15 días.</p>
                     </div>
                     <span className="shrink-0 rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-red-700">Crítico</span>
                   </div>
-                  <div className="flex items-start justify-between gap-4 p-4 rounded-[22px] bg-amber-50/50 border border-amber-100">
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-[22px] bg-amber-50/50 border border-amber-100 transition-all duration-200 hover:translate-x-1 hover:shadow-sm">
                     <div className="space-y-1.5">
                       <p className="text-[14.5px] font-bold text-[#D97706] leading-tight">Límites de plan excedidos</p>
                       <p className="text-[13px] font-medium text-slate-600">2 empresas están al 95% de su capacidad máxima de usuarios.</p>
@@ -617,7 +617,7 @@ export const SuperAdminPage: React.FC = () => {
                 </div>
                 <div className="space-y-4">
                   {masterLogs.slice(0, 4).map(log => (
-                    <div key={log.id} className="flex items-start gap-3">
+                    <div key={log.id} className="flex items-start gap-3 transition-all duration-200 hover:translate-x-1">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                         <Terminal size={15} />
                       </div>
