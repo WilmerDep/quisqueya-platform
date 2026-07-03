@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
@@ -139,6 +140,7 @@ export const SuperAdminPage: React.FC = () => {
   const [planFilter, setPlanFilter] = useState('Todos los planes');
   const [activeFilterDropdown, setActiveFilterDropdown] = useState<'STATUS' | 'PLAN' | null>(null);
   const [activeActionsDropdown, setActiveActionsDropdown] = useState<string | null>(null);
+  const [dropdownCoords, setDropdownCoords] = useState<{ top: number; left: number; openUpward: boolean } | null>(null);
   const [isYearly, setIsYearly] = useState(false);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -1243,7 +1245,23 @@ export const SuperAdminPage: React.FC = () => {
                                 <div className="flex items-center justify-end">
                                   <button
                                     type="button"
-                                    onClick={() => setActiveActionsDropdown(activeActionsDropdown === company.id ? null : company.id)}
+                                    onClick={(event) => {
+                                      if (activeActionsDropdown === company.id) {
+                                        setActiveActionsDropdown(null);
+                                        setDropdownCoords(null);
+                                      } else {
+                                        const rect = event.currentTarget.getBoundingClientRect();
+                                        const spaceBelow = window.innerHeight - rect.bottom;
+                                        const openUpward = spaceBelow < 220; // Si hay menos de 220px abajo, abrir hacia arriba
+                                        const top = openUpward 
+                                          ? rect.top + window.scrollY - 205
+                                          : rect.bottom + window.scrollY + 8;
+                                        const left = rect.right + window.scrollX - 200;
+
+                                        setActiveActionsDropdown(company.id);
+                                        setDropdownCoords({ top, left, openUpward });
+                                      }
+                                    }}
                                     className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all cursor-pointer ${
                                       activeActionsDropdown === company.id
                                         ? 'border-[#2563EB] bg-[#EFF6FF]/40 text-[#2563EB]'
@@ -1253,8 +1271,16 @@ export const SuperAdminPage: React.FC = () => {
                                     <MoreHorizontal size={16} />
                                   </button>
 
-                                  {activeActionsDropdown === company.id && (
-                                    <div className="absolute right-0 bottom-[calc(100%+8px)] z-[90] w-[200px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)] animate-[platform-fade-in_120ms_ease-out]">
+                                  {activeActionsDropdown === company.id && dropdownCoords && createPortal(
+                                    <div 
+                                      style={{ 
+                                        position: 'absolute',
+                                        top: `${dropdownCoords.top}px`,
+                                        left: `${dropdownCoords.left}px`,
+                                      }}
+                                      className="z-[9999] w-[200px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)] animate-[platform-fade-in_120ms_ease-out]"
+                                      onClick={e => e.stopPropagation()}
+                                    >
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -1333,7 +1359,8 @@ export const SuperAdminPage: React.FC = () => {
                                         <AlertTriangle size={14} className={company.status === 'ACTIVE' ? 'text-red-400' : 'text-emerald-400'} />
                                         {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
                                       </button>
-                                    </div>
+                                    </div>,
+                                    document.body
                                   )}
                                 </div>
                               </div>
