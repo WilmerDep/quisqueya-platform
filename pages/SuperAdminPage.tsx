@@ -902,30 +902,77 @@ export const SuperAdminPage: React.FC = () => {
 
               {/* Fila de KPIs Superiores de la Vista Empresas */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-[platform-fade-in_180ms_ease-out]">
-                <div className={`${shellCardClass} p-6`}>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Empresas activas</p>
-                  <p className="mt-3 text-3xl font-black text-slate-900">128</p>
-                  <p className="mt-2 text-xs font-semibold text-emerald-600">+12 este mes</p>
+                {/* Empresas Activas */}
+                <div className="relative min-h-[178px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#DBEAFE] text-[#2563EB]">
+                      <Building2 size={24} />
+                    </div>
+                    <span className="inline-flex rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold text-[#2563EB]">+12 este mes</span>
+                  </div>
+                  <div className="mt-6">
+                    <p className="text-[14.5px] font-semibold text-slate-500">Empresas activas</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900">128</p>
+                  </div>
+                  <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08] text-[#2563EB]">
+                    <Building2 size={70} />
+                  </div>
                 </div>
-                <div className={`${shellCardClass} p-6`}>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">En prueba</p>
-                  <p className="mt-3 text-3xl font-black text-slate-900">18</p>
-                  <p className="mt-2 text-xs font-semibold text-emerald-600">+3 este mes</p>
+
+                {/* En Prueba */}
+                <div className="relative min-h-[178px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#DCFCE7] text-[#16A34A]">
+                      <Crown size={24} />
+                    </div>
+                    <span className="inline-flex rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold text-[#16A34A]">+3 este mes</span>
+                  </div>
+                  <div className="mt-6">
+                    <p className="text-[14.5px] font-semibold text-slate-500">En prueba</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900">18</p>
+                  </div>
+                  <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08] text-[#16A34A]">
+                    <Crown size={70} />
+                  </div>
                 </div>
-                <div className={`${shellCardClass} p-6`}>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Suspendidas</p>
-                  <p className="mt-3 text-3xl font-black text-slate-900">7</p>
-                  <p className="mt-2 text-xs font-semibold text-amber-600">+1 este mes</p>
+
+                {/* Suspendidas */}
+                <div className="relative min-h-[178px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#FEF3C7] text-[#F59E0B]">
+                      <AlertCircle size={24} />
+                    </div>
+                    <span className="inline-flex rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold text-[#F59E0B]">+1 este mes</span>
+                  </div>
+                  <div className="mt-6">
+                    <p className="text-[14.5px] font-semibold text-slate-500">Suspendidas</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900">7</p>
+                  </div>
+                  <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08] text-[#F59E0B]">
+                    <AlertCircle size={70} />
+                  </div>
                 </div>
-                <div className={`${shellCardClass} p-6`}>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">MRR Total</p>
-                  <p className="mt-3 text-3xl font-black text-slate-900">RD$ 532,800.00</p>
-                  <p className="mt-2 text-xs font-semibold text-emerald-600">+8.5% vs mes anterior</p>
+
+                {/* MRR Total */}
+                <div className="relative min-h-[178px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#DBEAFE] text-[#2563EB]">
+                      <DollarSign size={24} />
+                    </div>
+                    <span className="inline-flex rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold text-[#2563EB]">+8.5%</span>
+                  </div>
+                  <div className="mt-6">
+                    <p className="text-[14.5px] font-semibold text-slate-500">MRR Total</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900">RD$ 532,800.00</p>
+                  </div>
+                  <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08] text-[#2563EB]">
+                    <DollarSign size={70} />
+                  </div>
                 </div>
               </div>
 
               {/* Barra de Filtros */}
-              <div className={`${shellCardClass} p-5`}>
+              <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="relative">
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
@@ -933,12 +980,12 @@ export const SuperAdminPage: React.FC = () => {
                       value={searchTerm}
                       onChange={event => setSearchTerm(event.target.value)}
                       placeholder="Buscar por nombre o dominio..."
-                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[14.5px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[14.5px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
                     />
                   </div>
                   <div>
                     <select
-                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14.5px] font-medium text-[#111827] outline-none transition-all duration-200 focus:border-[#93C5FD]"
+                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14.5px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD] cursor-pointer"
                     >
                       <option>Todos los estados</option>
                       <option>Activa</option>
@@ -949,7 +996,7 @@ export const SuperAdminPage: React.FC = () => {
                   </div>
                   <div>
                     <select
-                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14.5px] font-medium text-[#111827] outline-none transition-all duration-200 focus:border-[#93C5FD]"
+                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14.5px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD] cursor-pointer"
                     >
                       <option>Todos los planes</option>
                       <option>Básico</option>
@@ -970,7 +1017,7 @@ export const SuperAdminPage: React.FC = () => {
                   const companyBranchesCount = company.id === 'c1' ? 3 : 1;
 
                   return (
-                    <div key={company.id} className={`${shellCardClass} p-5 lg:p-6 transition-all duration-300 hover:shadow-md hover:border-slate-300/80`}>
+                    <div key={company.id} className="rounded-[30px] border border-[#E5E7EB] bg-white p-5 lg:p-6 shadow-sm transition-all duration-220 ease-out hover:-translate-y-1 hover:shadow-md hover:border-slate-300/80">
                       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex min-w-0 items-start gap-4">
                           <div className={`relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[20px] font-black text-white shadow-sm ${
