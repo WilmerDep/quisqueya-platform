@@ -1167,66 +1167,67 @@ export const SuperAdminPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="overflow-x-auto pb-28">
-                    <table className="min-w-full divide-y divide-slate-100 text-left">
-                      <thead>
-                        <tr className="text-[12.5px] font-bold uppercase tracking-wider text-slate-400">
-                          <th className="pb-3 pl-2">Empresa</th>
-                          <th className="pb-3 text-center">Plan</th>
-                          <th className="pb-3 text-center">Usuarios</th>
-                          <th className="pb-3 text-center">MRR / Cobro</th>
-                          <th className="pb-3 text-center">Próximo Pago</th>
-                          <th className="pb-3 text-center">Estado</th>
-                          <th className="pb-3 text-right pr-2">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
+                  <div className="overflow-x-auto overflow-y-visible">
+                    <div className="min-w-[920px] pb-32">
+                      <div className="grid grid-cols-[2.2fr_1.1fr_1.1fr_1.4fr_1.2fr_1fr_0.7fr] px-4 py-3 text-[12.5px] font-bold uppercase tracking-wider text-slate-400">
+                        <span>Empresa</span>
+                        <span className="text-center">Plan</span>
+                        <span className="text-center">Usuarios</span>
+                        <span className="text-center">MRR / Cobro</span>
+                        <span className="text-center">Próximo Pago</span>
+                        <span className="text-center">Estado</span>
+                        <span className="text-right pr-2">Acciones</span>
+                      </div>
+
+                      <div className="divide-y divide-slate-100 bg-white">
                         {filteredCompanies.map(company => {
                           const plan = plans.find(item => item.id === company.planId);
                           const isGhost = !!company.isGhostMode;
                           const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
 
                           return (
-                            <tr
+                            <div
                               key={company.id}
-                              className="group text-[14.5px] hover:bg-slate-50/65 transition-colors cursor-pointer"
+                              className="grid grid-cols-[2.2fr_1.1fr_1.1fr_1.4fr_1.2fr_1fr_0.7fr] items-center border-t border-[#F3F4F6] px-4 py-4 text-[14.5px] hover:bg-slate-50/65 transition-colors cursor-pointer"
                               onClick={() => {
                                 setSelectedCompanyDetail(company);
                                 setDetailTab('RESUMEN');
                               }}
                             >
-                              <td className="py-4 pl-2">
-                                <div className="flex min-w-0 items-center gap-3 transition-all duration-200 hover:translate-x-1">
-                                  <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold text-white shadow-sm ${
-                                    company.status === 'SUSPENDED' 
-                                      ? 'bg-slate-400' 
-                                      : isGhost 
-                                        ? 'bg-purple-600 shadow-purple-200' 
-                                        : 'bg-blue-600 shadow-blue-200'
-                                  }`}>
-                                    {company.name[0].toUpperCase()}
-                                    {isGhost && (
-                                      <span className="absolute -right-1 -top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
-                                        <Ghost size={8} />
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="font-bold text-[#111827] group-hover:text-blue-600 transition-colors">
-                                      {company.name}
-                                    </p>
-                                    <p className="text-[11.5px] font-semibold text-slate-400 mt-0.5">ID: {company.id}</p>
-                                  </div>
+                              <div className="flex min-w-0 items-center gap-3">
+                                <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold text-white shadow-sm ${
+                                  company.status === 'SUSPENDED' 
+                                    ? 'bg-slate-400' 
+                                    : isGhost 
+                                      ? 'bg-purple-600 shadow-purple-200' 
+                                      : 'bg-blue-600 shadow-blue-200'
+                                }`}>
+                                  {company.name[0].toUpperCase()}
+                                  {isGhost && (
+                                    <span className="absolute -right-1 -top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
+                                      <Ghost size={8} />
+                                    </span>
+                                  )}
                                 </div>
-                              </td>
-                              <td className="py-4 text-center font-bold text-slate-700">{plan?.name || 'Básico'}</td>
-                              <td className="py-4 text-center font-semibold text-[#475569]">{companyUsersCount} usuarios</td>
-                              <td className="py-4 text-center">
+                                <button
+                                  type="button"
+                                  className="group flex min-w-0 flex-col text-left transition-all duration-200 hover:translate-x-1 cursor-pointer"
+                                >
+                                  <span className="font-bold text-[#111827] group-hover:text-[#2563EB] transition-colors">
+                                    {company.name}
+                                  </span>
+                                  <span className="text-[11.5px] font-semibold text-slate-400 mt-0.5">ID: {company.id}</span>
+                                </button>
+                              </div>
+
+                              <span className="text-center font-bold text-slate-700">{plan?.name || 'Básico'}</span>
+                              <span className="text-center font-semibold text-[#475569]">{companyUsersCount} usuarios</span>
+                              <div className="text-center">
                                 <p className="font-bold text-slate-900">{formatCurrency(company.subscriptionPrice)}</p>
                                 <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{company.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}</p>
-                              </td>
-                              <td className="py-4 text-center font-semibold text-slate-600">{formatDate(company.expiresAt)}</td>
-                              <td className="py-4 text-center">
+                              </div>
+                              <span className="text-center font-semibold text-slate-600">{formatDate(company.expiresAt)}</span>
+                              <div className="text-center">
                                 <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
                                   company.status === 'ACTIVE' 
                                     ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
@@ -1236,8 +1237,9 @@ export const SuperAdminPage: React.FC = () => {
                                 }`}>
                                   {company.status === 'ACTIVE' ? 'Activo' : company.status === 'TRIAL' ? 'Prueba' : 'Suspendido'}
                                 </span>
-                              </td>
-                              <td className="py-4 text-right pr-2 relative" onClick={e => e.stopPropagation()}>
+                              </div>
+
+                              <div className="text-right pr-2 relative" onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center justify-end">
                                   <button
                                     type="button"
@@ -1260,7 +1262,7 @@ export const SuperAdminPage: React.FC = () => {
                                           setDetailTab('RESUMEN');
                                           setActiveActionsDropdown(null);
                                         }}
-                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[14px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
+                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[15px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
                                       >
                                         <Building2 size={16} className="text-[#2563EB]" />
                                         Ver perfil
@@ -1272,7 +1274,7 @@ export const SuperAdminPage: React.FC = () => {
                                           handleToggleGhost(company.id, isGhost);
                                           setActiveActionsDropdown(null);
                                         }}
-                                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[14px] font-semibold transition-all hover:translate-x-1 ${
+                                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[15px] font-semibold transition-all hover:translate-x-1 ${
                                           isGhost
                                             ? 'text-purple-650 hover:bg-purple-50/50'
                                             : 'text-slate-700 hover:bg-[#F8FAFC] hover:text-purple-650'
@@ -1293,7 +1295,7 @@ export const SuperAdminPage: React.FC = () => {
                                           setIsCompanyModalOpen(true);
                                           setActiveActionsDropdown(null);
                                         }}
-                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[14px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
+                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[15px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
                                       >
                                         <Edit3 size={16} className="text-[#2563EB]" />
                                         Editar empresa
@@ -1334,12 +1336,12 @@ export const SuperAdminPage: React.FC = () => {
                                     </div>
                                   )}
                                 </div>
-                              </td>
-                            </tr>
+                              </div>
+                            </div>
                           );
                         })}
-                      </tbody>
-                    </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
