@@ -3,10 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertCircle,
+  AlertTriangle,
   ArrowLeft,
   ArrowUpRight,
   Bell,
   Building2,
+  Calendar,
+  CalendarCheck,
   CheckCircle2,
   Clock3,
   CreditCard,
@@ -25,6 +28,7 @@ import {
   MoreHorizontal,
   Package,
   Plus,
+  RefreshCw,
   Search,
   Settings,
   ShieldAlert,
@@ -701,59 +705,119 @@ export const SuperAdminPage: React.FC = () => {
               </div>
 
               {/* Contenido de cada Tab del Detalle */}
+              {/* Contenido de cada Tab del Detalle */}
               {detailTab === 'RESUMEN' && (
-                <div className="grid gap-6 md:grid-cols-2 animate-[platform-fade-in_180ms_ease-out]">
-                  <div className={`${shellCardClass} p-6 space-y-4`}>
-                    <div className="border-b border-slate-100 pb-3">
-                      <h3 className="text-[17px] font-black text-slate-900">Salud Financiera de la Empresa</h3>
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.5fr_0.9fr] animate-[platform-fade-in_180ms_ease-out]">
+                  {/* Columna Izquierda: Salud Financiera e Indicadores */}
+                  <div className="space-y-6">
+                    <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm space-y-4">
+                      <div className="border-b border-slate-100 pb-3">
+                        <h3 className="text-[17px] font-black text-slate-900">Salud Financiera de la Empresa</h3>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4 transition-all duration-200 hover:shadow-sm">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Cobros Totales</p>
+                          <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 845200 : 0)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4 transition-all duration-200 hover:shadow-sm">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Capital Prestado</p>
+                          <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 1250000 : 0)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4 transition-all duration-200 hover:shadow-sm">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Cartera Activa</p>
+                          <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 689000 : 0)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4 transition-all duration-200 hover:shadow-sm">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Mora Acumulada</p>
+                          <p className="text-xl font-black text-red-650 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 45000 : 0)}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Cobros Totales</p>
-                        <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 845200 : 0)}</p>
+
+                    {/* Operación General */}
+                    <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                      <div className="border-b border-slate-100 pb-3 mb-4">
+                        <h3 className="text-[17px] font-black text-slate-900">Operación General</h3>
                       </div>
-                      <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Capital Prestado</p>
-                        <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 1250000 : 0)}</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Cartera Activa</p>
-                        <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 689000 : 0)}</p>
-                      </div>
-                      <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Mora Acumulada</p>
-                        <p className="text-xl font-black text-red-650 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 45000 : 0)}</p>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center p-3 rounded-2xl bg-slate-50/50">
+                          <p className="text-2xl font-black text-slate-900">13</p>
+                          <p className="text-[12px] font-semibold text-slate-500 mt-0.5">Usuarios Activos</p>
+                        </div>
+                        <div className="text-center p-3 rounded-2xl bg-slate-50/50">
+                          <p className="text-2xl font-black text-slate-900">3</p>
+                          <p className="text-[12px] font-semibold text-slate-500 mt-0.5">Sucursales</p>
+                        </div>
+                        <div className="text-center p-3 rounded-2xl bg-slate-50/50">
+                          <p className="text-2xl font-black text-slate-900">97</p>
+                          <p className="text-[12px] font-semibold text-slate-500 mt-0.5">Clientes Registrados</p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className={`${shellCardClass} p-6 space-y-4`}>
-                    <div className="border-b border-slate-100 pb-3">
-                      <h3 className="text-[17px] font-black text-slate-900">Configuración General</h3>
+                  {/* Columna Derecha: Configuración y Acciones Rápidas */}
+                  <div className="space-y-6">
+                    <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm space-y-4">
+                      <div className="border-b border-slate-100 pb-3">
+                        <h3 className="text-[17px] font-black text-slate-900">Configuración General</h3>
+                      </div>
+                      <div className="space-y-3.5 pt-1">
+                        <div className="flex items-center justify-between text-[13.5px]">
+                          <span className="font-semibold text-slate-500">Plan Contratado</span>
+                          <span className="font-bold text-slate-800">
+                            {plans.find(p => p.id === selectedCompanyDetail.planId)?.name || 'Estándar'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[13.5px]">
+                          <span className="font-semibold text-slate-500">Ciclo de Facturación</span>
+                          <span className="font-bold text-slate-800">
+                            {selectedCompanyDetail.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[13.5px]">
+                          <span className="font-semibold text-slate-500">Precio de suscripción</span>
+                          <span className="font-bold text-slate-800">{formatCurrency(selectedCompanyDetail.subscriptionPrice)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[13.5px]">
+                          <span className="font-semibold text-slate-500">Estado de Operación</span>
+                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase ${
+                            selectedCompanyDetail.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                          }`}>
+                            {selectedCompanyDetail.status}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-3.5">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-semibold text-slate-500">Plan Contratado</span>
-                        <span className="font-bold text-slate-800">
-                          {plans.find(p => p.id === selectedCompanyDetail.planId)?.name || 'Estándar'}
-                        </span>
+
+                    {/* Acciones Rápidas del Perfil */}
+                    <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm space-y-3">
+                      <div className="border-b border-slate-100 pb-3 mb-2">
+                        <h3 className="text-[17px] font-black text-slate-900">Acciones de Control</h3>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-semibold text-slate-500">Ciclo de Facturación</span>
-                        <span className="font-bold text-slate-800">
-                          {selectedCompanyDetail.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-semibold text-slate-500">Precio de suscripción</span>
-                        <span className="font-bold text-slate-800">{formatCurrency(selectedCompanyDetail.subscriptionPrice)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-semibold text-slate-500">Estado de Operación</span>
-                        <span className="font-bold text-slate-800 uppercase text-xs">
-                          {selectedCompanyDetail.status}
-                        </span>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleGhost(selectedCompanyDetail.id, !!selectedCompanyDetail.isGhostMode)}
+                        className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-purple-50 border border-purple-200 text-[13.5px] font-bold text-purple-650 hover:bg-purple-100 transition-all cursor-pointer"
+                      >
+                        <Ghost size={16} />
+                        Emular Sesión (Soporte)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCompany(selectedCompanyDetail);
+                          setProvisionName(selectedCompanyDetail.name);
+                          setProvisionPlanId(selectedCompanyDetail.planId);
+                          setProvisionCycle(selectedCompanyDetail.billingCycle);
+                          setProvisionPrice(selectedCompanyDetail.subscriptionPrice || 0);
+                          setIsCompanyModalOpen(true);
+                        }}
+                        className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white border border-slate-200 text-[13.5px] font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                      >
+                        <Edit3 size={16} />
+                        Editar Configuración
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -885,283 +949,402 @@ export const SuperAdminPage: React.FC = () => {
             </section>
           ) : (
             // ==================== LISTADO GENERAL DE EMPRESAS ====================
-            <section className="space-y-5">
-              <SectionHeader
-                title="Empresas"
-                description="Gestion global de tenants, estado, plan contratado y controles de soporte."
-                actionLabel="Aprovisionar empresa"
-                onAction={() => {
-                  setEditingCompany(null);
-                  setProvisionName('');
-                  setProvisionPlanId('p2');
-                  setProvisionCycle('MONTHLY');
-                  setProvisionPrice(3500);
-                  setIsCompanyModalOpen(true);
-                }}
-              />
+            <section className="space-y-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <h1 className="text-[32px] font-semibold leading-[1.1] tracking-tight text-[#111827]">Empresas</h1>
+                  <p className="mt-2 text-[15px] font-medium text-[#6B7280]">
+                    Vista operativa de tenants, planes, facturación, estado y seguimiento del SaaS.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingCompany(null);
+                      setProvisionName('');
+                      setProvisionPlanId('p2');
+                      setProvisionCycle('MONTHLY');
+                      setProvisionPrice(3500);
+                      setIsCompanyModalOpen(true);
+                    }}
+                    className="inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-6 text-[14.5px] font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#1D4ED8] hover:shadow-md cursor-pointer"
+                  >
+                    <Building2 size={18} />
+                    Aprovisionar empresa
+                  </button>
+                </div>
+              </div>
 
-              {/* Fila de KPIs Superiores de la Vista Empresas */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-[platform-fade-in_180ms_ease-out]">
+              {/* Fila de KPIs Superiores de la Vista Empresas (Estilo Cobrar Hoy - Estáticos) */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5 animate-[platform-fade-in_180ms_ease-out]">
                 {/* Empresas Activas */}
-                <div className="relative min-h-[178px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                <div className="relative min-h-[160px] overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#DBEAFE] text-[#2563EB]">
-                      <Building2 size={24} />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#DBEAFE] text-[#2563EB]">
+                      <Building2 size={20} />
                     </div>
-                    <span className="inline-flex rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold text-[#2563EB]">+12 este mes</span>
+                    <div className="text-right">
+                      <span className="inline-flex rounded-full bg-[#F8FAFC] px-2.5 py-0.5 text-[11px] font-bold text-[#2563EB]">+12 mes</span>
+                    </div>
                   </div>
-                  <div className="mt-6">
-                    <p className="text-[14.5px] font-semibold text-slate-500">Empresas activas</p>
-                    <p className="mt-1 text-2xl font-black text-slate-900">128</p>
+                  <div className="mt-4">
+                    <p className="text-[13px] font-semibold text-slate-500">Empresas activas</p>
+                    <p className="mt-0.5 text-2xl font-black text-slate-900">128</p>
                   </div>
-                  <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08] text-[#2563EB]">
-                    <Building2 size={70} />
+                  <div className="pointer-events-none absolute bottom-3 right-3 opacity-[0.06] text-[#2563EB]">
+                    <Building2 size={64} />
                   </div>
                 </div>
 
                 {/* En Prueba */}
-                <div className="relative min-h-[178px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                <div className="relative min-h-[160px] overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#DCFCE7] text-[#16A34A]">
-                      <Crown size={24} />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#DCFCE7] text-[#16A34A]">
+                      <Crown size={20} />
                     </div>
-                    <span className="inline-flex rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold text-[#16A34A]">+3 este mes</span>
+                    <div className="text-right">
+                      <span className="inline-flex rounded-full bg-[#F8FAFC] px-2.5 py-0.5 text-[11px] font-bold text-[#16A34A]">+3 mes</span>
+                    </div>
                   </div>
-                  <div className="mt-6">
-                    <p className="text-[14.5px] font-semibold text-slate-500">En prueba</p>
-                    <p className="mt-1 text-2xl font-black text-slate-900">18</p>
+                  <div className="mt-4">
+                    <p className="text-[13px] font-semibold text-slate-500">En prueba</p>
+                    <p className="mt-0.5 text-2xl font-black text-slate-900">18</p>
                   </div>
-                  <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08] text-[#16A34A]">
-                    <Crown size={70} />
+                  <div className="pointer-events-none absolute bottom-3 right-3 opacity-[0.06] text-[#16A34A]">
+                    <Crown size={64} />
                   </div>
                 </div>
 
                 {/* Suspendidas */}
-                <div className="relative min-h-[178px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                <div className="relative min-h-[160px] overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#FEF3C7] text-[#F59E0B]">
-                      <AlertCircle size={24} />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#FEE2E2] text-[#DC2626]">
+                      <AlertCircle size={20} />
                     </div>
-                    <span className="inline-flex rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold text-[#F59E0B]">+1 este mes</span>
+                    <div className="text-right">
+                      <span className="inline-flex rounded-full bg-[#F8FAFC] px-2.5 py-0.5 text-[11px] font-bold text-[#DC2626]">+1 mes</span>
+                    </div>
                   </div>
-                  <div className="mt-6">
-                    <p className="text-[14.5px] font-semibold text-slate-500">Suspendidas</p>
-                    <p className="mt-1 text-2xl font-black text-slate-900">7</p>
+                  <div className="mt-4">
+                    <p className="text-[13px] font-semibold text-slate-500">Suspendidas</p>
+                    <p className="mt-0.5 text-2xl font-black text-slate-900">7</p>
                   </div>
-                  <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08] text-[#F59E0B]">
-                    <AlertCircle size={70} />
+                  <div className="pointer-events-none absolute bottom-3 right-3 opacity-[0.06] text-[#DC2626]">
+                    <AlertCircle size={64} />
                   </div>
                 </div>
 
                 {/* MRR Total */}
-                <div className="relative min-h-[178px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                <div className="relative min-h-[160px] overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#DBEAFE] text-[#2563EB]">
-                      <DollarSign size={24} />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#DBEAFE] text-[#2563EB]">
+                      <DollarSign size={20} />
                     </div>
-                    <span className="inline-flex rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold text-[#2563EB]">+8.5%</span>
+                    <div className="text-right">
+                      <span className="inline-flex rounded-full bg-[#F8FAFC] px-2.5 py-0.5 text-[11px] font-bold text-[#2563EB]">+8.5%</span>
+                    </div>
                   </div>
-                  <div className="mt-6">
-                    <p className="text-[14.5px] font-semibold text-slate-500">MRR Total</p>
-                    <p className="mt-1 text-2xl font-black text-slate-900">RD$ 532,800.00</p>
+                  <div className="mt-4">
+                    <p className="text-[13px] font-semibold text-slate-500">MRR Total</p>
+                    <p className="mt-0.5 text-2xl font-black text-slate-900">RD$ 532.8K</p>
                   </div>
-                  <div className="pointer-events-none absolute bottom-4 right-4 opacity-[0.08] text-[#2563EB]">
-                    <DollarSign size={70} />
+                  <div className="pointer-events-none absolute bottom-3 right-3 opacity-[0.06] text-[#2563EB]">
+                    <DollarSign size={64} />
+                  </div>
+                </div>
+
+                {/* Próximos Vencimientos */}
+                <div className="relative min-h-[160px] overflow-hidden rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#FEF3C7] text-[#D97706]">
+                      <Calendar size={20} />
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black text-red-650">Urgente</span>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-[13px] font-semibold text-slate-500">Vencimientos</p>
+                    <p className="mt-0.5 text-2xl font-black text-slate-900">14</p>
+                  </div>
+                  <div className="pointer-events-none absolute bottom-3 right-3 opacity-[0.06] text-[#D97706]">
+                    <Calendar size={64} />
                   </div>
                 </div>
               </div>
 
               {/* Barra de Filtros */}
-              <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
-                <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1fr_1.2fr_auto]">
                   <div className="relative">
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
                     <input
                       value={searchTerm}
                       onChange={event => setSearchTerm(event.target.value)}
-                      placeholder="Buscar por nombre o dominio..."
-                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[14.5px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                      placeholder="Buscar por empresa, ID o dominio..."
+                      className="h-[48px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[14px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
                     />
                   </div>
                   <div>
                     <select
-                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14.5px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD] cursor-pointer"
+                      className="h-[48px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD] cursor-pointer"
                     >
                       <option>Todos los estados</option>
-                      <option>Activa</option>
-                      <option>En prueba</option>
-                      <option>En mora</option>
-                      <option>Suspendida</option>
+                      <option>Activas</option>
+                      <option>Pruebas</option>
+                      <option>Suspendidas</option>
                     </select>
                   </div>
                   <div>
                     <select
-                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14.5px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD] cursor-pointer"
+                      className="h-[48px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD] cursor-pointer"
                     >
                       <option>Todos los planes</option>
                       <option>Básico</option>
                       <option>Profesional</option>
                       <option>Empresarial</option>
-                      <option>Personalizado</option>
                     </select>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm('');
+                    }}
+                    className="inline-flex h-[48px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[13.5px] font-bold text-slate-650 hover:bg-slate-50 hover:text-slate-900 transition-all cursor-pointer"
+                  >
+                    <RefreshCw size={14} />
+                    Limpiar filtros
+                  </button>
                 </div>
               </div>
 
-              <div className="rounded-[30px] border border-[#E5E7EB] bg-white shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between border-b border-[#E5E7EB] px-8 py-6">
-                  <h2 className="text-[20px] font-bold text-[#111827]">Listado de empresas</h2>
-                  <span className="rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3.5 py-1 text-[13px] font-bold text-[#475569]">
-                    {filteredCompanies.length} registradas
-                  </span>
+              {/* Layout Operativo de dos columnas al estilo Cobrar Hoy */}
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_0.95fr]">
+                {/* Columna Izquierda: Cartera de Empresas */}
+                <div className="rounded-[30px] border border-[#E5E7EB] bg-white shadow-sm overflow-hidden p-6 space-y-5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                      <h2 className="text-[20px] font-bold text-[#111827]">Cartera de empresas</h2>
+                      <p className="text-[13px] font-medium text-slate-400 mt-1">Seguimiento centralizado de tenants y facturación operativa.</p>
+                    </div>
+                    <span className="rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-1 text-[13px] font-bold text-[#475569]">
+                      {filteredCompanies.length} registradas
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-100 text-left">
+                      <thead>
+                        <tr className="text-[12.5px] font-bold uppercase tracking-wider text-slate-400">
+                          <th className="pb-3 pl-2">Empresa</th>
+                          <th className="pb-3 text-center">Plan</th>
+                          <th className="pb-3 text-center">Usuarios</th>
+                          <th className="pb-3 text-center">MRR / Cobro</th>
+                          <th className="pb-3 text-center">Próximo Pago</th>
+                          <th className="pb-3 text-center">Estado</th>
+                          <th className="pb-3 text-right pr-2">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredCompanies.map(company => {
+                          const plan = plans.find(item => item.id === company.planId);
+                          const isGhost = !!company.isGhostMode;
+                          const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
+
+                          return (
+                            <tr
+                              key={company.id}
+                              className="group text-[14.5px] hover:bg-slate-50/65 transition-colors cursor-pointer"
+                              onClick={() => {
+                                setSelectedCompanyDetail(company);
+                                setDetailTab('RESUMEN');
+                              }}
+                            >
+                              <td className="py-4 pl-2">
+                                <div className="flex items-center gap-3">
+                                  <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold text-white shadow-sm ${
+                                    company.status === 'SUSPENDED' 
+                                      ? 'bg-slate-400' 
+                                      : isGhost 
+                                        ? 'bg-purple-600 shadow-purple-200' 
+                                        : 'bg-blue-600 shadow-blue-200'
+                                  }`}>
+                                    {company.name[0].toUpperCase()}
+                                    {isGhost && (
+                                      <span className="absolute -right-1 -top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
+                                        <Ghost size={8} />
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-[#111827] group-hover:text-blue-600 transition-colors">
+                                      {company.name}
+                                    </p>
+                                    <p className="text-[11.5px] font-semibold text-slate-400 mt-0.5">ID: {company.id}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-4 text-center font-bold text-slate-700">{plan?.name || 'Básico'}</td>
+                              <td className="py-4 text-center font-semibold text-[#475569]">{companyUsersCount} usuarios</td>
+                              <td className="py-4 text-center">
+                                <p className="font-bold text-slate-900">{formatCurrency(company.subscriptionPrice)}</p>
+                                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{company.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}</p>
+                              </td>
+                              <td className="py-4 text-center font-semibold text-slate-600">{formatDate(company.expiresAt)}</td>
+                              <td className="py-4 text-center">
+                                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                                  company.status === 'ACTIVE' 
+                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                                    : company.status === 'TRIAL' 
+                                      ? 'bg-amber-50 text-amber-600 border border-amber-200' 
+                                      : 'bg-rose-50 text-rose-600 border border-rose-200'
+                                }`}>
+                                  {company.status === 'ACTIVE' ? 'Activo' : company.status === 'TRIAL' ? 'Prueba' : 'Suspendido'}
+                                </span>
+                              </td>
+                              <td className="py-4 text-right pr-2" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    title="Modo Fantasma"
+                                    onClick={() => handleToggleGhost(company.id, isGhost)}
+                                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all ${
+                                      isGhost 
+                                        ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
+                                        : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
+                                    } cursor-pointer`}
+                                  >
+                                    <Ghost size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    title="Editar"
+                                    onClick={() => {
+                                      setEditingCompany(company);
+                                      setProvisionName(company.name);
+                                      setProvisionPlanId(company.planId);
+                                      setProvisionCycle(company.billingCycle);
+                                      setProvisionPrice(company.subscriptionPrice || 0);
+                                      setIsCompanyModalOpen(true);
+                                    }}
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
+                                  >
+                                    <Edit3 size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (company.status === 'ACTIVE') {
+                                        window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
+                                          detail: {
+                                            id: `suspend-${company.id}`,
+                                            state: 'open',
+                                            tone: 'danger',
+                                            title: `¿Suspender acceso de ${company.name}?`,
+                                            description: `Esta acción denegará de inmediato el acceso a todos los administradores y usuarios de esta empresa.`,
+                                            confirmLabel: 'Confirmar Suspensión',
+                                            cancelLabel: 'Cancelar',
+                                            onConfirm: () => handleToggleCompany(company.id, company.status)
+                                          }
+                                        }));
+                                      } else {
+                                        handleToggleCompany(company.id, company.status);
+                                      }
+                                    }}
+                                    className={`inline-flex h-9 items-center justify-center rounded-xl px-3 text-[12px] font-bold transition-all cursor-pointer ${
+                                      company.status === 'ACTIVE'
+                                        ? 'border border-red-200 bg-red-50 text-red-650 hover:bg-red-100'
+                                        : 'border border-emerald-200 bg-emerald-50 text-emerald-650 hover:bg-emerald-100'
+                                    }`}
+                                  >
+                                    {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <div className="min-w-[1020px]">
-                    {/* Cabecera del Listado Estilo Lista */}
-                    <div className="grid grid-cols-[2.2fr_1.1fr_0.9fr_1fr_1.3fr_1.3fr_1fr_1.2fr] px-8 py-5 text-[13px] font-bold uppercase tracking-[0.08em] text-[#94A3B8] border-b border-slate-100 bg-[#FCFDFF]">
-                      <span>Empresa</span>
-                      <span className="text-center">Plan</span>
-                      <span className="text-center">Usuarios</span>
-                      <span className="text-center">Sucursales</span>
-                      <span className="text-center">MRR / Cobro</span>
-                      <span className="text-center">Próximo Pago</span>
-                      <span className="text-center">Estado</span>
-                      <span className="text-right">Acciones</span>
+                {/* Columna Derecha: Panel Lateral Operativo Estilo Cobrar Hoy */}
+                <div className="space-y-5">
+                  {/* Bloque A: Empresas en seguimiento */}
+                  <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4">
+                      <AlertTriangle size={18} className="text-amber-500" />
+                      <h3 className="text-[17px] font-semibold text-slate-900">Empresas en seguimiento</h3>
                     </div>
+                    <div className="space-y-3.5">
+                      <div className="flex items-center justify-between gap-4 p-3 rounded-[18px] bg-red-50/40 border border-red-100/50 transition-all duration-200 hover:translate-x-1">
+                        <div>
+                          <p className="text-[13.5px] font-bold text-slate-900">Inversiones Almonte</p>
+                          <p className="text-[11px] font-semibold text-red-600 mt-0.5">Suscripción vencida hace 4 días</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-700">Mora</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 p-3 rounded-[18px] bg-amber-50/40 border border-amber-100/50 transition-all duration-200 hover:translate-x-1">
+                        <div>
+                          <p className="text-[13.5px] font-bold text-slate-900">PrestaFacil RD</p>
+                          <p className="text-[11px] font-semibold text-amber-600 mt-0.5">Prueba por expirar en 3 días</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black text-amber-700">Trial</span>
+                      </div>
+                    </div>
+                  </div>
 
-                    <div className="divide-y divide-[#F3F4F6]">
-                      {filteredCompanies.map(company => {
-                        const plan = plans.find(item => item.id === company.planId);
-                        const isGhost = !!company.isGhostMode;
-                        const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
-                        const companyBranchesCount = company.id === 'c1' ? 3 : 1;
+                  {/* Bloque B: Renovaciones Próximas */}
+                  <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4">
+                      <CalendarCheck size={18} className="text-blue-500" />
+                      <h3 className="text-[17px] font-semibold text-slate-900">Renovaciones próximas</h3>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded-[18px] bg-[#FCFDFF] border border-slate-100 transition-all duration-200 hover:translate-x-1">
+                        <div>
+                          <p className="text-[13.5px] font-bold text-slate-900">CrediGarantías</p>
+                          <p className="text-[11px] font-semibold text-slate-400 mt-0.5">Expira: 12/07/2026</p>
+                        </div>
+                        <span className="font-bold text-slate-900 text-[13.5px]">{formatCurrency(3500)}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-[18px] bg-[#FCFDFF] border border-slate-100 transition-all duration-200 hover:translate-x-1">
+                        <div>
+                          <p className="text-[13.5px] font-bold text-slate-900">Capital Express</p>
+                          <p className="text-[11px] font-semibold text-slate-400 mt-0.5">Expira: 18/07/2026</p>
+                        </div>
+                        <span className="font-bold text-slate-900 text-[13.5px]">{formatCurrency(8000)}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                        return (
-                          <div
-                            key={company.id}
-                            className="grid grid-cols-[2.2fr_1.1fr_0.9fr_1fr_1.3fr_1.3fr_1fr_1.2fr] items-center px-8 py-5 text-[14.5px] transition-colors duration-200 hover:bg-[#FCFDFE] cursor-pointer"
-                            onClick={() => {
-                              setSelectedCompanyDetail(company);
-                              setDetailTab('RESUMEN');
-                            }}
-                          >
-                            {/* Identificación de la Empresa */}
-                            <div className="flex min-w-0 items-center gap-3">
-                              <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold text-white shadow-sm ${
-                                company.status === 'SUSPENDED' 
-                                  ? 'bg-slate-400' 
-                                  : isGhost 
-                                    ? 'bg-purple-600 shadow-purple-200' 
-                                    : 'bg-blue-600 shadow-blue-200'
-                              }`}>
-                                {company.name[0].toUpperCase()}
-                                {isGhost && (
-                                  <span className="absolute -right-1 -top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
-                                    <Ghost size={8} />
-                                  </span>
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate font-bold text-[#111827] transition-colors duration-200 hover:text-blue-600">
-                                  {company.name}
-                                </p>
-                                <p className="mt-0.5 truncate text-[12px] font-semibold text-[#6B7280]">ID: {company.id}</p>
-                              </div>
-                            </div>
-
-                            {/* Plan */}
-                            <span className="text-center font-bold text-slate-700">{plan?.name || 'Básico'}</span>
-
-                            {/* Usuarios */}
-                            <span className="text-center font-semibold text-[#475569]">{companyUsersCount} usuarios</span>
-
-                            {/* Sucursales */}
-                            <span className="text-center font-semibold text-[#475569]">{companyBranchesCount} sucursal/es</span>
-
-                            {/* MRR / Cobro */}
-                            <div className="text-center">
-                              <p className="font-bold text-slate-900">{formatCurrency(company.subscriptionPrice)}</p>
-                              <p className="text-[11px] font-semibold text-slate-400 mt-0.5">{company.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}</p>
-                            </div>
-
-                            {/* Próximo Pago */}
-                            <span className="text-center font-semibold text-slate-650">{formatDate(company.expiresAt)}</span>
-
-                            {/* Estado */}
-                            <div className="flex justify-center">
-                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                                company.status === 'ACTIVE' 
-                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
-                                  : company.status === 'TRIAL' 
-                                    ? 'bg-amber-50 text-amber-600 border border-amber-200' 
-                                    : 'bg-rose-50 text-rose-600 border border-rose-200'
-                              }`}>
-                                {company.status === 'ACTIVE' ? 'Activo' : company.status === 'TRIAL' ? 'Prueba' : 'Suspendido'}
-                              </span>
-                            </div>
-
-                            {/* Acciones */}
-                            <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                title="Modo Fantasma"
-                                onClick={() => handleToggleGhost(company.id, isGhost)}
-                                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all ${
-                                  isGhost 
-                                    ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
-                                    : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
-                                } cursor-pointer`}
-                              >
-                                <Ghost size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                title="Editar"
-                                onClick={() => {
-                                  setEditingCompany(company);
-                                  setProvisionName(company.name);
-                                  setProvisionPlanId(company.planId);
-                                  setProvisionCycle(company.billingCycle);
-                                  setProvisionPrice(company.subscriptionPrice || 0);
-                                  setIsCompanyModalOpen(true);
-                                }}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
-                              >
-                                <Edit3 size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (company.status === 'ACTIVE') {
-                                    window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
-                                      detail: {
-                                        id: `suspend-${company.id}`,
-                                        state: 'open',
-                                        tone: 'danger',
-                                        title: `¿Suspender acceso de ${company.name}?`,
-                                        description: `Esta acción denegará de inmediato el acceso a todos los administradores y usuarios de esta empresa.`,
-                                        confirmLabel: 'Confirmar Suspensión',
-                                        cancelLabel: 'Cancelar',
-                                        onConfirm: () => handleToggleCompany(company.id, company.status)
-                                      }
-                                    }));
-                                  } else {
-                                    handleToggleCompany(company.id, company.status);
-                                  }
-                                }}
-                                className={`inline-flex h-9 items-center justify-center rounded-xl px-3 text-[12px] font-bold transition-all cursor-pointer ${
-                                  company.status === 'ACTIVE'
-                                    ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
-                                    : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                                }`}
-                              >
-                                {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                  {/* Bloque C: Actividad Reciente del Tenant */}
+                  <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4">
+                      <Clock3 size={18} className="text-purple-500" />
+                      <h3 className="text-[17px] font-semibold text-slate-900">Actividad del tenant</h3>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3 transition-all duration-200 hover:translate-x-1">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                          <Activity size={14} />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-950 leading-tight">Acceso Emulado</p>
+                          <p className="text-[11.5px] font-medium text-slate-500 mt-0.5">Super Admin inició sesión en PrestaFacil RD</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 transition-all duration-200 hover:translate-x-1">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                          <CheckCircle2 size={14} />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-950 leading-tight">Pago Recibido</p>
+                          <p className="text-[11.5px] font-medium text-slate-500 mt-0.5">RD$ 3,500.00 recibidos de CrediGarantías</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1169,7 +1352,6 @@ export const SuperAdminPage: React.FC = () => {
             </section>
           )
         ) : null}
-
         {activeTab === 'GLOBAL_USERS' ? (
           <section className="space-y-5">
             <SectionHeader
