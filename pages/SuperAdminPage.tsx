@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertCircle,
+  ArrowLeft,
   ArrowUpRight,
   Bell,
   Building2,
@@ -136,6 +137,10 @@ export const SuperAdminPage: React.FC = () => {
   const [provisionPlanId, setProvisionPlanId] = useState('p2');
   const [provisionCycle, setProvisionCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
   const [provisionPrice, setProvisionPrice] = useState(3500);
+  
+  // Detalle de la empresa seleccionada para soporte y analisis en vivo
+  const [selectedCompanyDetail, setSelectedCompanyDetail] = useState<Company | null>(null);
+  const [detailTab, setDetailTab] = useState<'RESUMEN' | 'USUARIOS' | 'SUCURSALES' | 'SUSCRIPCION' | 'ACTIVIDAD'>('RESUMEN');
 
   const refreshData = useCallback(() => {
     setCompanies(getCompanies());
@@ -468,183 +473,440 @@ export const SuperAdminPage: React.FC = () => {
         ) : null}
 
         {activeTab === 'COMPANIES' ? (
-          <section className="space-y-5">
-            <SectionHeader
-              title="Empresas"
-              description="Gestion global de tenants, estado, plan contratado y controles de soporte."
-              actionLabel="Aprovisionar empresa"
-              onAction={() => {
-                setEditingCompany(null);
-                setProvisionName('');
-                setProvisionPlanId('p2');
-                setProvisionCycle('MONTHLY');
-                setProvisionPrice(3500);
-                setIsCompanyModalOpen(true);
-              }}
-            />
-
-            <div className={`${shellCardClass} p-5`}>
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
-                <div className="relative">
-                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
-                  <input
-                    value={searchTerm}
-                    onChange={event => setSearchTerm(event.target.value)}
-                    placeholder="Buscar empresa por nombre o ID..."
-                    className="h-[54px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
-                  />
-                </div>
-                <div className="flex items-center justify-end">
-                  <div className="rounded-2xl border border-[#E5E7EB] bg-[#FCFDFF] px-4 py-3 text-right">
-                    <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Empresas visibles</p>
-                    <p className="mt-2 text-[24px] font-semibold text-[#111827]">{filteredCompanies.length}</p>
+          selectedCompanyDetail ? (
+            // ==================== DETALLE DE EMPRESA (SOPORTE Y TENANT) ====================
+            <section className="space-y-6 animate-[platform-fade-in_180ms_ease-out]">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCompanyDetail(null)}
+                    className="inline-flex h-12 px-4 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-[13.5px] font-bold text-slate-600 transition-all hover:bg-slate-50 cursor-pointer"
+                  >
+                    <ArrowLeft size={16} />
+                    Volver al listado
+                  </button>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-[24px] font-black tracking-tight text-slate-900">{selectedCompanyDetail.name}</h2>
+                      <span className="inline-flex rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-blue-600">
+                        ID: {selectedCompanyDetail.id}
+                      </span>
+                    </div>
+                    <p className="text-[13.5px] font-semibold text-slate-500 mt-0.5">Ficha de soporte global y estado de suscripción.</p>
                   </div>
                 </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    title="Modo Fantasma (Diagnóstico de Soporte)"
+                    onClick={() => handleToggleGhost(selectedCompanyDetail.id, !!selectedCompanyDetail.isGhostMode)}
+                    className={`inline-flex h-11 px-4 items-center justify-center gap-2 rounded-2xl border transition-all ${
+                      selectedCompanyDetail.isGhostMode 
+                        ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
+                        : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
+                    } cursor-pointer`}
+                  >
+                    <Ghost size={16} />
+                    {selectedCompanyDetail.isGhostMode ? 'Emulando...' : 'Emular'}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              {filteredCompanies.map(company => {
-                const plan = plans.find(item => item.id === company.planId);
-                const isGhost = !!company.isGhostMode;
-                // Contar usuarios y sucursales de este tenant para mayor contexto
-                const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
-                const companyBranchesCount = company.id === 'c1' ? 3 : 1;
+              {/* Sub-navegación Horizontal de la Empresa */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200">
+                {(['RESUMEN', 'USUARIOS', 'SUCURSALES', 'SUSCRIPCION', 'ACTIVIDAD'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setDetailTab(tab)}
+                    className={`px-4 py-2.5 text-[13.5px] font-bold border-b-2 transition-all cursor-pointer ${
+                      detailTab === tab 
+                        ? 'border-blue-600 text-blue-600' 
+                        : 'border-transparent text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {tab === 'RESUMEN' && 'Resumen'}
+                    {tab === 'USUARIOS' && 'Usuarios'}
+                    {tab === 'SUCURSALES' && 'Sucursales'}
+                    {tab === 'SUSCRIPCION' && 'Suscripción'}
+                    {tab === 'ACTIVIDAD' && 'Actividad'}
+                  </button>
+                ))}
+              </div>
 
-                return (
-                  <div key={company.id} className={`${shellCardClass} p-5 lg:p-6 transition-all duration-300 hover:shadow-md hover:border-slate-300/80`}>
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="flex min-w-0 items-start gap-4">
-                        <div className={`relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[20px] font-black text-white shadow-sm ${
-                          company.status === 'SUSPENDED' 
-                            ? 'bg-slate-400' 
-                            : isGhost 
-                              ? 'bg-purple-600 shadow-purple-200' 
-                              : 'bg-blue-600 shadow-blue-200'
-                        }`}>
-                          {company.name[0].toUpperCase()}
-                          {isGhost && (
-                            <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
-                              <Ghost size={12} />
-                            </span>
-                          )}
-                        </div>
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-[19px] font-black tracking-tight text-[#111827]">{company.name}</h3>
-                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${
-                              company.status === 'ACTIVE' 
-                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
-                                : company.status === 'TRIAL' 
-                                  ? 'bg-amber-50 text-amber-600 border border-amber-200' 
-                                  : 'bg-rose-50 text-rose-600 border border-rose-200'
-                            }`}>
-                              {company.status === 'ACTIVE' ? 'Activo' : company.status === 'TRIAL' ? 'Prueba' : 'Suspendido'}
-                            </span>
-                            {company.isGhostMode && (
-                              <span className="inline-flex rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-purple-600">
-                                Emulación Activa
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className="flex flex-wrap items-center gap-3.5 text-[13px] font-medium text-slate-500 pt-1">
-                            <div className="flex items-center gap-1.5">
-                              <Package size={14} className="text-slate-400" />
-                              <span className="font-bold text-slate-700">{plan?.name || 'Básico estándar'}</span>
-                            </div>
-                            <span className="text-slate-300">•</span>
-                            <div className="flex items-center gap-1.5">
-                              <Users size={14} className="text-slate-400" />
-                              <span>{companyUsersCount} usuarios</span>
-                            </div>
-                            <span className="text-slate-300">•</span>
-                            <div className="flex items-center gap-1.5">
-                              <MapPin size={14} className="text-slate-400" />
-                              <span>{companyBranchesCount} sucursales</span>
-                            </div>
-                            <span className="text-slate-300">•</span>
-                            <div className="flex items-center gap-1.5">
-                              <Clock3 size={14} className="text-slate-400" />
-                              <span>Expira: <strong className="text-slate-700">{formatDate(company.expiresAt)}</strong></span>
-                            </div>
-                          </div>
-                        </div>
+              {/* Contenido de cada Tab del Detalle */}
+              {detailTab === 'RESUMEN' && (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className={`${shellCardClass} p-6 space-y-4`}>
+                    <div className="border-b border-slate-100 pb-3">
+                      <h3 className="text-[17px] font-black text-slate-900">Salud Financiera de la Empresa</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Cobros Totales</p>
+                        <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 845200 : 0)}</p>
                       </div>
-
-                      {/* Lado Financiero e Interactivo del Tenant */}
-                      <div className="flex flex-wrap items-center gap-5 justify-between lg:justify-end border-t border-slate-100 pt-4 lg:border-none lg:pt-0">
-                        <div className="text-left lg:text-right">
-                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Facturación Anual/Mensual</p>
-                          <p className="text-lg font-black text-slate-900 mt-1">{formatCurrency(company.subscriptionPrice)}</p>
-                          <p className="text-xs font-semibold text-slate-500 mt-0.5">{company.billingCycle === 'YEARLY' ? 'Ciclo Anual' : 'Ciclo Mensual'}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            title="Modo Fantasma (Diagnóstico de Soporte)"
-                            onClick={() => handleToggleGhost(company.id, isGhost)}
-                            className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition-all ${
-                              isGhost 
-                                ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
-                                : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
-                            } cursor-pointer`}
-                          >
-                            <Ghost size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            title="Editar plan y aprovisionamiento"
-                            onClick={() => {
-                              setEditingCompany(company);
-                              setProvisionName(company.name);
-                              setProvisionPlanId(company.planId);
-                              setProvisionCycle(company.billingCycle);
-                              setProvisionPrice(company.subscriptionPrice || 0);
-                              setIsCompanyModalOpen(true);
-                            }}
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (company.status === 'ACTIVE') {
-                                // Mostrar confirmación crítica para suspensión
-                                window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
-                                  detail: {
-                                    id: `suspend-${company.id}`,
-                                    state: 'open',
-                                    tone: 'danger',
-                                    title: `¿Suspender acceso de ${company.name}?`,
-                                    description: `Esta acción denegará de inmediato el acceso a todos los administradores, supervisores y cobradores registrados bajo esta empresa. Ninguna sucursal podrá realizar cobros ni arqueos.`,
-                                    confirmLabel: 'Confirmar Suspensión',
-                                    cancelLabel: 'Cancelar',
-                                    onConfirm: () => handleToggleCompany(company.id, company.status)
-                                  }
-                                }));
-                              } else {
-                                handleToggleCompany(company.id, company.status);
-                              }
-                            }}
-                            className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-[13.5px] font-bold transition-all cursor-pointer ${
-                              company.status === 'ACTIVE'
-                                ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
-                                : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
-                            }`}
-                          >
-                            {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
-                          </button>
-                        </div>
+                      <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Capital Prestado</p>
+                        <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 1250000 : 0)}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Cartera Activa</p>
+                        <p className="text-xl font-black text-slate-900 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 689000 : 0)}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-100 bg-[#FCFDFF] p-4">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Mora Acumulada</p>
+                        <p className="text-xl font-black text-red-650 mt-1">{formatCurrency(selectedCompanyDetail.id === 'c1' ? 45000 : 0)}</p>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </section>
+
+                  <div className={`${shellCardClass} p-6 space-y-4`}>
+                    <div className="border-b border-slate-100 pb-3">
+                      <h3 className="text-[17px] font-black text-slate-900">Configuración General</h3>
+                    </div>
+                    <div className="space-y-3.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-semibold text-slate-500">Plan Contratado</span>
+                        <span className="font-bold text-slate-800">
+                          {plans.find(p => p.id === selectedCompanyDetail.planId)?.name || 'Estándar'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-semibold text-slate-500">Ciclo de Facturación</span>
+                        <span className="font-bold text-slate-800">
+                          {selectedCompanyDetail.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-semibold text-slate-500">Precio de suscripción</span>
+                        <span className="font-bold text-slate-800">{formatCurrency(selectedCompanyDetail.subscriptionPrice)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-semibold text-slate-500">Estado de Operación</span>
+                        <span className="font-bold text-slate-800 uppercase text-xs">
+                          {selectedCompanyDetail.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {detailTab === 'USUARIOS' && (
+                <div className={`${shellCardClass} overflow-hidden rounded-[32px]`}>
+                  <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                    <h3 className="text-[17px] font-black text-slate-900">Usuarios Registrados en el Tenant</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-100">
+                      <thead className="bg-[#F8FAFC]">
+                        <tr className="text-left">
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Usuario</th>
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Nombre</th>
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Rol</th>
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {globalUsers.filter(u => u.companyId === selectedCompanyDetail.id).map(user => (
+                          <tr key={user.id} className="hover:bg-slate-50/55 transition-colors">
+                            <td className="px-6 py-4">
+                              <p className="text-[14px] font-bold text-slate-900">@{user.username}</p>
+                            </td>
+                            <td className="px-6 py-4 text-[14px] font-semibold text-slate-700">{user.name}</td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-slate-600">
+                                {user.role}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${
+                                user.isActive ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'
+                              }`}>
+                                {user.isActive ? 'Activo' : 'Suspendido'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {detailTab === 'SUCURSALES' && (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {(selectedCompanyDetail.id === 'c1' ? [
+                    { id: 'b1', name: 'Sucursal Central Santo Domingo', address: 'Av. Winston Churchill', monthlyGoal: 250000 },
+                    { id: 'b2', name: 'Sucursal Santiago', address: 'Av. Estrella Sadhalá', monthlyGoal: 180000 },
+                    { id: 'b3', name: 'Sucursal Herrera', address: 'Av. Isabel Aguiar', monthlyGoal: 150000 }
+                  ] : [
+                    { id: 'b4', name: 'Sucursal Central', address: 'Oficinas Administrativas', monthlyGoal: 100000 }
+                  ]).map(branch => (
+                    <div key={branch.id} className={`${shellCardClass} p-5 space-y-4`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                          <Building2 size={18} />
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Meta Mensual</p>
+                          <p className="text-[15px] font-black text-slate-900 mt-0.5">{formatCurrency(branch.monthlyGoal)}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-[16px] font-black text-slate-900 leading-tight">{branch.name}</h4>
+                        <p className="text-xs font-semibold text-slate-500 mt-1">{branch.address}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {detailTab === 'SUSCRIPCION' && (
+                <div className={`${shellCardClass} overflow-hidden rounded-[32px]`}>
+                  <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                    <h3 className="text-[17px] font-black text-slate-900">Historial de Cobros al Tenant</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-100">
+                      <thead className="bg-[#F8FAFC]">
+                        <tr className="text-left">
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Factura</th>
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Ciclo</th>
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Monto</th>
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Vencimiento</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        <tr className="hover:bg-slate-50/55 transition-colors">
+                          <td className="px-6 py-4">
+                            <p className="text-[14px] font-bold text-slate-900">FAC-2026-001</p>
+                          </td>
+                          <td className="px-6 py-4 text-[14px] font-semibold text-slate-700">
+                            {selectedCompanyDetail.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}
+                          </td>
+                          <td className="px-6 py-4 text-[14.5px] font-black text-slate-900">{formatCurrency(selectedCompanyDetail.subscriptionPrice)}</td>
+                          <td className="px-6 py-4 text-[13.5px] font-semibold text-slate-500">{formatDate(selectedCompanyDetail.expiresAt)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {detailTab === 'ACTIVIDAD' && (
+                <div className="rounded-[32px] bg-[#0F172A] border border-slate-800 shadow-2xl p-6 overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                    <span className="text-xs font-bold text-slate-500 font-mono">tenant_logs_{selectedCompanyDetail.id}.log</span>
+                  </div>
+                  
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 font-mono text-[13px] leading-relaxed custom-scrollbar">
+                    {masterLogs.filter(l => l.detail.toLowerCase().includes(selectedCompanyDetail.name.toLowerCase()) || l.action.toLowerCase().includes('company')).map(log => (
+                      <div key={log.id} className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-850">
+                        <div className="flex items-center gap-2">
+                          <span className="text-blue-400 font-bold">[{formatDate(log.timestamp)}]</span>
+                          <span className="text-purple-400 font-bold">&gt; {log.action}</span>
+                        </div>
+                        <p className="mt-2 text-emerald-400/90 leading-relaxed pl-2 border-l-2 border-slate-700">
+                          {log.detail}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          ) : (
+            // ==================== LISTADO GENERAL DE EMPRESAS ====================
+            <section className="space-y-5">
+              <SectionHeader
+                title="Empresas"
+                description="Gestion global de tenants, estado, plan contratado y controles de soporte."
+                actionLabel="Aprovisionar empresa"
+                onAction={() => {
+                  setEditingCompany(null);
+                  setProvisionName('');
+                  setProvisionPlanId('p2');
+                  setProvisionCycle('MONTHLY');
+                  setProvisionPrice(3500);
+                  setIsCompanyModalOpen(true);
+                }}
+              />
+
+              <div className={`${shellCardClass} p-5`}>
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+                  <div className="relative">
+                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                    <input
+                      value={searchTerm}
+                      onChange={event => setSearchTerm(event.target.value)}
+                      placeholder="Buscar empresa por nombre o ID..."
+                      className="h-[54px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                    />
+                  </div>
+                  <div className="flex items-center justify-end">
+                    <div className="rounded-2xl border border-[#E5E7EB] bg-[#FCFDFF] px-4 py-3 text-right">
+                      <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Empresas visibles</p>
+                      <p className="mt-2 text-[24px] font-semibold text-[#111827]">{filteredCompanies.length}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {filteredCompanies.map(company => {
+                  const plan = plans.find(item => item.id === company.planId);
+                  const isGhost = !!company.isGhostMode;
+                  // Contar usuarios y sucursales de este tenant para mayor contexto
+                  const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
+                  const companyBranchesCount = company.id === 'c1' ? 3 : 1;
+
+                  return (
+                    <div key={company.id} className={`${shellCardClass} p-5 lg:p-6 transition-all duration-300 hover:shadow-md hover:border-slate-300/80`}>
+                      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex min-w-0 items-start gap-4">
+                          <div className={`relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[20px] font-black text-white shadow-sm ${
+                            company.status === 'SUSPENDED' 
+                              ? 'bg-slate-400' 
+                              : isGhost 
+                                ? 'bg-purple-600 shadow-purple-200' 
+                                : 'bg-blue-600 shadow-blue-200'
+                          }`}>
+                            {company.name[0].toUpperCase()}
+                            {isGhost && (
+                              <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
+                                <Ghost size={12} />
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 
+                                onClick={() => {
+                                  setSelectedCompanyDetail(company);
+                                  setDetailTab('RESUMEN');
+                                }}
+                                className="text-[19px] font-black tracking-tight text-[#111827] cursor-pointer hover:text-blue-600 transition-colors"
+                              >
+                                {company.name}
+                              </h3>
+                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${
+                                company.status === 'ACTIVE' 
+                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                                  : company.status === 'TRIAL' 
+                                    ? 'bg-amber-50 text-amber-600 border border-amber-200' 
+                                    : 'bg-rose-50 text-rose-600 border border-rose-200'
+                              }`}>
+                                {company.status === 'ACTIVE' ? 'Activo' : company.status === 'TRIAL' ? 'Prueba' : 'Suspendido'}
+                              </span>
+                              {company.isGhostMode && (
+                                <span className="inline-flex rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-purple-600">
+                                  Emulación Activa
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center gap-3.5 text-[13px] font-medium text-slate-500 pt-1">
+                              <div className="flex items-center gap-1.5">
+                                <Package size={14} className="text-slate-400" />
+                                <span className="font-bold text-slate-700">{plan?.name || 'Básico estándar'}</span>
+                              </div>
+                              <span className="text-slate-300">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <Users size={14} className="text-slate-400" />
+                                <span>{companyUsersCount} usuarios</span>
+                              </div>
+                              <span className="text-slate-300">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <MapPin size={14} className="text-slate-400" />
+                                <span>{companyBranchesCount} sucursales</span>
+                              </div>
+                              <span className="text-slate-300">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <Clock3 size={14} className="text-slate-400" />
+                                <span>Expira: <strong className="text-slate-700">{formatDate(company.expiresAt)}</strong></span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Lado Financiero e Interactivo del Tenant */}
+                        <div className="flex flex-wrap items-center gap-5 justify-between lg:justify-end border-t border-slate-100 pt-4 lg:border-none lg:pt-0">
+                          <div className="text-left lg:text-right">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Facturación Anual/Mensual</p>
+                            <p className="text-lg font-black text-slate-900 mt-1">{formatCurrency(company.subscriptionPrice)}</p>
+                            <p className="text-xs font-semibold text-slate-500 mt-0.5">{company.billingCycle === 'YEARLY' ? 'Ciclo Anual' : 'Ciclo Mensual'}</p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              title="Modo Fantasma (Diagnóstico de Soporte)"
+                              onClick={() => handleToggleGhost(company.id, isGhost)}
+                              className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition-all ${
+                                isGhost 
+                                  ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
+                                  : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
+                              } cursor-pointer`}
+                            >
+                              <Ghost size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              title="Editar plan y aprovisionamiento"
+                              onClick={() => {
+                                setEditingCompany(company);
+                                setProvisionName(company.name);
+                                setProvisionPlanId(company.planId);
+                                setProvisionCycle(company.billingCycle);
+                                setProvisionPrice(company.subscriptionPrice || 0);
+                                setIsCompanyModalOpen(true);
+                              }}
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (company.status === 'ACTIVE') {
+                                  // Mostrar confirmación crítica para suspensión
+                                  window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
+                                    detail: {
+                                      id: `suspend-${company.id}`,
+                                      state: 'open',
+                                      tone: 'danger',
+                                      title: `¿Suspender acceso de ${company.name}?`,
+                                      description: `Esta acción denegará de inmediato el acceso a todos los administradores, supervisores y cobradores registrados bajo esta empresa. Ninguna sucursal podrá realizar cobros ni arqueos.`,
+                                      confirmLabel: 'Confirmar Suspensión',
+                                      cancelLabel: 'Cancelar',
+                                      onConfirm: () => handleToggleCompany(company.id, company.status)
+                                    }
+                                  }));
+                                } else {
+                                  handleToggleCompany(company.id, company.status);
+                                }
+                              }}
+                              className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-[13.5px] font-bold transition-all cursor-pointer ${
+                                company.status === 'ACTIVE'
+                                  ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
+                                  : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
+                              }`}
+                            >
+                              {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )
         ) : null}
 
         {activeTab === 'GLOBAL_USERS' ? (
