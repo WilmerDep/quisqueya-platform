@@ -481,7 +481,7 @@ export const SuperAdminPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedCompanyDetail(null)}
-                    className="inline-flex h-12 px-4 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-[13.5px] font-bold text-slate-600 transition-all hover:bg-slate-50 cursor-pointer"
+                    className="inline-flex h-12 px-4 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-[13.5px] font-bold text-slate-600 transition-all duration-250 hover:-translate-x-1 hover:bg-slate-50 hover:shadow-sm cursor-pointer"
                   >
                     <ArrowLeft size={16} />
                     Volver al listado
@@ -538,7 +538,7 @@ export const SuperAdminPage: React.FC = () => {
 
               {/* Contenido de cada Tab del Detalle */}
               {detailTab === 'RESUMEN' && (
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-2 animate-[platform-fade-in_180ms_ease-out]">
                   <div className={`${shellCardClass} p-6 space-y-4`}>
                     <div className="border-b border-slate-100 pb-3">
                       <h3 className="text-[17px] font-black text-slate-900">Salud Financiera de la Empresa</h3>
@@ -596,7 +596,7 @@ export const SuperAdminPage: React.FC = () => {
               )}
 
               {detailTab === 'USUARIOS' && (
-                <div className={`${shellCardClass} overflow-hidden rounded-[32px]`}>
+                <div className={`${shellCardClass} overflow-hidden rounded-[32px] animate-[platform-fade-in_180ms_ease-out]`}>
                   <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
                     <h3 className="text-[17px] font-black text-slate-900">Usuarios Registrados en el Tenant</h3>
                   </div>
@@ -638,7 +638,7 @@ export const SuperAdminPage: React.FC = () => {
               )}
 
               {detailTab === 'SUCURSALES' && (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-[platform-fade-in_180ms_ease-out]">
                   {(selectedCompanyDetail.id === 'c1' ? [
                     { id: 'b1', name: 'Sucursal Central Santo Domingo', address: 'Av. Winston Churchill', monthlyGoal: 250000 },
                     { id: 'b2', name: 'Sucursal Santiago', address: 'Av. Estrella Sadhalá', monthlyGoal: 180000 },
@@ -666,7 +666,7 @@ export const SuperAdminPage: React.FC = () => {
               )}
 
               {detailTab === 'SUSCRIPCION' && (
-                <div className={`${shellCardClass} overflow-hidden rounded-[32px]`}>
+                <div className={`${shellCardClass} overflow-hidden rounded-[32px] animate-[platform-fade-in_180ms_ease-out]`}>
                   <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
                     <h3 className="text-[17px] font-black text-slate-900">Historial de Cobros al Tenant</h3>
                   </div>
