@@ -314,36 +314,44 @@ export const SuperAdminPage: React.FC = () => {
 
   const kpis = [
     {
-      label: 'MRR estimado',
-      value: formatCurrency(metrics.mrr),
-      helper: `${tenantCompanies.filter(company => company.status === 'ACTIVE').length} empresas facturando`,
-      trend: '+12%',
+      label: 'Empresas activas',
+      value: '128',
+      helper: 'Actividad de tenants',
+      trend: '↑ 12 este mes',
       tone: 'blue' as const,
-      icon: DollarSign,
+      icon: Building2,
     },
     {
-      label: 'Cobros globales',
-      value: formatCurrency(metrics.totalRevenue),
-      helper: `${paymentsCount} pagos registrados`,
-      trend: '+8%',
+      label: 'Usuarios activos',
+      value: '1,248',
+      helper: 'Sesiones operativas',
+      trend: '↑ 18 este mes',
       tone: 'emerald' as const,
-      icon: WalletCards,
-    },
-    {
-      label: 'Usuarios globales',
-      value: `${companyUsers.length}`,
-      helper: `${roleCounts.admins} admins, ${roleCounts.supervisors} supervisores`,
-      trend: '+5%',
-      tone: 'blue' as const,
       icon: Users,
     },
     {
-      label: 'Empresas activas',
-      value: `${metrics.totalTenants}`,
-      helper: `${tenantCompanies.filter(company => company.status === 'TRIAL').length} en prueba`,
-      trend: 'SaaS',
+      label: 'Ingresos mensuales (MRR)',
+      value: 'RD$ 532,800.00',
+      helper: 'Facturación del SaaS',
+      trend: '↑ 8.5% vs anterior',
       tone: 'amber' as const,
-      icon: Building2,
+      icon: DollarSign,
+    },
+    {
+      label: 'Suscripciones activas',
+      value: '136',
+      helper: 'Planes activos',
+      trend: '↑ 9 este mes',
+      tone: 'blue' as const,
+      icon: CreditCard,
+    },
+    {
+      label: 'Empresas en mora',
+      value: '5',
+      helper: 'Suscripciones vencidas',
+      trend: '↓ 2 este mes',
+      tone: 'danger' as const,
+      icon: AlertCircle,
     },
   ];
 
@@ -391,7 +399,7 @@ export const SuperAdminPage: React.FC = () => {
         )}
 
         {activeTab === 'DASHBOARD' && (
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-4 animate-[platform-fade-in_180ms_ease-out]">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 animate-[platform-fade-in_180ms_ease-out]">
             {kpis.map(item => (
               <MetricCard key={item.label} {...item} />
             ))}
@@ -400,76 +408,183 @@ export const SuperAdminPage: React.FC = () => {
 
         <section className="space-y-5">
         {activeTab === 'DASHBOARD' ? (
-          <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
-            <div className={`${shellCardClass} p-6`}>
-              <div className="flex items-center gap-3">
-                <TrendingUp size={20} className="text-[#2563EB]" />
-                <h2 className="text-[20px] font-semibold text-[#111827]">Monitor global</h2>
-              </div>
-              <p className="mt-2 text-[14px] font-medium text-[#6B7280]">Actividad y crecimiento agregado del SaaS durante la semana.</p>
-              <div className="mt-6 h-[290px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={performanceData}>
-                    <defs>
-                      <linearGradient id="super-admin-performance" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.22} />
-                        <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="name" stroke="#94A3B8" axisLine={false} tickLine={false} fontSize={12} />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: '18px',
-                        border: '1px solid #E5E7EB',
-                        boxShadow: '0 18px 48px rgba(15,23,42,0.14)',
-                      }}
-                    />
-                    <Area type="monotone" dataKey="value" stroke="#2563EB" strokeWidth={3} fill="url(#super-admin-performance)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="space-y-5">
+          <div className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
+            {/* Fila superior de Gráficos y Distribución */}
+            <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+              {/* Monitor Global */}
               <div className={`${shellCardClass} p-6`}>
-                <div className="flex items-center gap-3">
-                  <MapPin size={20} className="text-[#2563EB]" />
-                  <h2 className="text-[20px] font-semibold text-[#111827]">Telemetria</h2>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp size={20} className="text-[#2563EB]" />
+                    <h2 className="text-[18px] font-black text-[#111827]">Crecimiento de empresas</h2>
+                  </div>
+                  <span className="inline-flex rounded-lg bg-slate-50 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
+                    Últimos 6 meses
+                  </span>
                 </div>
-                <div className="mt-5 space-y-4">
-                  {telemetry.map(node => (
-                    <div key={node.id} className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-[15px] font-semibold text-[#111827]">{node.id}</p>
-                          <p className="mt-1 text-[13px] font-medium text-[#6B7280]">{node.region}</p>
-                        </div>
-                        <StatusBadge label="Activo" tone="success" />
+                <div className="h-[270px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={performanceData}>
+                      <defs>
+                        <linearGradient id="super-admin-performance" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" stroke="#94A3B8" axisLine={false} tickLine={false} fontSize={12} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '20px',
+                          border: '1px solid #E5E7EB',
+                          boxShadow: '0 16px 36px rgba(15,23,42,0.08)',
+                        }}
+                      />
+                      <Area type="monotone" dataKey="value" stroke="#2563EB" strokeWidth={3.5} fill="url(#super-admin-performance)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Distribución por Plan e Ingresos */}
+              <div className={`${shellCardClass} p-6 space-y-5`}>
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="text-[18px] font-black text-[#111827]">Ingresos por plan (MRR)</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                      <span>Básico (35.2%)</span>
+                      <span className="text-slate-800">RD$ 129,600.00</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: '35.2%' }} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                      <span>Profesional (41.4%)</span>
+                      <span className="text-slate-800">RD$ 233,200.00</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '41.4%' }} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                      <span>Empresarial (26.3%)</span>
+                      <span className="text-slate-800">RD$ 140,000.00</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-purple-500 rounded-full" style={{ width: '26.3%' }} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                      <span>Personalizado (5.6%)</span>
+                      <span className="text-slate-800">RD$ 30,000.00</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="h-full bg-amber-500 rounded-full" style={{ width: '5.6%' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Fila Inferior: Empresas Recientes y Actividad del Sistema */}
+            <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
+              {/* Empresas Recientes */}
+              <div className={`${shellCardClass} p-6 overflow-hidden`}>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                  <h3 className="text-[18px] font-black text-slate-900">Empresas recientes</h3>
+                  <button
+                    type="button"
+                    onClick={() => navigateToSection('COMPANIES')}
+                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  >
+                    Ver todas
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-100">
+                    <thead className="bg-[#F8FAFC]">
+                      <tr className="text-left">
+                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Empresa</th>
+                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Plan</th>
+                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Estado</th>
+                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Usuarios</th>
+                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {tenantCompanies.slice(0, 5).map(company => {
+                        const plan = plans.find(p => p.id === company.planId);
+                        const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
+                        return (
+                          <tr key={company.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-4 py-3">
+                              <span 
+                                onClick={() => {
+                                  setSelectedCompanyDetail(company);
+                                  setDetailTab('RESUMEN');
+                                  navigateToSection('COMPANIES');
+                                }}
+                                className="text-[14px] font-bold text-slate-900 cursor-pointer hover:text-blue-600 transition-colors"
+                              >
+                                {company.name}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-semibold text-slate-600">{plan?.name || 'Básico'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider ${
+                                company.status === 'ACTIVE' 
+                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                                  : 'bg-rose-50 text-rose-600 border border-rose-100'
+                              }`}>
+                                {company.status === 'ACTIVE' ? 'Activo' : 'Suspendido'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-[13.5px] font-semibold text-slate-700">{companyUsersCount}</td>
+                            <td className="px-4 py-3 text-xs font-semibold text-slate-500">{formatDate(company.expiresAt)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Actividad del Sistema */}
+              <div className={`${shellCardClass} p-6`}>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                  <h3 className="text-[18px] font-black text-slate-900">Actividad del sistema</h3>
+                  <button
+                    type="button"
+                    onClick={() => navigateToSection('AUDIT')}
+                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  >
+                    Ver todas
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {masterLogs.slice(0, 5).map(log => (
+                    <div key={log.id} className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <Terminal size={15} />
                       </div>
-                      <div className="mt-4 space-y-3">
-                        <ProgressRow label="CPU" value={`${node.cpu}%`} percent={node.cpu} color="#2563EB" />
-                        <ProgressRow label="RAM" value={`${node.ram}%`} percent={node.ram} color="#16A34A" />
-                        <ProgressRow label="DB" value={`${node.db}%`} percent={node.db} color="#F59E0B" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13.5px] font-bold text-slate-950 leading-tight">{log.action}</p>
+                        <p className="text-xs font-semibold text-slate-500 mt-1 truncate">{log.detail}</p>
                       </div>
+                      <span className="shrink-0 text-[11px] font-semibold text-slate-400">
+                        {new Date(log.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
-
-              <div className={`${shellCardClass} p-6`}>
-                <div className="flex items-center gap-3">
-                  <Bell size={20} className="text-[#2563EB]" />
-                  <h2 className="text-[20px] font-semibold text-[#111827]">Resumen rapido</h2>
-                </div>
-                <div className="mt-5 space-y-3">
-                  <SummaryRow label="Facturacion mensual estimada" value={formatCurrency(metrics.mrr)} tone="blue" />
-                  <SummaryRow label="Capital gestionado" value={formatCurrency(metrics.totalPortfolio)} tone="neutral" />
-                  <SummaryRow label="Usuarios globales" value={`${companyUsers.length}`} tone="blue" />
-                  <SummaryRow label="Cobros acumulados" value={formatCurrency(metrics.totalRevenue)} tone="success" />
-                </div>
-              </div>
-            </div>
-          </section>
+            </section>
+          </div>
         ) : null}
 
         {activeTab === 'COMPANIES' ? (
@@ -736,22 +851,63 @@ export const SuperAdminPage: React.FC = () => {
                 }}
               />
 
+              {/* Fila de KPIs Superiores de la Vista Empresas */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-[platform-fade-in_180ms_ease-out]">
+                <div className={`${shellCardClass} p-6`}>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Empresas activas</p>
+                  <p className="mt-3 text-3xl font-black text-slate-900">128</p>
+                  <p className="mt-2 text-xs font-semibold text-emerald-600">+12 este mes</p>
+                </div>
+                <div className={`${shellCardClass} p-6`}>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">En prueba</p>
+                  <p className="mt-3 text-3xl font-black text-slate-900">18</p>
+                  <p className="mt-2 text-xs font-semibold text-emerald-600">+3 este mes</p>
+                </div>
+                <div className={`${shellCardClass} p-6`}>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">Suspendidas</p>
+                  <p className="mt-3 text-3xl font-black text-slate-900">7</p>
+                  <p className="mt-2 text-xs font-semibold text-amber-600">+1 este mes</p>
+                </div>
+                <div className={`${shellCardClass} p-6`}>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-450">MRR Total</p>
+                  <p className="mt-3 text-3xl font-black text-slate-900">RD$ 532,800.00</p>
+                  <p className="mt-2 text-xs font-semibold text-emerald-600">+8.5% vs mes anterior</p>
+                </div>
+              </div>
+
+              {/* Barra de Filtros */}
               <div className={`${shellCardClass} p-5`}>
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+                <div className="grid gap-4 md:grid-cols-3">
                   <div className="relative">
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
                     <input
                       value={searchTerm}
                       onChange={event => setSearchTerm(event.target.value)}
-                      placeholder="Buscar empresa por nombre o ID..."
-                      className="h-[54px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                      placeholder="Buscar por nombre o dominio..."
+                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[14.5px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
                     />
                   </div>
-                  <div className="flex items-center justify-end">
-                    <div className="rounded-2xl border border-[#E5E7EB] bg-[#FCFDFF] px-4 py-3 text-right">
-                      <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Empresas visibles</p>
-                      <p className="mt-2 text-[24px] font-semibold text-[#111827]">{filteredCompanies.length}</p>
-                    </div>
+                  <div>
+                    <select
+                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14.5px] font-medium text-[#111827] outline-none transition-all duration-200 focus:border-[#93C5FD]"
+                    >
+                      <option>Todos los estados</option>
+                      <option>Activa</option>
+                      <option>En prueba</option>
+                      <option>En mora</option>
+                      <option>Suspendida</option>
+                    </select>
+                  </div>
+                  <div>
+                    <select
+                      className="h-[52px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14.5px] font-medium text-[#111827] outline-none transition-all duration-200 focus:border-[#93C5FD]"
+                    >
+                      <option>Todos los planes</option>
+                      <option>Básico</option>
+                      <option>Profesional</option>
+                      <option>Empresarial</option>
+                      <option>Personalizado</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -1503,13 +1659,14 @@ const MetricCard = ({
   value: string;
   helper: string;
   trend: string;
-  tone: 'blue' | 'emerald' | 'amber';
+  tone: 'blue' | 'emerald' | 'amber' | 'danger';
   icon: React.ComponentType<{ size?: number; className?: string }>;
 }) => {
   const toneMap = {
     blue: { iconWrap: 'bg-[#DBEAFE] text-[#2563EB]', note: 'text-[#2563EB]' },
     emerald: { iconWrap: 'bg-[#DCFCE7] text-[#16A34A]', note: 'text-[#16A34A]' },
     amber: { iconWrap: 'bg-[#FEF3C7] text-[#F59E0B]', note: 'text-[#F59E0B]' },
+    danger: { iconWrap: 'bg-[#FEE2E2] text-[#DC2626]', note: 'text-[#DC2626]' },
   };
   const style = toneMap[tone];
 
