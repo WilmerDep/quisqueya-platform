@@ -138,6 +138,7 @@ export const SuperAdminPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('Todos los estados');
   const [planFilter, setPlanFilter] = useState('Todos los planes');
   const [activeFilterDropdown, setActiveFilterDropdown] = useState<'STATUS' | 'PLAN' | null>(null);
+  const [activeActionsDropdown, setActiveActionsDropdown] = useState<string | null>(null);
   const [isYearly, setIsYearly] = useState(false);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -172,6 +173,14 @@ export const SuperAdminPage: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [activeTab, currentUser?.id, currentUser?.role, navigate, refreshData]);
+
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveActionsDropdown(null);
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
 
   const metrics = useMemo(() => getGlobalMetrics(), [companies]);
   const masterLogs = useMemo(() => getMasterLogs(), [companies, platformConfig]);
@@ -1228,63 +1237,102 @@ export const SuperAdminPage: React.FC = () => {
                                   {company.status === 'ACTIVE' ? 'Activo' : company.status === 'TRIAL' ? 'Prueba' : 'Suspendido'}
                                 </span>
                               </td>
-                              <td className="py-4 text-right pr-2" onClick={e => e.stopPropagation()}>
-                                <div className="flex items-center justify-end gap-1.5">
+                              <td className="py-4 text-right pr-2 relative" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center justify-end">
                                   <button
                                     type="button"
-                                    title="Modo Fantasma"
-                                    onClick={() => handleToggleGhost(company.id, isGhost)}
-                                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all ${
-                                      isGhost 
-                                        ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
-                                        : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
-                                    } cursor-pointer`}
-                                  >
-                                    <Ghost size={14} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    title="Editar"
-                                    onClick={() => {
-                                      setEditingCompany(company);
-                                      setProvisionName(company.name);
-                                      setProvisionPlanId(company.planId);
-                                      setProvisionCycle(company.billingCycle);
-                                      setProvisionPrice(company.subscriptionPrice || 0);
-                                      setIsCompanyModalOpen(true);
-                                    }}
-                                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
-                                  >
-                                    <Edit3 size={14} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (company.status === 'ACTIVE') {
-                                        window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
-                                          detail: {
-                                            id: `suspend-${company.id}`,
-                                            state: 'open',
-                                            tone: 'danger',
-                                            title: `¿Suspender acceso de ${company.name}?`,
-                                            description: `Esta acción denegará de inmediato el acceso a todos los administradores y usuarios de esta empresa.`,
-                                            confirmLabel: 'Confirmar Suspensión',
-                                            cancelLabel: 'Cancelar',
-                                            onConfirm: () => handleToggleCompany(company.id, company.status)
-                                          }
-                                        }));
-                                      } else {
-                                        handleToggleCompany(company.id, company.status);
-                                      }
-                                    }}
-                                    className={`inline-flex h-9 items-center justify-center rounded-xl px-3 text-[12px] font-bold transition-all cursor-pointer ${
-                                      company.status === 'ACTIVE'
-                                        ? 'border border-red-200 bg-red-50 text-red-650 hover:bg-red-100'
-                                        : 'border border-emerald-200 bg-emerald-50 text-emerald-650 hover:bg-emerald-100'
+                                    onClick={() => setActiveActionsDropdown(activeActionsDropdown === company.id ? null : company.id)}
+                                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all cursor-pointer ${
+                                      activeActionsDropdown === company.id
+                                        ? 'border-[#2563EB] bg-[#EFF6FF]/40 text-[#2563EB]'
+                                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-350 hover:bg-slate-50'
                                     }`}
                                   >
-                                    {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
+                                    <MoreHorizontal size={16} />
                                   </button>
+
+                                  {activeActionsDropdown === company.id && (
+                                    <div className="absolute right-2 top-11 z-[60] w-[190px] rounded-2xl border border-[#E5E7EB] bg-white p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.08)] animate-[platform-fade-in_120ms_ease-out]">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedCompanyDetail(company);
+                                          setDetailTab('RESUMEN');
+                                          setActiveActionsDropdown(null);
+                                        }}
+                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
+                                      >
+                                        <Building2 size={14} className="text-slate-400" />
+                                        Ver perfil
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleToggleGhost(company.id, isGhost);
+                                          setActiveActionsDropdown(null);
+                                        }}
+                                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px] font-semibold transition-all hover:translate-x-1 ${
+                                          isGhost
+                                            ? 'text-purple-650 hover:bg-purple-50/50'
+                                            : 'text-slate-700 hover:bg-[#F8FAFC] hover:text-purple-650'
+                                        }`}
+                                      >
+                                        <Ghost size={14} className={isGhost ? 'text-purple-500' : 'text-slate-400'} />
+                                        {isGhost ? 'Desactivar emulación' : 'Emular sesión'}
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingCompany(company);
+                                          setProvisionName(company.name);
+                                          setProvisionPlanId(company.planId);
+                                          setProvisionCycle(company.billingCycle);
+                                          setProvisionPrice(company.subscriptionPrice || 0);
+                                          setIsCompanyModalOpen(true);
+                                          setActiveActionsDropdown(null);
+                                        }}
+                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
+                                      >
+                                        <Edit3 size={14} className="text-slate-400" />
+                                        Editar empresa
+                                      </button>
+
+                                      <div className="my-1 border-t border-slate-100" />
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveActionsDropdown(null);
+                                          if (company.status === 'ACTIVE') {
+                                            window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
+                                              detail: {
+                                                id: `suspend-${company.id}`,
+                                                state: 'open',
+                                                tone: 'danger',
+                                                title: `¿Suspender acceso de ${company.name}?`,
+                                                description: `Esta acción denegará de inmediato el acceso a todos los administradores y usuarios de esta empresa.`,
+                                                confirmLabel: 'Confirmar Suspensión',
+                                                cancelLabel: 'Cancelar',
+                                                onConfirm: () => handleToggleCompany(company.id, company.status)
+                                              }
+                                            }));
+                                          } else {
+                                            handleToggleCompany(company.id, company.status);
+                                          }
+                                        }}
+                                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px] font-semibold transition-all hover:translate-x-1 ${
+                                          company.status === 'ACTIVE'
+                                            ? 'text-red-600 hover:bg-red-50/50'
+                                            : 'text-emerald-650 hover:bg-emerald-50/50'
+                                        }`}
+                                      >
+                                        <AlertTriangle size={14} className={company.status === 'ACTIVE' ? 'text-red-400' : 'text-emerald-400'} />
+                                        {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             </tr>
