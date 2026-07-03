@@ -1254,7 +1254,7 @@ export const SuperAdminPage: React.FC = () => {
                                   </button>
 
                                   {activeActionsDropdown === company.id && (
-                                    <div className="absolute right-2 top-11 z-[90] w-[200px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)] animate-[platform-fade-in_120ms_ease-out]">
+                                    <div className="absolute right-0 bottom-[calc(100%+8px)] z-[90] w-[200px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)] animate-[platform-fade-in_120ms_ease-out]">
                                       <button
                                         type="button"
                                         onClick={() => {
