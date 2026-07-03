@@ -11,6 +11,7 @@ import {
   Calendar,
   CalendarCheck,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   CreditCard,
   Crown,
@@ -33,6 +34,7 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Terminal,
   TrendingUp,
@@ -132,6 +134,9 @@ export const SuperAdminPage: React.FC = () => {
   const [platformConfig, setPlatformConfig] = useState<GlobalConfig>(getGlobalConfig());
   const [activeTab, setActiveTab] = useState<SuperAdminTab>('DASHBOARD');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Todos los estados');
+  const [planFilter, setPlanFilter] = useState('Todos los planes');
+  const [activeFilterDropdown, setActiveFilterDropdown] = useState<'STATUS' | 'PLAN' | null>(null);
   const [isYearly, setIsYearly] = useState(false);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -175,10 +180,23 @@ export const SuperAdminPage: React.FC = () => {
   const companyUsers = useMemo(() => tenantUsers.filter(user => user.role !== Role.SUPER_ADMIN), [tenantUsers]);
 
   const filteredCompanies = useMemo(() => {
+    let result = tenantCompanies;
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return tenantCompanies;
-    return tenantCompanies.filter(company => company.name.toLowerCase().includes(query) || company.id.toLowerCase().includes(query));
-  }, [searchTerm, tenantCompanies]);
+    if (query) {
+      result = result.filter(company => company.name.toLowerCase().includes(query) || company.id.toLowerCase().includes(query));
+    }
+    if (statusFilter !== 'Todos los estados') {
+      const matchStatus = statusFilter === 'Activas' ? 'ACTIVE' : statusFilter === 'Pruebas' ? 'TRIAL' : 'SUSPENDED';
+      result = result.filter(company => company.status === matchStatus);
+    }
+    if (planFilter !== 'Todos los planes') {
+      const selectedPlan = plans.find(p => p.name === planFilter);
+      if (selectedPlan) {
+        result = result.filter(company => company.planId === selectedPlan.id);
+      }
+    }
+    return result;
+  }, [searchTerm, statusFilter, planFilter, tenantCompanies, plans]);
 
   const filteredUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -1074,8 +1092,8 @@ export const SuperAdminPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Barra de Filtros */}
-              <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+              {/* Barra de Filtros (Custom Dropdown Flow de Cobrar Hoy) */}
+              <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm z-30 relative">
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1fr_1.2fr_auto]">
                   <div className="relative">
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
@@ -1086,41 +1104,111 @@ export const SuperAdminPage: React.FC = () => {
                       className="h-[48px] w-full rounded-2xl border border-[#E5E7EB] bg-white pl-12 pr-4 text-[14px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
                     />
                   </div>
-                  <div>
-                    <select
-                      className="h-[48px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD] cursor-pointer"
+
+                  {/* Dropdown de Estado */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'STATUS' ? null : 'STATUS')}
+                      className={`flex h-[48px] w-full items-center justify-between rounded-2xl border px-4 text-[14px] font-semibold transition-all duration-200 cursor-pointer ${
+                        activeFilterDropdown === 'STATUS'
+                          ? 'border-[#2563EB] bg-[#EFF6FF]/30 ring-2 ring-[#BFDBFE]'
+                          : 'border-[#E5E7EB] bg-white hover:border-[#DBEAFE]'
+                      }`}
                     >
-                      <option>Todos los estados</option>
-                      <option>Activas</option>
-                      <option>Pruebas</option>
-                      <option>Suspendidas</option>
-                    </select>
+                      <span className="text-slate-800">{statusFilter}</span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-slate-500 transition-transform duration-250 ${
+                          activeFilterDropdown === 'STATUS' ? 'rotate-180 text-blue-600' : ''
+                        }`}
+                      />
+                    </button>
+                    {activeFilterDropdown === 'STATUS' && (
+                      <div className="absolute z-50 mt-1.5 w-full rounded-2xl border border-[#E5E7EB] bg-white p-1.5 shadow-xl animate-[platform-fade-in_120ms_ease-out]">
+                        {['Todos los estados', 'Activas', 'Pruebas', 'Suspendidas'].map(option => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => {
+                              setStatusFilter(option);
+                              setActiveFilterDropdown(null);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13.5px] font-semibold transition-colors cursor-pointer ${
+                              statusFilter === option
+                                ? 'bg-[#EFF6FF] text-[#2563EB]'
+                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                            }`}
+                          >
+                            <span>{option}</span>
+                            {statusFilter === option && <div className="h-1.5 w-1.5 rounded-full bg-blue-600" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <select
-                      className="h-[48px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[14px] font-semibold text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD] cursor-pointer"
+
+                  {/* Dropdown de Plan */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setActiveFilterDropdown(activeFilterDropdown === 'PLAN' ? null : 'PLAN')}
+                      className={`flex h-[48px] w-full items-center justify-between rounded-2xl border px-4 text-[14px] font-semibold transition-all duration-200 cursor-pointer ${
+                        activeFilterDropdown === 'PLAN'
+                          ? 'border-[#2563EB] bg-[#EFF6FF]/30 ring-2 ring-[#BFDBFE]'
+                          : 'border-[#E5E7EB] bg-white hover:border-[#DBEAFE]'
+                      }`}
                     >
-                      <option>Todos los planes</option>
-                      <option>Básico</option>
-                      <option>Profesional</option>
-                      <option>Empresarial</option>
-                    </select>
+                      <span className="text-slate-800">{planFilter}</span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-slate-500 transition-transform duration-250 ${
+                          activeFilterDropdown === 'PLAN' ? 'rotate-180 text-blue-600' : ''
+                        }`}
+                      />
+                    </button>
+                    {activeFilterDropdown === 'PLAN' && (
+                      <div className="absolute z-50 mt-1.5 w-full rounded-2xl border border-[#E5E7EB] bg-white p-1.5 shadow-xl animate-[platform-fade-in_120ms_ease-out]">
+                        {['Todos los planes', 'Básico', 'Profesional', 'Empresarial'].map(option => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => {
+                              setPlanFilter(option);
+                              setActiveFilterDropdown(null);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13.5px] font-semibold transition-colors cursor-pointer ${
+                              planFilter === option
+                                ? 'bg-[#EFF6FF] text-[#2563EB]'
+                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                            }`}
+                          >
+                            <span>{option}</span>
+                            {planFilter === option && <div className="h-1.5 w-1.5 rounded-full bg-blue-600" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
+
                   <button
                     type="button"
                     onClick={() => {
                       setSearchTerm('');
+                      setStatusFilter('Todos los estados');
+                      setPlanFilter('Todos los planes');
+                      setActiveFilterDropdown(null);
                     }}
                     className="inline-flex h-[48px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[13.5px] font-bold text-slate-650 hover:bg-slate-50 hover:text-slate-900 transition-all cursor-pointer"
                   >
-                    <RefreshCw size={14} />
+                    <SlidersHorizontal size={14} className="text-slate-550" />
                     Limpiar filtros
                   </button>
                 </div>
               </div>
 
               {/* Layout Operativo de dos columnas al estilo Cobrar Hoy */}
-              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_0.95fr]">
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_0.95fr] z-10 relative">
                 {/* Columna Izquierda: Cartera de Empresas */}
                 <div className="rounded-[30px] border border-[#E5E7EB] bg-white shadow-sm overflow-hidden p-6 space-y-5">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -1146,7 +1234,7 @@ export const SuperAdminPage: React.FC = () => {
                           <th className="pb-3 text-right pr-2">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 bg-white">
                         {filteredCompanies.map(company => {
                           const plan = plans.find(item => item.id === company.planId);
                           const isGhost = !!company.isGhostMode;
@@ -1155,7 +1243,7 @@ export const SuperAdminPage: React.FC = () => {
                           return (
                             <tr
                               key={company.id}
-                              className="group text-[14.5px] hover:bg-slate-50/65 transition-colors cursor-pointer"
+                              className="group text-[14.5px] hover:bg-slate-50/65 transition-all duration-200 hover:translate-x-1.5 cursor-pointer"
                               onClick={() => {
                                 setSelectedCompanyDetail(company);
                                 setDetailTab('RESUMEN');
