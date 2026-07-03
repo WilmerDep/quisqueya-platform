@@ -1145,9 +1145,9 @@ export const SuperAdminPage: React.FC = () => {
                       setPlanFilter('Todos los planes');
                       setActiveFilterDropdown(null);
                     }}
-                    className="inline-flex h-[56px] items-center justify-center gap-2 rounded-2xl bg-[#EFF6FF] px-5 text-[15px] font-semibold text-[#2563EB] transition-all duration-200 hover:translate-x-1 hover:bg-[#BFDBFE]/30 hover:text-[#1D4ED8] hover:shadow-[0_16px_36px_rgba(37,99,235,0.08)] cursor-pointer"
+                    className="inline-flex h-[56px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[15px] font-semibold text-[#111827] transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB] hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)] cursor-pointer"
                   >
-                    <Filter size={18} className="text-[#2563EB]" />
+                    <Filter size={18} className="text-[#111827]" />
                     Limpiar filtros
                   </button>
                 </div>
@@ -1245,14 +1245,14 @@ export const SuperAdminPage: React.FC = () => {
                                     className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all cursor-pointer ${
                                       activeActionsDropdown === company.id
                                         ? 'border-[#2563EB] bg-[#EFF6FF]/40 text-[#2563EB]'
-                                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-350 hover:bg-slate-50'
+                                        : 'border-slate-200 bg-white text-[#94A3B8] hover:border-slate-350 hover:bg-slate-50'
                                     }`}
                                   >
                                     <MoreHorizontal size={16} />
                                   </button>
 
                                   {activeActionsDropdown === company.id && (
-                                    <div className="absolute right-2 top-11 z-[60] w-[190px] rounded-2xl border border-[#E5E7EB] bg-white p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.08)] animate-[platform-fade-in_120ms_ease-out]">
+                                    <div className="absolute right-2 top-11 z-[90] w-[200px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)] animate-[platform-fade-in_120ms_ease-out]">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -1260,9 +1260,9 @@ export const SuperAdminPage: React.FC = () => {
                                           setDetailTab('RESUMEN');
                                           setActiveActionsDropdown(null);
                                         }}
-                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
+                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[14px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
                                       >
-                                        <Building2 size={14} className="text-slate-400" />
+                                        <Building2 size={16} className="text-[#2563EB]" />
                                         Ver perfil
                                       </button>
 
@@ -1272,13 +1272,13 @@ export const SuperAdminPage: React.FC = () => {
                                           handleToggleGhost(company.id, isGhost);
                                           setActiveActionsDropdown(null);
                                         }}
-                                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px] font-semibold transition-all hover:translate-x-1 ${
+                                        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[14px] font-semibold transition-all hover:translate-x-1 ${
                                           isGhost
                                             ? 'text-purple-650 hover:bg-purple-50/50'
                                             : 'text-slate-700 hover:bg-[#F8FAFC] hover:text-purple-650'
                                         }`}
                                       >
-                                        <Ghost size={14} className={isGhost ? 'text-purple-500' : 'text-slate-400'} />
+                                        <Ghost size={16} className={isGhost ? 'text-purple-500' : 'text-slate-400'} />
                                         {isGhost ? 'Desactivar emulación' : 'Emular sesión'}
                                       </button>
 
@@ -1293,9 +1293,9 @@ export const SuperAdminPage: React.FC = () => {
                                           setIsCompanyModalOpen(true);
                                           setActiveActionsDropdown(null);
                                         }}
-                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
+                                        className="flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[14px] font-semibold text-slate-700 hover:bg-[#F8FAFC] hover:text-[#2563EB] transition-all hover:translate-x-1"
                                       >
-                                        <Edit3 size={14} className="text-slate-400" />
+                                        <Edit3 size={16} className="text-[#2563EB]" />
                                         Editar empresa
                                       </button>
 
