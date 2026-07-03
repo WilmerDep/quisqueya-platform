@@ -359,40 +359,36 @@ export const SuperAdminPage: React.FC = () => {
     return (
       <div className="space-y-6 pb-24 lg:pb-0">
         {activeTab === 'DASHBOARD' && (
-          <section>
-            <div className={`${shellCardClass} overflow-hidden`}>
-              <div className="px-6 py-6 lg:px-8">
-                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                  <div className="min-w-0">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] px-4 py-2 text-[12px] font-semibold text-[#2563EB]">
-                      <Crown size={14} />
-                      Super Admin SaaS
-                    </div>
-                    <h1 className="mt-4 text-[32px] font-semibold leading-[1.08] tracking-tight text-[#111827]">Control global de ABUNDRA</h1>
-                    <p className="mt-3 max-w-3xl text-[18px] font-medium leading-8 text-[#6B7280]">
-                      Monitorea empresas, usuarios globales, suscripciones, facturacion, auditoria y configuracion del sistema con la misma identidad visual del panel Admin Empresa.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsCompanyModalOpen(true)}
-                      className="flex h-[54px] items-center justify-center gap-3 rounded-2xl bg-[#2563EB] px-6 text-[16px] font-medium text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8] cursor-pointer"
-                    >
-                      <Plus size={18} />
-                      Nueva empresa
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => navigateToSection('SYSTEM')}
-                      className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[16px] font-medium text-[#111827] shadow-sm ${motionButtonClass} cursor-pointer`}
-                    >
-                      <Settings size={18} className="text-[#2563EB]" />
-                      Configuracion
-                    </button>
-                  </div>
+          <section className="animate-[platform-fade-in_180ms_ease-out]">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+              <div className="min-w-0">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] px-3.5 py-1.5 text-[11.5px] font-black uppercase tracking-wider text-[#2563EB]">
+                  <Crown size={12} />
+                  Super Admin SaaS
                 </div>
+                <h1 className="mt-3.5 text-[32px] font-semibold leading-[1.1] tracking-tight text-[#111827]">Control global de ABUNDRA</h1>
+                <p className="mt-2.5 text-[16px] font-medium text-[#6B7280]">
+                  Monitorea empresas, usuarios, suscripciones, facturación y actividad general del SaaS.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCompanyModalOpen(true)}
+                  className="flex h-[54px] items-center justify-center gap-3 rounded-2xl bg-[#2563EB] px-6 text-[16px] font-semibold text-white shadow-[0_14px_34px_rgba(37,99,235,0.28)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8] hover:shadow-[0_18px_40px_rgba(37,99,235,0.32)] cursor-pointer active:scale-98"
+                >
+                  <Plus size={18} />
+                  Nueva empresa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateToSection('SYSTEM')}
+                  className={`flex h-[54px] items-center justify-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[16px] font-semibold text-[#111827] shadow-sm ${motionButtonClass} cursor-pointer active:scale-98`}
+                >
+                  <Settings size={18} className="text-[#2563EB]" />
+                  Configuración
+                </button>
               </div>
             </div>
           </section>
@@ -400,25 +396,57 @@ export const SuperAdminPage: React.FC = () => {
 
         {activeTab === 'DASHBOARD' && (
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 animate-[platform-fade-in_180ms_ease-out]">
-            {kpis.map(item => (
-              <MetricCard key={item.label} {...item} />
-            ))}
+            {kpis.map(item => {
+              const toneClassMap = {
+                blue: { text: 'text-[#2563EB]', bg: 'bg-[#DBEAFE] text-[#2563EB]' },
+                emerald: { text: 'text-[#16A34A]', bg: 'bg-[#DCFCE7] text-[#16A34A]' },
+                amber: { text: 'text-[#F59E0B]', bg: 'bg-[#FEF3C7] text-[#F59E0B]' },
+                danger: { text: 'text-[#DC2626]', bg: 'bg-[#FEE2E2] text-[#DC2626]' },
+              };
+              const style = toneClassMap[item.tone];
+
+              return (
+                <div
+                  key={item.label}
+                  className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] ${style.bg}`}>
+                      <item.icon size={24} />
+                    </div>
+                    <div className="text-right">
+                      <div className={`inline-flex items-center gap-1 rounded-full bg-[#F8FAFC] px-3 py-1 text-[12px] font-semibold ${style.text}`}>
+                        <TrendingUp size={13} />
+                        {item.trend}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-8 space-y-3">
+                    <p className="text-[15px] font-semibold text-[#111827]">{item.label}</p>
+                    <p className="text-[28px] font-semibold leading-none tracking-tight text-[#111827]">{item.value}</p>
+                    <p className="text-[14px] font-medium text-[#6B7280]">{item.helper}</p>
+                  </div>
+                  <div className={`pointer-events-none absolute bottom-4 right-4 opacity-[0.08] ${style.text}`}>
+                    <item.icon size={88} />
+                  </div>
+                </div>
+              );
+            })}
           </section>
         )}
 
-        <section className="space-y-5">
         {activeTab === 'DASHBOARD' ? (
           <div className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
             {/* Fila superior de Gráficos y Distribución */}
-            <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+            <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_0.95fr]">
               {/* Monitor Global */}
-              <div className={`${shellCardClass} p-6`}>
+              <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
                   <div className="flex items-center gap-3">
                     <TrendingUp size={20} className="text-[#2563EB]" />
-                    <h2 className="text-[18px] font-black text-[#111827]">Crecimiento de empresas</h2>
+                    <h2 className="text-[19px] font-semibold text-[#111827]">Crecimiento de empresas</h2>
                   </div>
-                  <span className="inline-flex rounded-lg bg-slate-50 border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
+                  <span className="inline-flex rounded-full bg-slate-50 border border-slate-200 px-3.5 py-1 text-xs font-semibold text-slate-600">
                     Últimos 6 meses
                   </span>
                 </div>
@@ -427,7 +455,7 @@ export const SuperAdminPage: React.FC = () => {
                     <AreaChart data={performanceData}>
                       <defs>
                         <linearGradient id="super-admin-performance" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
+                          <stop offset="5%" stopColor="#2563EB" stopOpacity={0.16} />
                           <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
                         </linearGradient>
                       </defs>
@@ -446,13 +474,13 @@ export const SuperAdminPage: React.FC = () => {
               </div>
 
               {/* Distribución por Plan e Ingresos */}
-              <div className={`${shellCardClass} p-6 space-y-5`}>
+              <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 space-y-5 shadow-sm">
                 <div className="border-b border-slate-100 pb-3">
-                  <h3 className="text-[18px] font-black text-[#111827]">Ingresos por plan (MRR)</h3>
+                  <h3 className="text-[19px] font-semibold text-[#111827]">Ingresos por plan (MRR)</h3>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 pt-1">
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                    <div className="flex items-center justify-between text-[13.5px] font-bold text-slate-500">
                       <span>Básico (35.2%)</span>
                       <span className="text-slate-800">RD$ 129,600.00</span>
                     </div>
@@ -461,16 +489,16 @@ export const SuperAdminPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                    <div className="flex items-center justify-between text-[13.5px] font-bold text-slate-500">
                       <span>Profesional (41.4%)</span>
                       <span className="text-slate-800">RD$ 233,200.00</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '41.4%' }} />
+                      <div className="h-full bg-[#16A34A] rounded-full" style={{ width: '41.4%' }} />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                    <div className="flex items-center justify-between text-[13.5px] font-bold text-slate-500">
                       <span>Empresarial (26.3%)</span>
                       <span className="text-slate-800">RD$ 140,000.00</span>
                     </div>
@@ -479,102 +507,123 @@ export const SuperAdminPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                    <div className="flex items-center justify-between text-[13.5px] font-bold text-slate-500">
                       <span>Personalizado (5.6%)</span>
                       <span className="text-slate-800">RD$ 30,000.00</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full" style={{ width: '5.6%' }} />
+                      <div className="h-full bg-[#F59E0B] rounded-full" style={{ width: '5.6%' }} />
                     </div>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* Fila Inferior: Empresas Recientes y Actividad del Sistema */}
-            <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
-              {/* Empresas Recientes */}
-              <div className={`${shellCardClass} p-6 overflow-hidden`}>
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-                  <h3 className="text-[18px] font-black text-slate-900">Empresas recientes</h3>
-                  <button
-                    type="button"
-                    onClick={() => navigateToSection('COMPANIES')}
-                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
-                  >
-                    Ver todas
-                  </button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-100">
-                    <thead className="bg-[#F8FAFC]">
-                      <tr className="text-left">
-                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Empresa</th>
-                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Plan</th>
-                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Estado</th>
-                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Usuarios</th>
-                        <th className="px-4 py-3 text-[10.5px] font-black uppercase tracking-wider text-slate-400">Fecha</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
-                      {tenantCompanies.slice(0, 5).map(company => {
-                        const plan = plans.find(p => p.id === company.planId);
-                        const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
-                        return (
-                          <tr key={company.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-4 py-3">
-                              <span 
-                                onClick={() => {
-                                  setSelectedCompanyDetail(company);
-                                  setDetailTab('RESUMEN');
-                                  navigateToSection('COMPANIES');
-                                }}
-                                className="text-[14px] font-bold text-slate-900 cursor-pointer hover:text-blue-600 transition-colors"
-                              >
-                                {company.name}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-xs font-semibold text-slate-600">{plan?.name || 'Básico'}</td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider ${
-                                company.status === 'ACTIVE' 
-                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                                  : 'bg-rose-50 text-rose-600 border border-rose-100'
-                              }`}>
-                                {company.status === 'ACTIVE' ? 'Activo' : 'Suspendido'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-[13.5px] font-semibold text-slate-700">{companyUsersCount}</td>
-                            <td className="px-4 py-3 text-xs font-semibold text-slate-500">{formatDate(company.expiresAt)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+            {/* Acciones Rápidas Super Admin */}
+            <section className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <TrendingUp size={20} className="text-[#2563EB]" />
+                <h2 className="text-[19px] font-semibold text-[#111827]">Acciones rápidas</h2>
               </div>
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <button
+                  type="button"
+                  onClick={() => setIsCompanyModalOpen(true)}
+                  className="group flex min-h-[148px] flex-col items-center justify-center rounded-[22px] border border-[#E5E7EB] bg-white px-4 text-center transition-all duration-200 hover:-translate-y-1 hover:border-[#BFDBFE] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:shadow-sm cursor-pointer"
+                >
+                  <Building2 size={30} className="text-[#2563EB]" />
+                  <p className="mt-4 text-[17px] font-semibold leading-tight text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">Nueva empresa</p>
+                  <p className="mt-1.5 text-[13px] font-medium leading-5 text-[#6B7280]">Aprovisionar tenant</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateToSection('BILLING')}
+                  className="group flex min-h-[148px] flex-col items-center justify-center rounded-[22px] border border-[#E5E7EB] bg-white px-4 text-center transition-all duration-200 hover:-translate-y-1 hover:border-[#BFDBFE] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:shadow-sm cursor-pointer"
+                >
+                  <CreditCard size={30} className="text-[#2563EB]" />
+                  <p className="mt-4 text-[17px] font-semibold leading-tight text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">Revisar facturación</p>
+                  <p className="mt-1.5 text-[13px] font-medium leading-5 text-[#6B7280]">Suscripciones y cobros</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateToSection('AUDIT')}
+                  className="group flex min-h-[148px] flex-col items-center justify-center rounded-[22px] border border-[#E5E7EB] bg-white px-4 text-center transition-all duration-200 hover:-translate-y-1 hover:border-[#BFDBFE] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:shadow-sm cursor-pointer"
+                >
+                  <History size={30} className="text-[#2563EB]" />
+                  <p className="mt-4 text-[17px] font-semibold leading-tight text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">Ver auditoría</p>
+                  <p className="mt-1.5 text-[13px] font-medium leading-5 text-[#6B7280]">Logs de seguridad globales</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateToSection('PLANS')}
+                  className="group flex min-h-[148px] flex-col items-center justify-center rounded-[22px] border border-[#E5E7EB] bg-white px-4 text-center transition-all duration-200 hover:-translate-y-1 hover:border-[#BFDBFE] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:shadow-sm cursor-pointer"
+                >
+                  <Package size={30} className="text-[#2563EB]" />
+                  <p className="mt-4 text-[17px] font-semibold leading-tight text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">Gestionar planes</p>
+                  <p className="mt-1.5 text-[13px] font-medium leading-5 text-[#6B7280]">Límites y precios del SaaS</p>
+                </button>
+              </div>
+            </section>
 
-              {/* Actividad del Sistema */}
-              <div className={`${shellCardClass} p-6`}>
+            {/* Fila Inferior: Alertas Operativas y Actividad Reciente */}
+            <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_1fr]">
+              {/* Alertas Operativas */}
+              <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-                  <h3 className="text-[18px] font-black text-slate-900">Actividad del sistema</h3>
+                  <div className="flex items-center gap-3">
+                    <AlertCircle size={20} className="text-[#DC2626]" />
+                    <h3 className="text-[19px] font-semibold text-slate-900">Alertas operativas</h3>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => navigateToSection('AUDIT')}
+                    onClick={() => navigateToSection('SYSTEM')}
                     className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
                   >
                     Ver todas
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {masterLogs.slice(0, 5).map(log => (
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-[22px] bg-red-50/50 border border-red-100">
+                    <div className="space-y-1.5">
+                      <p className="text-[14.5px] font-bold text-[#DC2626] leading-tight">Empresas en mora crítica</p>
+                      <p className="text-[13px] font-medium text-slate-600">Hay 5 tenants con pagos de suscripción pendientes por más de 15 días.</p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-red-700">Crítico</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-4 p-4 rounded-[22px] bg-amber-50/50 border border-amber-100">
+                    <div className="space-y-1.5">
+                      <p className="text-[14.5px] font-bold text-[#D97706] leading-tight">Límites de plan excedidos</p>
+                      <p className="text-[13px] font-medium text-slate-600">2 empresas están al 95% de su capacidad máxima de usuarios.</p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-amber-700">Advertencia</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actividad Reciente */}
+              <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <Activity size={20} className="text-[#2563EB]" />
+                    <h3 className="text-[19px] font-semibold text-slate-900">Actividad reciente</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateToSection('AUDIT')}
+                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  >
+                    Ver todo
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {masterLogs.slice(0, 4).map(log => (
                     <div key={log.id} className="flex items-start gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                         <Terminal size={15} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] font-bold text-slate-950 leading-tight">{log.action}</p>
-                        <p className="text-xs font-semibold text-slate-500 mt-1 truncate">{log.detail}</p>
+                        <p className="text-[13.5px] font-semibold text-slate-950 leading-tight">{log.action}</p>
+                        <p className="text-xs font-medium text-slate-500 mt-1 truncate">{log.detail}</p>
                       </div>
                       <span className="shrink-0 text-[11px] font-semibold text-slate-400">
                         {new Date(log.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })}
@@ -1537,7 +1586,6 @@ export const SuperAdminPage: React.FC = () => {
             </div>
           </section>
         ) : null}
-        </section>
 
         {isPlanModalOpen && editingPlan ? (
           <ModalFrame title={`Editar plan: ${editingPlan.name}`} onClose={() => { setIsPlanModalOpen(false); setEditingPlan(null); }}>
