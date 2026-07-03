@@ -577,7 +577,7 @@ export const SuperAdminPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => navigateToSection('SYSTEM')}
-                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                    className="text-[13.5px] font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-200 cursor-pointer"
                   >
                     Ver todas
                   </button>
@@ -610,7 +610,7 @@ export const SuperAdminPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => navigateToSection('AUDIT')}
-                    className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                    className="text-[13.5px] font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-200 cursor-pointer"
                   >
                     Ver todo
                   </button>
