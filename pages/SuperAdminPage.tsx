@@ -1008,44 +1008,89 @@ export const SuperAdminPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {filteredCompanies.map(company => {
-                  const plan = plans.find(item => item.id === company.planId);
-                  const isGhost = !!company.isGhostMode;
-                  // Contar usuarios y sucursales de este tenant para mayor contexto
-                  const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
-                  const companyBranchesCount = company.id === 'c1' ? 3 : 1;
+              <div className="rounded-[30px] border border-[#E5E7EB] bg-white shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between border-b border-[#E5E7EB] px-8 py-6">
+                  <h2 className="text-[20px] font-bold text-[#111827]">Listado de empresas</h2>
+                  <span className="rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3.5 py-1 text-[13px] font-bold text-[#475569]">
+                    {filteredCompanies.length} registradas
+                  </span>
+                </div>
 
-                  return (
-                    <div key={company.id} className="rounded-[30px] border border-[#E5E7EB] bg-white p-5 lg:p-6 shadow-sm transition-all duration-220 ease-out hover:-translate-y-1 hover:shadow-md hover:border-slate-300/80">
-                      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="flex min-w-0 items-start gap-4">
-                          <div className={`relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[20px] font-black text-white shadow-sm ${
-                            company.status === 'SUSPENDED' 
-                              ? 'bg-slate-400' 
-                              : isGhost 
-                                ? 'bg-purple-600 shadow-purple-200' 
-                                : 'bg-blue-600 shadow-blue-200'
-                          }`}>
-                            {company.name[0].toUpperCase()}
-                            {isGhost && (
-                              <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
-                                <Ghost size={12} />
-                              </span>
-                            )}
-                          </div>
-                          <div className="min-w-0 space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 
-                                onClick={() => {
-                                  setSelectedCompanyDetail(company);
-                                  setDetailTab('RESUMEN');
-                                }}
-                                className="text-[19px] font-black tracking-tight text-[#111827] cursor-pointer hover:text-blue-600 transition-colors"
-                              >
-                                {company.name}
-                              </h3>
-                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${
+                <div className="overflow-x-auto">
+                  <div className="min-w-[1020px]">
+                    {/* Cabecera del Listado Estilo Lista */}
+                    <div className="grid grid-cols-[2.2fr_1.1fr_0.9fr_1fr_1.3fr_1.3fr_1fr_1.2fr] px-8 py-5 text-[13px] font-bold uppercase tracking-[0.08em] text-[#94A3B8] border-b border-slate-100 bg-[#FCFDFF]">
+                      <span>Empresa</span>
+                      <span className="text-center">Plan</span>
+                      <span className="text-center">Usuarios</span>
+                      <span className="text-center">Sucursales</span>
+                      <span className="text-center">MRR / Cobro</span>
+                      <span className="text-center">Próximo Pago</span>
+                      <span className="text-center">Estado</span>
+                      <span className="text-right">Acciones</span>
+                    </div>
+
+                    <div className="divide-y divide-[#F3F4F6]">
+                      {filteredCompanies.map(company => {
+                        const plan = plans.find(item => item.id === company.planId);
+                        const isGhost = !!company.isGhostMode;
+                        const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
+                        const companyBranchesCount = company.id === 'c1' ? 3 : 1;
+
+                        return (
+                          <div
+                            key={company.id}
+                            className="grid grid-cols-[2.2fr_1.1fr_0.9fr_1fr_1.3fr_1.3fr_1fr_1.2fr] items-center px-8 py-5 text-[14.5px] transition-colors duration-200 hover:bg-[#FCFDFE] cursor-pointer"
+                            onClick={() => {
+                              setSelectedCompanyDetail(company);
+                              setDetailTab('RESUMEN');
+                            }}
+                          >
+                            {/* Identificación de la Empresa */}
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold text-white shadow-sm ${
+                                company.status === 'SUSPENDED' 
+                                  ? 'bg-slate-400' 
+                                  : isGhost 
+                                    ? 'bg-purple-600 shadow-purple-200' 
+                                    : 'bg-blue-600 shadow-blue-200'
+                              }`}>
+                                {company.name[0].toUpperCase()}
+                                {isGhost && (
+                                  <span className="absolute -right-1 -top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
+                                    <Ghost size={8} />
+                                  </span>
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate font-bold text-[#111827] transition-colors duration-200 hover:text-blue-600">
+                                  {company.name}
+                                </p>
+                                <p className="mt-0.5 truncate text-[12px] font-semibold text-[#6B7280]">ID: {company.id}</p>
+                              </div>
+                            </div>
+
+                            {/* Plan */}
+                            <span className="text-center font-bold text-slate-700">{plan?.name || 'Básico'}</span>
+
+                            {/* Usuarios */}
+                            <span className="text-center font-semibold text-[#475569]">{companyUsersCount} usuarios</span>
+
+                            {/* Sucursales */}
+                            <span className="text-center font-semibold text-[#475569]">{companyBranchesCount} sucursal/es</span>
+
+                            {/* MRR / Cobro */}
+                            <div className="text-center">
+                              <p className="font-bold text-slate-900">{formatCurrency(company.subscriptionPrice)}</p>
+                              <p className="text-[11px] font-semibold text-slate-400 mt-0.5">{company.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}</p>
+                            </div>
+
+                            {/* Próximo Pago */}
+                            <span className="text-center font-semibold text-slate-650">{formatDate(company.expiresAt)}</span>
+
+                            {/* Estado */}
+                            <div className="flex justify-center">
+                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
                                 company.status === 'ACTIVE' 
                                   ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
                                   : company.status === 'TRIAL' 
@@ -1054,108 +1099,72 @@ export const SuperAdminPage: React.FC = () => {
                               }`}>
                                 {company.status === 'ACTIVE' ? 'Activo' : company.status === 'TRIAL' ? 'Prueba' : 'Suspendido'}
                               </span>
-                              {company.isGhostMode && (
-                                <span className="inline-flex rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-purple-600">
-                                  Emulación Activa
-                                </span>
-                              )}
                             </div>
-                            
-                            <div className="flex flex-wrap items-center gap-3.5 text-[13px] font-medium text-slate-500 pt-1">
-                              <div className="flex items-center gap-1.5">
-                                <Package size={14} className="text-slate-400" />
-                                <span className="font-bold text-slate-700">{plan?.name || 'Básico estándar'}</span>
-                              </div>
-                              <span className="text-slate-300">•</span>
-                              <div className="flex items-center gap-1.5">
-                                <Users size={14} className="text-slate-400" />
-                                <span>{companyUsersCount} usuarios</span>
-                              </div>
-                              <span className="text-slate-300">•</span>
-                              <div className="flex items-center gap-1.5">
-                                <MapPin size={14} className="text-slate-400" />
-                                <span>{companyBranchesCount} sucursales</span>
-                              </div>
-                              <span className="text-slate-300">•</span>
-                              <div className="flex items-center gap-1.5">
-                                <Clock3 size={14} className="text-slate-400" />
-                                <span>Expira: <strong className="text-slate-700">{formatDate(company.expiresAt)}</strong></span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* Lado Financiero e Interactivo del Tenant */}
-                        <div className="flex flex-wrap items-center gap-5 justify-between lg:justify-end border-t border-slate-100 pt-4 lg:border-none lg:pt-0">
-                          <div className="text-left lg:text-right">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Facturación Anual/Mensual</p>
-                            <p className="text-lg font-black text-slate-900 mt-1">{formatCurrency(company.subscriptionPrice)}</p>
-                            <p className="text-xs font-semibold text-slate-500 mt-0.5">{company.billingCycle === 'YEARLY' ? 'Ciclo Anual' : 'Ciclo Mensual'}</p>
+                            {/* Acciones */}
+                            <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                title="Modo Fantasma"
+                                onClick={() => handleToggleGhost(company.id, isGhost)}
+                                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all ${
+                                  isGhost 
+                                    ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
+                                    : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
+                                } cursor-pointer`}
+                              >
+                                <Ghost size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                title="Editar"
+                                onClick={() => {
+                                  setEditingCompany(company);
+                                  setProvisionName(company.name);
+                                  setProvisionPlanId(company.planId);
+                                  setProvisionCycle(company.billingCycle);
+                                  setProvisionPrice(company.subscriptionPrice || 0);
+                                  setIsCompanyModalOpen(true);
+                                }}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (company.status === 'ACTIVE') {
+                                    window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
+                                      detail: {
+                                        id: `suspend-${company.id}`,
+                                        state: 'open',
+                                        tone: 'danger',
+                                        title: `¿Suspender acceso de ${company.name}?`,
+                                        description: `Esta acción denegará de inmediato el acceso a todos los administradores y usuarios de esta empresa.`,
+                                        confirmLabel: 'Confirmar Suspensión',
+                                        cancelLabel: 'Cancelar',
+                                        onConfirm: () => handleToggleCompany(company.id, company.status)
+                                      }
+                                    }));
+                                  } else {
+                                    handleToggleCompany(company.id, company.status);
+                                  }
+                                }}
+                                className={`inline-flex h-9 items-center justify-center rounded-xl px-3 text-[12px] font-bold transition-all cursor-pointer ${
+                                  company.status === 'ACTIVE'
+                                    ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                                    : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                                }`}
+                              >
+                                {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
+                              </button>
+                            </div>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              title="Modo Fantasma (Diagnóstico de Soporte)"
-                              onClick={() => handleToggleGhost(company.id, isGhost)}
-                              className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition-all ${
-                                isGhost 
-                                  ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
-                                  : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
-                              } cursor-pointer`}
-                            >
-                              <Ghost size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              title="Editar plan y aprovisionamiento"
-                              onClick={() => {
-                                setEditingCompany(company);
-                                setProvisionName(company.name);
-                                setProvisionPlanId(company.planId);
-                                setProvisionCycle(company.billingCycle);
-                                setProvisionPrice(company.subscriptionPrice || 0);
-                                setIsCompanyModalOpen(true);
-                              }}
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (company.status === 'ACTIVE') {
-                                  // Mostrar confirmación crítica para suspensión
-                                  window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
-                                    detail: {
-                                      id: `suspend-${company.id}`,
-                                      state: 'open',
-                                      tone: 'danger',
-                                      title: `¿Suspender acceso de ${company.name}?`,
-                                      description: `Esta acción denegará de inmediato el acceso a todos los administradores, supervisores y cobradores registrados bajo esta empresa. Ninguna sucursal podrá realizar cobros ni arqueos.`,
-                                      confirmLabel: 'Confirmar Suspensión',
-                                      cancelLabel: 'Cancelar',
-                                      onConfirm: () => handleToggleCompany(company.id, company.status)
-                                    }
-                                  }));
-                                } else {
-                                  handleToggleCompany(company.id, company.status);
-                                }
-                              }}
-                              className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-[13.5px] font-bold transition-all cursor-pointer ${
-                                company.status === 'ACTIVE'
-                                  ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
-                                  : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
-                              }`}
-                            >
-                              {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
               </div>
             </section>
           )
