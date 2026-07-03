@@ -1975,55 +1975,36 @@ export const SuperAdminPage: React.FC = () => {
               </FieldBlock>
               <div className="grid gap-4 md:grid-cols-2">
                 <FieldBlock label="Plan">
-                  <div className="relative h-[56px] w-full">
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 transition-all duration-200 group-focus-within:border-[#93C5FD] hover:border-[#DBEAFE]">
-                      <span className="text-[15px] font-medium text-[#111827]">
-                        {plans.find(p => p.id === provisionPlanId)?.name || 'Seleccionar plan'}
-                      </span>
-                      <ChevronDown size={16} className="text-[#94A3B8]" />
-                    </div>
-                    <select
-                      value={provisionPlanId}
-                      onChange={event => {
-                        const value = event.target.value;
-                        setProvisionPlanId(value);
-                        const selectedPlan = plans.find(plan => plan.id === value);
-                        if (selectedPlan) {
-                          setProvisionPrice(provisionCycle === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
-                        }
-                      }}
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    >
-                      {plans.map(plan => (
-                        <option key={plan.id} value={plan.id}>{plan.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <FilterDropdown
+                    value={provisionPlanId}
+                    onChange={(value) => {
+                      setProvisionPlanId(value);
+                      const selectedPlan = plans.find(plan => plan.id === value);
+                      if (selectedPlan) {
+                        setProvisionPrice(provisionCycle === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
+                      }
+                    }}
+                    options={plans.map(p => ({ value: p.id, label: p.name }))}
+                    placeholder="Seleccionar plan"
+                  />
                 </FieldBlock>
                 <FieldBlock label="Ciclo">
-                  <div className="relative h-[56px] w-full">
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 transition-all duration-200 hover:border-[#DBEAFE]">
-                      <span className="text-[15px] font-medium text-[#111827]">
-                        {provisionCycle === 'YEARLY' ? 'Anual' : 'Mensual'}
-                      </span>
-                      <ChevronDown size={16} className="text-[#94A3B8]" />
-                    </div>
-                    <select
-                      value={provisionCycle}
-                      onChange={event => {
-                        const value = event.target.value as 'MONTHLY' | 'YEARLY';
-                        setProvisionCycle(value);
-                        const selectedPlan = plans.find(plan => plan.id === provisionPlanId);
-                        if (selectedPlan) {
-                          setProvisionPrice(value === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
-                        }
-                      }}
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    >
-                      <option value="MONTHLY">Mensual</option>
-                      <option value="YEARLY">Anual</option>
-                    </select>
-                  </div>
+                  <FilterDropdown
+                    value={provisionCycle}
+                    onChange={(value) => {
+                      const cycle = value as 'MONTHLY' | 'YEARLY';
+                      setProvisionCycle(cycle);
+                      const selectedPlan = plans.find(plan => plan.id === provisionPlanId);
+                      if (selectedPlan) {
+                        setProvisionPrice(cycle === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
+                      }
+                    }}
+                    options={[
+                      { value: 'MONTHLY', label: 'Mensual' },
+                      { value: 'YEARLY',  label: 'Anual' },
+                    ]}
+                    placeholder="Seleccionar ciclo"
+                  />
                 </FieldBlock>
               </div>
               <FieldBlock label="Precio pactado">
