@@ -1975,41 +1975,55 @@ export const SuperAdminPage: React.FC = () => {
               </FieldBlock>
               <div className="grid gap-4 md:grid-cols-2">
                 <FieldBlock label="Plan">
-                  <select
-                    value={provisionPlanId}
-                    onChange={event => {
-                      const value = event.target.value;
-                      setProvisionPlanId(value);
-                      const selectedPlan = plans.find(plan => plan.id === value);
-                      if (selectedPlan) {
-                        setProvisionPrice(provisionCycle === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
-                      }
-                    }}
-                    className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
-                  >
-                    {plans.map(plan => (
-                      <option key={plan.id} value={plan.id}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative h-[56px] w-full">
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 transition-all duration-200 group-focus-within:border-[#93C5FD] hover:border-[#DBEAFE]">
+                      <span className="text-[15px] font-medium text-[#111827]">
+                        {plans.find(p => p.id === provisionPlanId)?.name || 'Seleccionar plan'}
+                      </span>
+                      <ChevronDown size={16} className="text-[#94A3B8]" />
+                    </div>
+                    <select
+                      value={provisionPlanId}
+                      onChange={event => {
+                        const value = event.target.value;
+                        setProvisionPlanId(value);
+                        const selectedPlan = plans.find(plan => plan.id === value);
+                        if (selectedPlan) {
+                          setProvisionPrice(provisionCycle === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
+                        }
+                      }}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    >
+                      {plans.map(plan => (
+                        <option key={plan.id} value={plan.id}>{plan.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </FieldBlock>
                 <FieldBlock label="Ciclo">
-                  <select
-                    value={provisionCycle}
-                    onChange={event => {
-                      const value = event.target.value as 'MONTHLY' | 'YEARLY';
-                      setProvisionCycle(value);
-                      const selectedPlan = plans.find(plan => plan.id === provisionPlanId);
-                      if (selectedPlan) {
-                        setProvisionPrice(value === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
-                      }
-                    }}
-                    className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
-                  >
-                    <option value="MONTHLY">Mensual</option>
-                    <option value="YEARLY">Anual</option>
-                  </select>
+                  <div className="relative h-[56px] w-full">
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-4 transition-all duration-200 hover:border-[#DBEAFE]">
+                      <span className="text-[15px] font-medium text-[#111827]">
+                        {provisionCycle === 'YEARLY' ? 'Anual' : 'Mensual'}
+                      </span>
+                      <ChevronDown size={16} className="text-[#94A3B8]" />
+                    </div>
+                    <select
+                      value={provisionCycle}
+                      onChange={event => {
+                        const value = event.target.value as 'MONTHLY' | 'YEARLY';
+                        setProvisionCycle(value);
+                        const selectedPlan = plans.find(plan => plan.id === provisionPlanId);
+                        if (selectedPlan) {
+                          setProvisionPrice(value === 'YEARLY' ? (selectedPlan.yearlyPrice || selectedPlan.monthlyPrice * 10) : selectedPlan.monthlyPrice);
+                        }
+                      }}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    >
+                      <option value="MONTHLY">Mensual</option>
+                      <option value="YEARLY">Anual</option>
+                    </select>
+                  </div>
                 </FieldBlock>
               </div>
               <FieldBlock label="Precio pactado">
@@ -2253,7 +2267,7 @@ const ModalFrame = ({
         <button
           type="button"
           onClick={onClose}
-          className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#6B7280] ${motionButtonClass}`}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#6B7280] transition-all duration-200 hover:border-red-200 hover:bg-red-50 hover:text-red-500 cursor-pointer"
         >
           <X size={18} />
         </button>
