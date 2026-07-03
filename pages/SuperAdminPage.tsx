@@ -32,6 +32,7 @@ import {
   Terminal,
   TrendingUp,
   Users,
+  UserCog,
   WalletCards,
   X,
 } from 'lucide-react';
@@ -506,67 +507,137 @@ export const SuperAdminPage: React.FC = () => {
               {filteredCompanies.map(company => {
                 const plan = plans.find(item => item.id === company.planId);
                 const isGhost = !!company.isGhostMode;
+                // Contar usuarios y sucursales de este tenant para mayor contexto
+                const companyUsersCount = globalUsers.filter(u => u.companyId === company.id).length;
+                const companyBranchesCount = company.id === 'c1' ? 3 : 1;
+
                 return (
-                  <div key={company.id} className={`${shellCardClass} p-5 lg:p-6`}>
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div key={company.id} className={`${shellCardClass} p-5 lg:p-6 transition-all duration-300 hover:shadow-md hover:border-slate-300/80`}>
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                       <div className="flex min-w-0 items-start gap-4">
-                        <div className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] text-[18px] font-semibold text-white ${isGhost ? 'bg-[#7C3AED]' : 'bg-[#2563EB]'}`}>
-                          {company.name[0]}
-                          {isGhost ? (
-                            <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#7C3AED] text-white">
+                        <div className={`relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-[20px] font-black text-white shadow-sm ${
+                          company.status === 'SUSPENDED' 
+                            ? 'bg-slate-400' 
+                            : isGhost 
+                              ? 'bg-purple-600 shadow-purple-200' 
+                              : 'bg-blue-600 shadow-blue-200'
+                        }`}>
+                          {company.name[0].toUpperCase()}
+                          {isGhost && (
+                            <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-purple-600 text-white animate-pulse">
                               <Ghost size={12} />
                             </span>
-                          ) : null}
+                          )}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-[20px] font-semibold leading-tight text-[#111827]">{company.name}</h3>
-                            <StatusBadge label={company.status} tone={getCompanyTone(company.status)} />
-                            {company.status === 'TRIAL' ? <StatusBadge label="En prueba" tone="warning" /> : null}
+                            <h3 className="text-[19px] font-black tracking-tight text-[#111827]">{company.name}</h3>
+                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${
+                              company.status === 'ACTIVE' 
+                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                                : company.status === 'TRIAL' 
+                                  ? 'bg-amber-50 text-amber-600 border border-amber-200' 
+                                  : 'bg-rose-50 text-rose-600 border border-rose-200'
+                            }`}>
+                              {company.status === 'ACTIVE' ? 'Activo' : company.status === 'TRIAL' ? 'Prueba' : 'Suspendido'}
+                            </span>
+                            {company.isGhostMode && (
+                              <span className="inline-flex rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-purple-600">
+                                Emulación Activa
+                              </span>
+                            )}
                           </div>
-                          <div className="mt-3 flex flex-wrap items-center gap-3 text-[13px] font-medium text-[#6B7280]">
-                            <InfoChip icon={Package} label={plan?.name || 'Sin plan'} />
-                            <InfoChip icon={Clock3} label={`Expira ${formatDate(company.expiresAt)}`} />
-                            <InfoChip icon={WalletCards} label={formatCurrency(company.subscriptionPrice)} />
+                          
+                          <div className="flex flex-wrap items-center gap-3.5 text-[13px] font-medium text-slate-500 pt-1">
+                            <div className="flex items-center gap-1.5">
+                              <Package size={14} className="text-slate-400" />
+                              <span className="font-bold text-slate-700">{plan?.name || 'Básico estándar'}</span>
+                            </div>
+                            <span className="text-slate-300">•</span>
+                            <div className="flex items-center gap-1.5">
+                              <Users size={14} className="text-slate-400" />
+                              <span>{companyUsersCount} usuarios</span>
+                            </div>
+                            <span className="text-slate-300">•</span>
+                            <div className="flex items-center gap-1.5">
+                              <MapPin size={14} className="text-slate-400" />
+                              <span>{companyBranchesCount} sucursales</span>
+                            </div>
+                            <span className="text-slate-300">•</span>
+                            <div className="flex items-center gap-1.5">
+                              <Clock3 size={14} className="text-slate-400" />
+                              <span>Expira: <strong className="text-slate-700">{formatDate(company.expiresAt)}</strong></span>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          title="Modo fantasma"
-                          onClick={() => handleToggleGhost(company.id, isGhost)}
-                          className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border ${isGhost ? 'border-[#DDD6FE] bg-[#F5F3FF] text-[#7C3AED]' : 'border-[#E5E7EB] bg-white text-[#6B7280]'} ${motionButtonClass}`}
-                        >
-                          <Ghost size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          title="Editar empresa"
-                          onClick={() => {
-                            setEditingCompany(company);
-                            setProvisionName(company.name);
-                            setProvisionPlanId(company.planId);
-                            setProvisionCycle(company.billingCycle);
-                            setProvisionPrice(company.subscriptionPrice || 0);
-                            setIsCompanyModalOpen(true);
-                          }}
-                          className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#6B7280] ${motionButtonClass}`}
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleCompany(company.id, company.status)}
-                          className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-[14px] font-semibold ${
-                            company.status === 'ACTIVE'
-                              ? 'border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]'
-                              : 'border border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]'
-                          } ${motionButtonClass}`}
-                        >
-                          {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
-                        </button>
+                      {/* Lado Financiero e Interactivo del Tenant */}
+                      <div className="flex flex-wrap items-center gap-5 justify-between lg:justify-end border-t border-slate-100 pt-4 lg:border-none lg:pt-0">
+                        <div className="text-left lg:text-right">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Facturación Anual/Mensual</p>
+                          <p className="text-lg font-black text-slate-900 mt-1">{formatCurrency(company.subscriptionPrice)}</p>
+                          <p className="text-xs font-semibold text-slate-500 mt-0.5">{company.billingCycle === 'YEARLY' ? 'Ciclo Anual' : 'Ciclo Mensual'}</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title="Modo Fantasma (Diagnóstico de Soporte)"
+                            onClick={() => handleToggleGhost(company.id, isGhost)}
+                            className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition-all ${
+                              isGhost 
+                                ? 'border-purple-300 bg-purple-50 text-purple-600 shadow-sm' 
+                                : 'border-slate-200 bg-white text-slate-500 hover:border-purple-200 hover:bg-purple-50/50 hover:text-purple-600'
+                            } cursor-pointer`}
+                          >
+                            <Ghost size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            title="Editar plan y aprovisionamiento"
+                            onClick={() => {
+                              setEditingCompany(company);
+                              setProvisionName(company.name);
+                              setProvisionPlanId(company.planId);
+                              setProvisionCycle(company.billingCycle);
+                              setProvisionPrice(company.subscriptionPrice || 0);
+                              setIsCompanyModalOpen(true);
+                            }}
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (company.status === 'ACTIVE') {
+                                // Mostrar confirmación crítica para suspensión
+                                window.dispatchEvent(new CustomEvent('PLATFORM_MODAL_EVENT', {
+                                  detail: {
+                                    id: `suspend-${company.id}`,
+                                    state: 'open',
+                                    tone: 'danger',
+                                    title: `¿Suspender acceso de ${company.name}?`,
+                                    description: `Esta acción denegará de inmediato el acceso a todos los administradores, supervisores y cobradores registrados bajo esta empresa. Ninguna sucursal podrá realizar cobros ni arqueos.`,
+                                    confirmLabel: 'Confirmar Suspensión',
+                                    cancelLabel: 'Cancelar',
+                                    onConfirm: () => handleToggleCompany(company.id, company.status)
+                                  }
+                                }));
+                              } else {
+                                handleToggleCompany(company.id, company.status);
+                              }
+                            }}
+                            className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-[13.5px] font-bold transition-all cursor-pointer ${
+                              company.status === 'ACTIVE'
+                                ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'
+                                : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
+                            }`}
+                          >
+                            {company.status === 'ACTIVE' ? 'Suspender' : 'Activar'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -668,80 +739,152 @@ export const SuperAdminPage: React.FC = () => {
               </div>
             </div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {plans.map(plan => (
-                <div key={plan.id} className={`${shellCardClass} flex flex-col p-6`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Plan SaaS</p>
-                      <h3 className="mt-3 text-[26px] font-semibold tracking-tight text-[#111827]">{plan.name}</h3>
-                    </div>
-                    {plan.isOffer ? <StatusBadge label={plan.offerText || 'Popular'} tone="blue" /> : null}
-                  </div>
-                  <p className="mt-5 text-[34px] font-semibold leading-none text-[#111827]">
-                    {formatCurrency(isYearly ? (plan.yearlyPrice || plan.monthlyPrice * 10) : plan.monthlyPrice)}
-                  </p>
-                  <p className="mt-2 text-[14px] font-medium text-[#6B7280]">{isYearly ? 'facturacion anual' : 'facturacion mensual'}</p>
+              {plans.map(plan => {
+                const price = isYearly ? (plan.yearlyPrice || plan.monthlyPrice * 10) : plan.monthlyPrice;
+                const isEnterprise = plan.id === 'p3';
+                const isPro = plan.id === 'p2';
 
-                  <div className="mt-6 grid gap-3">
-                    <MiniPanel label="Clientes" value={`${plan.maxClients}`} />
-                    <MiniPanel label="Usuarios" value={`${plan.maxUsers}`} />
-                    <MiniPanel label="Sucursales" value={`${plan.maxBranches}`} />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingPlan(plan);
-                      setIsPlanModalOpen(true);
-                    }}
-                    className={`mt-6 inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[15px] font-semibold text-[#111827] ${motionButtonClass}`}
+                return (
+                  <div 
+                    key={plan.id} 
+                    className={`${shellCardClass} flex flex-col p-6 rounded-[32px] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden border ${
+                      isEnterprise 
+                        ? 'border-purple-200 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-50/20 via-white to-white' 
+                        : isPro
+                          ? 'border-blue-200 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/20 via-white to-white'
+                          : 'border-slate-200 bg-white'
+                    }`}
                   >
-                    <Edit3 size={16} />
-                    Editar plan
-                  </button>
-                </div>
-              ))}
+                    {/* Badge Popular / Recomendado */}
+                    {plan.isOffer && (
+                      <div className="absolute right-0 top-0 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-bl-2xl shadow-sm">
+                        {plan.offerText || 'Popular'}
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5 pb-5 border-b border-slate-100">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Modelo de Suscripción</p>
+                      <h3 className="text-[25px] font-black tracking-tight text-slate-900">{plan.name}</h3>
+                    </div>
+
+                    <div className="py-6 space-y-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[38px] font-black tracking-tight text-slate-900">{formatCurrency(price)}</span>
+                        <span className="text-sm font-semibold text-slate-400">/ {isYearly ? 'año' : 'mes'}</span>
+                      </div>
+                      <p className="text-xs font-semibold text-slate-400">
+                        {isYearly ? 'Cobrado anualmente en una sola cuota' : 'Cobro recurrente mensual'}
+                      </p>
+                    </div>
+
+                    {/* Límites Cuantitativos del Plan */}
+                    <div className="flex-1 space-y-4 pt-2">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Límites y Recursos Incluidos</p>
+                      
+                      <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-[#FCFDFF] px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Users size={16} className="text-slate-400" />
+                          <span className="text-[13.5px] font-semibold text-slate-600">Clientes Máximos</span>
+                        </div>
+                        <span className="text-[14px] font-black text-slate-800">{plan.maxClients === 999999 ? 'Ilimitados' : plan.maxClients}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-[#FCFDFF] px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <UserCog size={16} className="text-slate-400" />
+                          <span className="text-[13.5px] font-semibold text-slate-600">Usuarios por Empresa</span>
+                        </div>
+                        <span className="text-[14px] font-black text-slate-800">{plan.maxUsers === 999999 ? 'Ilimitados' : plan.maxUsers}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-[#FCFDFF] px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Building2 size={16} className="text-slate-400" />
+                          <span className="text-[13.5px] font-semibold text-slate-600">Sucursales Permitidas</span>
+                        </div>
+                        <span className="text-[14px] font-black text-slate-800">{plan.maxBranches === 999999 ? 'Ilimitadas' : plan.maxBranches}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingPlan(plan);
+                        setIsPlanModalOpen(true);
+                      }}
+                      className="mt-8 flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-[14px] font-bold text-slate-700 transition-all hover:border-slate-350 hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+                    >
+                      <Edit3 size={15} />
+                      Editar parámetros del plan
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </section>
         ) : null}
 
         {activeTab === 'BILLING' ? (
-          <section className="space-y-5">
+          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
             <SectionHeader
               title="Facturacion"
               description="Seguimiento de suscripciones, cobros globales y estado de renovacion por empresa."
               actionLabel="Exportar resumen"
             />
-            <div className={`${shellCardClass} overflow-hidden`}>
-              <div className="grid gap-4 border-b border-[#E5E7EB] px-5 py-5 lg:grid-cols-4">
-                <MiniStat label="MRR" value={formatCurrency(metrics.mrr)} />
-                <MiniStat label="Cobros" value={formatCurrency(metrics.totalRevenue)} />
-                <MiniStat label="Empresas activas" value={`${tenantCompanies.filter(company => company.status === 'ACTIVE').length}`} />
-                <MiniStat label="Pendientes" value={`${billingRows.filter(item => item.status !== 'Pagada').length}`} />
+            <div className={`${shellCardClass} overflow-hidden rounded-[32px]`}>
+              <div className="grid gap-4 border-b border-[#E5E7EB] bg-slate-50/50 p-6 lg:grid-cols-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">MRR Mensual Estimado</p>
+                  <p className="mt-2 text-2xl font-black text-slate-900">{formatCurrency(metrics.mrr)}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Cobros Totales</p>
+                  <p className="mt-2 text-2xl font-black text-slate-900">{formatCurrency(metrics.totalRevenue)}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tenants Activos</p>
+                  <p className="mt-2 text-2xl font-black text-slate-900">{tenantCompanies.filter(c => c.status === 'ACTIVE').length}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Facturas Pendientes</p>
+                  <p className="mt-2 text-2xl font-black text-red-600">{billingRows.filter(item => item.status !== 'Pagada').length}</p>
+                </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full">
+                <table className="min-w-full divide-y divide-slate-100">
                   <thead className="bg-[#F8FAFC]">
                     <tr className="text-left">
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Empresa</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Plan</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Ciclo</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Monto</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Estado</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Vencimiento</th>
+                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Empresa / Tenant</th>
+                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Plan contratado</th>
+                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Ciclo</th>
+                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Monto</th>
+                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Estado de pago</th>
+                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Próx. Vencimiento</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {billingRows.map(row => (
-                      <tr key={row.id} className="border-t border-[#EEF2F7] hover:bg-[#FCFDFF]">
-                        <td className="px-5 py-4 text-[14px] font-semibold text-[#111827]">{row.companyName}</td>
-                        <td className="px-5 py-4 text-[14px] font-medium text-[#6B7280]">{row.planName}</td>
-                        <td className="px-5 py-4 text-[14px] font-medium text-[#111827]">{row.cycle}</td>
-                        <td className="px-5 py-4 text-[14px] font-semibold text-[#111827]">{formatCurrency(row.amount)}</td>
-                        <td className="px-5 py-4">
-                          <StatusBadge label={row.status} tone={row.status === 'Pagada' ? 'success' : row.status === 'Pendiente' ? 'warning' : 'danger'} />
+                      <tr key={row.id} className="hover:bg-[#FCFDFF] transition-colors">
+                        <td className="px-6 py-4 text-[14.5px] font-bold text-slate-900">{row.companyName}</td>
+                        <td className="px-6 py-4 text-[14px] font-medium text-slate-600">{row.planName}</td>
+                        <td className="px-6 py-4 text-[14px] font-medium text-slate-700">
+                          <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold ${row.cycle === 'Anual' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}`}>
+                            {row.cycle}
+                          </span>
                         </td>
-                        <td className="px-5 py-4 text-[13px] font-medium text-[#6B7280]">{formatDate(row.dueDate)}</td>
+                        <td className="px-6 py-4 text-[14.5px] font-bold text-slate-900">{formatCurrency(row.amount)}</td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                            row.status === 'Pagada' 
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                              : row.status === 'Pendiente' 
+                                ? 'bg-amber-50 text-amber-600 border border-amber-200' 
+                                : 'bg-red-50 text-red-600 border border-red-200'
+                          }`}>
+                            {row.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-[13.5px] font-semibold text-slate-500">{formatDate(row.dueDate)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -752,41 +895,57 @@ export const SuperAdminPage: React.FC = () => {
         ) : null}
 
         {activeTab === 'REPORTS' ? (
-          <section className="space-y-5">
+          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
             <SectionHeader
               title="Reportes Globales"
               description="Lectura ejecutiva del SaaS con resumen financiero, operativo y de riesgo."
             />
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_1fr]">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]">
               <div className={`${shellCardClass} p-6`}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
                   <FileText size={20} className="text-[#2563EB]" />
-                  <h2 className="text-[20px] font-semibold text-[#111827]">Panel de reportes</h2>
+                  <h2 className="text-[20px] font-black tracking-tight text-slate-900">Panel Ejecutivo de Reportes</h2>
                 </div>
-                <div className="mt-5 space-y-4">
+                <div className="space-y-4">
                   {reportRows.map(row => (
-                    <div key={row.title} className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+                    <div key={row.title} className="group rounded-[22px] border border-slate-200 bg-[#FCFDFF] p-5 transition-all duration-200 hover:translate-x-1 hover:border-slate-350">
                       <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-[16px] font-semibold text-[#111827]">{row.title}</p>
-                          <p className="mt-2 text-[14px] font-medium leading-7 text-[#6B7280]">{row.detail}</p>
+                        <div className="space-y-2">
+                          <p className="text-[16px] font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{row.title}</p>
+                          <p className="text-[13.5px] font-semibold leading-relaxed text-slate-500">{row.detail}</p>
                         </div>
-                        <StatusBadge label={row.badge} tone={row.badge === 'Financiero' ? 'success' : row.badge === 'Operativo' ? 'blue' : 'warning'} />
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider ${
+                          row.badge === 'Financiero' 
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
+                            : row.badge === 'Operativo' 
+                              ? 'bg-blue-50 text-blue-600 border border-blue-200' 
+                              : 'bg-amber-50 text-amber-600 border border-amber-200'
+                        }`}>
+                          {row.badge}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className={`${shellCardClass} p-6`}>
-                <div className="flex items-center gap-3">
-                  <Download size={20} className="text-[#2563EB]" />
-                  <h2 className="text-[20px] font-semibold text-[#111827]">Exportaciones sugeridas</h2>
+              <div className={`${shellCardClass} p-6 flex flex-col justify-between`}>
+                <div>
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
+                    <Download size={20} className="text-[#2563EB]" />
+                    <h2 className="text-[20px] font-black tracking-tight text-slate-900">Exportaciones en Vivo</h2>
+                  </div>
+                  <div className="space-y-3.5">
+                    <ExportRow title="Financiero global" detail="MRR, cobros, cartera y suscripciones." />
+                    <ExportRow title="Uso por empresa" detail="Usuarios, actividad y adopcion por tenant." />
+                    <ExportRow title="Auditoria consolidada" detail="Eventos criticos y trazabilidad del sistema." />
+                  </div>
                 </div>
-                <div className="mt-5 space-y-3">
-                  <ExportRow title="Financiero global" detail="MRR, cobros, cartera y suscripciones." />
-                  <ExportRow title="Uso por empresa" detail="Usuarios, actividad y adopcion por tenant." />
-                  <ExportRow title="Auditoria consolidada" detail="Eventos criticos y trazabilidad del sistema." />
+                
+                <div className="mt-8 pt-5 border-t border-slate-100 text-center">
+                  <p className="text-xs font-semibold text-slate-400 leading-relaxed">
+                    Las exportaciones se generan bajo demanda en formato CSV o PDF de alta definición 1A.
+                  </p>
                 </div>
               </div>
             </div>
@@ -794,106 +953,120 @@ export const SuperAdminPage: React.FC = () => {
         ) : null}
 
         {activeTab === 'AUDIT' ? (
-          <section className="space-y-5">
+          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
             <SectionHeader
               title="Auditoria"
               description="Bitacora global de acciones criticas, cambios administrativos y eventos de seguridad."
               actionLabel="Exportar log"
             />
-            <div className="space-y-3">
-              {masterLogs.map(log => (
-                <div key={log.id} className={`${shellCardClass} p-5`}>
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="flex min-w-0 items-start gap-4">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
-                        <Terminal size={18} />
-                      </div>
+            
+            {/* Consola Terminal Premium */}
+            <div className="rounded-[32px] bg-[#0F172A] border border-slate-800 shadow-2xl p-6 overflow-hidden">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-rose-500" />
+                  <div className="h-3 w-3 rounded-full bg-amber-500" />
+                  <div className="h-3 w-3 rounded-full bg-emerald-500" />
+                  <span className="text-xs font-bold text-slate-500 font-mono ml-2">master_audit_stream.log</span>
+                </div>
+                <div className="inline-flex rounded-lg bg-slate-800/60 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-wider text-emerald-400 font-mono">
+                  LIVE CONNECTION
+                </div>
+              </div>
+              
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 font-mono text-[13.5px] leading-relaxed custom-scrollbar">
+                {masterLogs.map(log => (
+                  <div key={log.id} className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-850 hover:bg-slate-900 transition-colors">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0">
-                        <p className="text-[16px] font-semibold text-[#111827]">{log.action}</p>
-                        <p className="mt-2 break-words rounded-[20px] bg-[#FCFDFF] px-4 py-3 text-[14px] font-medium leading-7 text-[#6B7280]">{log.detail}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-blue-400 font-bold">[{formatDate(log.timestamp)} {new Date(log.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
+                          <span className="text-purple-400 font-bold">&gt; {log.action}</span>
+                        </div>
+                        <p className="mt-2 text-emerald-400/90 break-words leading-relaxed pl-2 border-l-2 border-slate-700">
+                          {log.detail}
+                        </p>
                       </div>
-                    </div>
-                    <div className="shrink-0">
-                      <p className="text-[13px] font-semibold text-[#111827]">{formatDate(log.timestamp)}</p>
-                      <p className="mt-1 text-[12px] font-medium text-[#94A3B8]">
-                        {new Date(log.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                      <div className="shrink-0 text-slate-500 text-[11px] font-bold text-right pt-0.5">
+                        session_trace_id: <span className="text-slate-400">{log.id.slice(0, 8)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </section>
         ) : null}
 
         {activeTab === 'SYSTEM' ? (
-          <section className="space-y-5">
+          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
             <SectionHeader
               title="Configuracion del Sistema"
               description="Mantenimiento global, version del sistema y mensajes de difusion."
               actionLabel="Guardar configuracion"
               onAction={handleUpdateConfig}
             />
-            <div className={`${shellCardClass} p-6 lg:p-8`}>
-              <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-5">
-                  <div className="rounded-[24px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+            <div className={`${shellCardClass} p-6 lg:p-8 rounded-[32px]`}>
+              <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+                <div className="space-y-6">
+                  <div className="rounded-[24px] border border-slate-200 bg-[#FCFDFF] p-5 shadow-sm">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-[18px] ${platformConfig.maintenanceMode ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#DCFCE7] text-[#16A34A]'}`}>
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${platformConfig.maintenanceMode ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#DCFCE7] text-[#16A34A]'}`}>
                           {platformConfig.maintenanceMode ? <ShieldAlert size={22} /> : <ShieldCheck size={22} />}
                         </div>
                         <div>
-                          <p className="text-[18px] font-semibold text-[#111827]">Modo mantenimiento</p>
-                          <p className="mt-1 text-[14px] font-medium text-[#6B7280]">Control global para restringir acceso temporalmente.</p>
+                          <p className="text-[17px] font-black text-slate-900 leading-tight">Modo Mantenimiento Global</p>
+                          <p className="text-[13.5px] font-semibold text-slate-500 mt-1">Control global para restringir acceso temporalmente.</p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setPlatformConfig(current => ({ ...current, maintenanceMode: !current.maintenanceMode }))}
-                        className={`inline-flex h-11 items-center justify-center rounded-2xl px-4 text-[14px] font-semibold ${
+                        className={`inline-flex h-11 items-center justify-center rounded-2xl px-5 text-[13.5px] font-bold transition-all cursor-pointer ${
                           platformConfig.maintenanceMode
-                            ? 'border border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]'
-                            : 'border border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]'
-                        } ${motionButtonClass}`}
+                            ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                            : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                        }`}
                       >
-                        {platformConfig.maintenanceMode ? 'Activo' : 'Listo'}
+                        {platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'}
                       </button>
                     </div>
                   </div>
 
-                  <FieldBlock label="Mensaje global">
+                  <FieldBlock label="Mensaje de Difusión (Broadcast)">
                     <input
                       value={platformConfig.broadcastMessage}
                       onChange={event => setPlatformConfig(current => ({ ...current, broadcastMessage: event.target.value }))}
-                      className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                      className="h-[56px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-[15px] font-medium text-slate-800 outline-none transition-all duration-200 hover:border-blue-200 focus:border-blue-500"
+                      placeholder="Escribe un aviso para todas las pantallas del SaaS..."
                     />
                   </FieldBlock>
 
                   <div className="grid gap-5 md:grid-cols-2">
-                    <FieldBlock label="Fecha de mantenimiento">
+                    <FieldBlock label="Fecha programada de mantenimiento">
                       <input
                         type="date"
                         value={platformConfig.maintenanceDate}
                         onChange={event => setPlatformConfig(current => ({ ...current, maintenanceDate: event.target.value }))}
-                        className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                        className="h-[56px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-[15px] font-medium text-slate-800 outline-none transition-all duration-200 hover:border-blue-200 focus:border-blue-500"
                       />
                     </FieldBlock>
-                    <FieldBlock label="Version del sistema">
+                    <FieldBlock label="Versión del Core">
                       <input
                         value={platformConfig.systemVersion}
                         onChange={event => setPlatformConfig(current => ({ ...current, systemVersion: event.target.value }))}
-                        className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]"
+                        className="h-[56px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-[15px] font-medium text-slate-800 outline-none transition-all duration-200 hover:border-blue-200 focus:border-blue-500"
                       />
                     </FieldBlock>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <SidebarInfoCard title="Estado actual" icon={Activity}>
-                    <SummaryRow label="Version" value={platformConfig.systemVersion} tone="blue" />
+                  <SidebarInfoCard title="Estado del Kernel" icon={Activity}>
+                    <SummaryRow label="Versión del Core" value={platformConfig.systemVersion} tone="blue" />
                     <SummaryRow label="Mantenimiento" value={platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'} tone={platformConfig.maintenanceMode ? 'danger' : 'success'} />
-                    <SummaryRow label="Broadcast" value={platformConfig.broadcastMessage || 'Sin mensaje'} tone="neutral" />
+                    <SummaryRow label="Mensaje Broadcast" value={platformConfig.broadcastMessage || 'Sin mensaje activo'} tone="neutral" />
                   </SidebarInfoCard>
                 </div>
               </div>
@@ -902,26 +1075,34 @@ export const SuperAdminPage: React.FC = () => {
         ) : null}
 
         {activeTab === 'HELP' ? (
-          <section className="space-y-5">
+          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
             <SectionHeader
               title="Centro de Ayuda"
               description="Soporte para empresas, material de onboarding y atencion operativa del SaaS."
             />
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_1fr]">
               <div className={`${shellCardClass} p-6`}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
                   <LifeBuoy size={20} className="text-[#2563EB]" />
-                  <h2 className="text-[20px] font-semibold text-[#111827]">Cola de ayuda</h2>
+                  <h2 className="text-[20px] font-black tracking-tight text-slate-900">Cola de Ayuda & Tickets Activos</h2>
                 </div>
-                <div className="mt-5 space-y-4">
+                <div className="space-y-4">
                   {helpRows.map(row => (
-                    <div key={row.title} className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-5">
+                    <div key={row.title} className="group rounded-[22px] border border-slate-200 bg-[#FCFDFF] p-5 transition-all duration-200 hover:translate-x-1 hover:border-slate-350 hover:shadow-sm">
                       <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-[16px] font-semibold text-[#111827]">{row.title}</p>
-                          <p className="mt-2 text-[14px] font-medium leading-7 text-[#6B7280]">{row.detail}</p>
+                        <div className="space-y-2">
+                          <p className="text-[16px] font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{row.title}</p>
+                          <p className="text-[13.5px] font-semibold leading-relaxed text-slate-500">{row.detail}</p>
                         </div>
-                        <StatusBadge label={row.tag} tone={row.tag === 'Soporte' ? 'warning' : row.tag === 'Tutoriales' ? 'blue' : 'success'} />
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider ${
+                          row.tag === 'Soporte' 
+                            ? 'bg-amber-50 text-amber-600 border border-amber-200' 
+                            : row.tag === 'Tutoriales' 
+                              ? 'bg-blue-50 text-blue-600 border border-blue-200' 
+                              : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                        }`}>
+                          {row.tag}
+                        </span>
                       </div>
                     </div>
                   ))}

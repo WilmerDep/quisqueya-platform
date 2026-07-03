@@ -547,7 +547,7 @@ const ConfigurationPage: React.FC = () => {
       
       // Intentar enviar actualización del perfil al backend si aplica
       try {
-        const response = await apiClient.updateProfile({
+        const response = await (apiClient as any).updateProfile({
           name: profileForm.name,
           phone: profileForm.phone,
           photo: profileForm.photo,
@@ -989,7 +989,7 @@ const ConfigurationPage: React.FC = () => {
           graceDays={configForm.graceDays}
           whatsappReady={whatsappReady}
         />
-        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} />
+        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} canManageSettings={canManageSettings} />
         <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
           <Panel title="Marca institucional" description="Aplica estos datos a recibos, reportes y visuales del sistema.">
             <div className="grid gap-6 xl:grid-cols-[240px_1fr]">
@@ -1056,7 +1056,7 @@ const ConfigurationPage: React.FC = () => {
           graceDays={configForm.graceDays}
           whatsappReady={whatsappReady}
         />
-        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} />
+        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} canManageSettings={canManageSettings} />
         <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
           <Panel title="Motor financiero" description="Controla el comportamiento de mora y los textos de recibo.">
             <div className="grid gap-5 md:grid-cols-2">
@@ -1124,7 +1124,7 @@ const ConfigurationPage: React.FC = () => {
           graceDays={configForm.graceDays}
           whatsappReady={whatsappReady}
         />
-        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} />
+        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} canManageSettings={canManageSettings} />
         <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <Panel title="Umbrales de comportamiento" description="Define como escala el riesgo del cliente.">
             <div className="grid gap-5 md:grid-cols-2">
@@ -1175,7 +1175,7 @@ const ConfigurationPage: React.FC = () => {
           graceDays={configForm.graceDays}
           whatsappReady={whatsappReady}
         />
-        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} />
+        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} canManageSettings={canManageSettings} />
         <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <Panel title="Mensajeria operativa" description="Usa variables como [CLIENTE], [MONTO] o [RECIBO].">
             <div className="grid gap-5">
@@ -1297,7 +1297,7 @@ const ConfigurationPage: React.FC = () => {
           graceDays={configForm.graceDays}
           whatsappReady={whatsappReady}
         />
-        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} />
+        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} canManageSettings={canManageSettings} />
         {sessionModeBanner}
         <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
           <Panel title={editingBranch ? 'Editar sucursal' : 'Nueva sucursal'} description="Usa el mismo estándar operativo para todas las oficinas.">
@@ -1441,7 +1441,7 @@ const ConfigurationPage: React.FC = () => {
           graceDays={configForm.graceDays}
           whatsappReady={whatsappReady}
         />
-        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} />
+        <SubviewTabs activeSubview={activeSubview} onNavigate={navigate} canManageSettings={canManageSettings} />
         {sessionModeBanner}
         <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <Panel title="Areas de configuracion" description="Accede a las subvistas del modulo con el mismo patron del resto del sistema.">

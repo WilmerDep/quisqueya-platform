@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
-import { ArrowLeft, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, CircleX, Edit3, Filter, LayoutDashboard, Save, Search, User, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleCheck, CircleX, Edit3, Filter, LayoutDashboard, Save, Search, User, Wallet } from 'lucide-react';
 import { createLoan, getCompanyById, upsertClientsInLocalStorage, upsertLoansInLocalStorage } from '../services/dataService';
 import { getBranchScope, getScopedClients, getScopedLoans, getScopedUsers } from '../services/viewScope';
 import { Branch, Client, ClientStatus, Company, Frequency, Loan, User as AppUser } from '../types';
