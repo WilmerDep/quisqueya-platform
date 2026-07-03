@@ -1156,7 +1156,7 @@ export const SuperAdminPage: React.FC = () => {
               {/* Layout Operativo de dos columnas (Distribución 75% / 25% - Estilo Cobrar Hoy) */}
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-[3fr_1fr] z-10 relative">
                 {/* Columna Izquierda: Cartera de Empresas */}
-                <div className="rounded-[30px] border border-[#E5E7EB] bg-white shadow-sm overflow-hidden p-6 space-y-5">
+                <div className="rounded-[30px] border border-[#E5E7EB] bg-white shadow-sm p-6 space-y-5">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                       <h2 className="text-[20px] font-bold text-[#111827]">Cartera de empresas</h2>
