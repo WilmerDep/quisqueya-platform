@@ -713,31 +713,38 @@ export const SuperAdminPage: React.FC = () => {
               </div>
 
               {/* Sub-navegación Horizontal de la Empresa */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200">
-                {(['RESUMEN', 'USUARIOS', 'SUCURSALES', 'SUSCRIPCION', 'ACTIVIDAD'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setDetailTab(tab)}
-                    className={`px-4 py-2.5 text-[13.5px] font-bold border-b-2 transition-all cursor-pointer ${
-                      detailTab === tab 
-                        ? 'border-blue-600 text-blue-600' 
-                        : 'border-transparent text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    {tab === 'RESUMEN' && 'Resumen'}
-                    {tab === 'USUARIOS' && 'Usuarios'}
-                    {tab === 'SUCURSALES' && 'Sucursales'}
-                    {tab === 'SUSCRIPCION' && 'Suscripción'}
-                    {tab === 'ACTIVIDAD' && 'Actividad'}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2 pb-1 border-b border-slate-100 mb-2">
+                {[
+                  { id: 'RESUMEN', label: 'Resumen', icon: Globe },
+                  { id: 'USUARIOS', label: 'Usuarios', icon: Users },
+                  { id: 'SUCURSALES', label: 'Sucursales', icon: Building2 },
+                  { id: 'SUSCRIPCION', label: 'Suscripción', icon: CreditCard },
+                  { id: 'ACTIVIDAD', label: 'Actividad', icon: History }
+                ].map(tab => {
+                  const active = detailTab === tab.id;
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setDetailTab(tab.id as any)}
+                      className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${
+                        active
+                          ? 'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB] shadow-[0_12px_28px_rgba(37,99,235,0.12)]'
+                          : 'border-[#E2E8F0] bg-white text-[#64748B] hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB]'
+                      }`}
+                    >
+                      <Icon size={15} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Contenido de cada Tab del Detalle */}
               {/* Contenido de cada Tab del Detalle */}
               {detailTab === 'RESUMEN' && (
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.5fr_0.9fr] animate-[platform-fade-in_180ms_ease-out]">
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-[3fr_1fr] animate-[platform-fade-in_180ms_ease-out]">
                   {/* Columna Izquierda: Salud Financiera e Indicadores */}
                   <div className="space-y-6">
                     <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-6 shadow-sm space-y-4">
