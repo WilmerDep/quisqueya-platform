@@ -859,38 +859,41 @@ export const SuperAdminPage: React.FC = () => {
                     <h3 className="text-[17px] font-black text-slate-900">Usuarios Registrados en el Tenant</h3>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-100">
-                      <thead className="bg-[#F8FAFC]">
-                        <tr className="text-left">
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Usuario</th>
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Nombre</th>
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Rol</th>
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
+                    <div className="min-w-[760px]">
+                      {/* Header */}
+                      <div className="grid grid-cols-[1.5fr_1.8fr_1.2fr_1.2fr] px-6 py-4 text-[12px] font-black uppercase tracking-wider text-slate-400 bg-[#F8FAFC]">
+                        <div>Usuario</div>
+                        <div>Nombre</div>
+                        <div>Rol</div>
+                        <div>Estado</div>
+                      </div>
+                      {/* Body */}
+                      <div className="divide-y divide-slate-100 bg-white">
                         {globalUsers.filter(u => u.companyId === selectedCompanyDetail.id).map(user => (
-                          <tr key={user.id} className="hover:bg-slate-50/55 transition-colors">
-                            <td className="px-6 py-4">
-                              <p className="text-[14px] font-bold text-slate-900">@{user.username}</p>
-                            </td>
-                            <td className="px-6 py-4 text-[14px] font-semibold text-slate-700">{user.name}</td>
-                            <td className="px-6 py-4">
+                          <div
+                            key={user.id}
+                            className="grid grid-cols-[1.5fr_1.8fr_1.2fr_1.2fr] items-center border-t border-[#F3F4F6] px-6 py-4.5 text-[15px] transition-colors duration-200 hover:bg-[#FCFDFE]"
+                          >
+                            <div className="group flex cursor-pointer items-center gap-2 text-left transition-all duration-200 hover:translate-x-1">
+                              <span className="font-bold text-slate-900">@{user.username}</span>
+                            </div>
+                            <div className="font-semibold text-slate-700">{user.name}</div>
+                            <div>
                               <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-slate-600">
                                 {user.role}
                               </span>
-                            </td>
-                            <td className="px-6 py-4">
+                            </div>
+                            <div>
                               <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${
                                 user.isActive ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'
                               }`}>
                                 {user.isActive ? 'Activo' : 'Suspendido'}
                               </span>
-                            </td>
-                          </tr>
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -929,28 +932,26 @@ export const SuperAdminPage: React.FC = () => {
                     <h3 className="text-[17px] font-black text-slate-900">Historial de Cobros al Tenant</h3>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-100">
-                      <thead className="bg-[#F8FAFC]">
-                        <tr className="text-left">
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Factura</th>
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Ciclo</th>
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Monto</th>
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-wider text-slate-400">Vencimiento</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
-                        <tr className="hover:bg-slate-50/55 transition-colors">
-                          <td className="px-6 py-4">
-                            <p className="text-[14px] font-bold text-slate-900">FAC-2026-001</p>
-                          </td>
-                          <td className="px-6 py-4 text-[14px] font-semibold text-slate-700">
+                    <div className="min-w-[760px]">
+                      {/* Header */}
+                      <div className="grid grid-cols-[1.8fr_1.2fr_1.5fr_1.5fr] px-6 py-4 text-[12px] font-black uppercase tracking-wider text-slate-400 bg-[#F8FAFC]">
+                        <div>Factura</div>
+                        <div>Ciclo</div>
+                        <div>Monto</div>
+                        <div>Vencimiento</div>
+                      </div>
+                      {/* Body */}
+                      <div className="divide-y divide-slate-100 bg-white">
+                        <div className="grid grid-cols-[1.8fr_1.2fr_1.5fr_1.5fr] items-center border-t border-[#F3F4F6] px-6 py-4.5 text-[15px] transition-colors duration-200 hover:bg-[#FCFDFE]">
+                          <div className="font-bold text-slate-900">FAC-2026-001</div>
+                          <div className="font-semibold text-slate-700">
                             {selectedCompanyDetail.billingCycle === 'YEARLY' ? 'Anual' : 'Mensual'}
-                          </td>
-                          <td className="px-6 py-4 text-[14.5px] font-black text-slate-900">{formatCurrency(selectedCompanyDetail.subscriptionPrice)}</td>
-                          <td className="px-6 py-4 text-[13.5px] font-semibold text-slate-500">{formatDate(selectedCompanyDetail.expiresAt)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          </div>
+                          <div className="font-black text-slate-900">{formatCurrency(selectedCompanyDetail.subscriptionPrice)}</div>
+                          <div className="font-semibold text-slate-500">{formatDate(selectedCompanyDetail.expiresAt)}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1480,42 +1481,47 @@ export const SuperAdminPage: React.FC = () => {
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead className="bg-[#F8FAFC]">
-                    <tr className="text-left">
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Usuario</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Empresa</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Rol</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Estado</th>
-                      <th className="px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Ultimo acceso</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <div className="min-w-[920px]">
+                  {/* Header */}
+                  <div className="grid grid-cols-[1.8fr_1.6fr_1.2fr_1.1fr_1.3fr] px-5 py-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8] bg-[#F8FAFC]">
+                    <div>Usuario</div>
+                    <div>Empresa</div>
+                    <div>Rol</div>
+                    <div>Estado</div>
+                    <div>Último acceso</div>
+                  </div>
+                  {/* Body */}
+                  <div className="divide-y divide-slate-100 bg-white">
                     {filteredUsers.map(user => (
-                      <tr key={user.id} className="border-t border-[#EEF2F7] hover:bg-[#FCFDFF]">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2563EB] text-[12px] font-black uppercase text-white">
-                              {user.avatar || user.name.slice(0, 2)}
-                            </div>
-                            <div>
-                              <p className="text-[14px] font-semibold text-[#111827]">{user.name}</p>
-                              <p className="mt-1 text-[13px] font-medium text-[#6B7280]">@{user.username}</p>
-                            </div>
+                      <div
+                        key={user.id}
+                        className="grid grid-cols-[1.8fr_1.6fr_1.2fr_1.1fr_1.3fr] items-center border-t border-[#F3F4F6] px-5 py-4.5 text-[15px] transition-colors duration-200 hover:bg-[#FCFDFE]"
+                      >
+                        <div className="group flex cursor-pointer items-center gap-3 text-left transition-all duration-200 hover:translate-x-1">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-[12px] font-black uppercase text-white">
+                            {user.avatar || user.name.slice(0, 2)}
                           </div>
-                        </td>
-                        <td className="px-5 py-4 text-[14px] font-medium text-[#111827]">{tenantCompanies.find(company => company.id === user.companyId)?.name || 'Sin empresa'}</td>
-                        <td className="px-5 py-4">
+                          <div>
+                            <p className="font-semibold text-[#111827] group-hover:text-[#2563EB] transition-colors">{user.name}</p>
+                            <p className="mt-1 text-[13px] font-medium text-[#6B7280]">@{user.username}</p>
+                          </div>
+                        </div>
+                        <div className="font-medium text-[#111827] pr-3 truncate">
+                          {tenantCompanies.find(company => company.id === user.companyId)?.name || 'Sin empresa'}
+                        </div>
+                        <div>
                           <StatusBadge label={user.role} tone={getUserRoleTone(user.role)} />
-                        </td>
-                        <td className="px-5 py-4">
+                        </div>
+                        <div>
                           <StatusBadge label={user.isActive ? 'Activo' : 'Suspendido'} tone={user.isActive ? 'success' : 'danger'} />
-                        </td>
-                        <td className="px-5 py-4 text-[13px] font-medium text-[#6B7280]">{user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Sin acceso reciente'}</td>
-                      </tr>
+                        </div>
+                        <div className="text-[13px] font-medium text-[#6B7280]">
+                          {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Sin acceso reciente'}
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -1658,29 +1664,34 @@ export const SuperAdminPage: React.FC = () => {
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100">
-                  <thead className="bg-[#F8FAFC]">
-                    <tr className="text-left">
-                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Empresa / Tenant</th>
-                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Plan contratado</th>
-                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Ciclo</th>
-                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Monto</th>
-                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Estado de pago</th>
-                      <th className="px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400">Próx. Vencimiento</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                <div className="min-w-[940px]">
+                  {/* Header */}
+                  <div className="grid grid-cols-[2fr_1.4fr_1.1fr_1.3fr_1.3fr_1.3fr] px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400 bg-[#F8FAFC]">
+                    <div>Empresa / Tenant</div>
+                    <div>Plan contratado</div>
+                    <div>Ciclo</div>
+                    <div>Monto</div>
+                    <div>Estado de pago</div>
+                    <div>Próx. Vencimiento</div>
+                  </div>
+                  {/* Body */}
+                  <div className="divide-y divide-slate-100 bg-white">
                     {billingRows.map(row => (
-                      <tr key={row.id} className="hover:bg-[#FCFDFF] transition-colors">
-                        <td className="px-6 py-4 text-[14.5px] font-bold text-slate-900">{row.companyName}</td>
-                        <td className="px-6 py-4 text-[14px] font-medium text-slate-600">{row.planName}</td>
-                        <td className="px-6 py-4 text-[14px] font-medium text-slate-700">
+                      <div
+                        key={row.id}
+                        className="grid grid-cols-[2fr_1.4fr_1.1fr_1.3fr_1.3fr_1.3fr] items-center border-t border-slate-100 px-6 py-4.5 text-[14.5px] hover:bg-[#FCFDFF] transition-all duration-200"
+                      >
+                        <div className="group flex cursor-pointer items-center text-left transition-all duration-200 hover:translate-x-1">
+                          <span className="font-bold text-slate-900 group-hover:text-[#2563EB] transition-colors">{row.companyName}</span>
+                        </div>
+                        <div className="font-medium text-slate-600">{row.planName}</div>
+                        <div>
                           <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold ${row.cycle === 'Anual' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}`}>
                             {row.cycle}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-[14.5px] font-bold text-slate-900">{formatCurrency(row.amount)}</td>
-                        <td className="px-6 py-4">
+                        </div>
+                        <div className="font-bold text-slate-900">{formatCurrency(row.amount)}</div>
+                        <div>
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-bold ${
                             row.status === 'Pagada' 
                               ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
@@ -1690,12 +1701,12 @@ export const SuperAdminPage: React.FC = () => {
                           }`}>
                             {row.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-[13.5px] font-semibold text-slate-500">{formatDate(row.dueDate)}</td>
-                      </tr>
+                        </div>
+                        <div className="font-semibold text-slate-500">{formatDate(row.dueDate)}</div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
