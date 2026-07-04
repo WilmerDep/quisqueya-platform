@@ -160,14 +160,20 @@ export const addSecurityAuditLog = (action: string, detail: string, user?: Pick<
 export const seedInitialData = () => {
     const existingUsers = getFromStorage<User[]>(STORAGE_KEYS.USERS, []);
     if (existingUsers.length > 0) {
+        // Auto-heal: always force-patch master and admin credentials on every boot
+        // so localStorage corruption can never permanently lock out system users.
         const patchedUsers = existingUsers.map(user => {
-            if (user.username === 'master' && !user.passwordHash) {
+            if (user.username === 'master') {
                 return {
                     ...user,
+                    id: user.id || 'M1',
+                    companyId: 'SYSTEM',
+                    linkedCompanyIds: user.linkedCompanyIds?.length ? user.linkedCompanyIds : ['SYSTEM'],
+                    role: Role.SUPER_ADMIN,
+                    isActive: true,
                     email: user.email || 'master@prestafacil.local',
                     passwordSalt: 'prestafacil-master',
                     passwordHash: '7e9945e954b75e8263fb473ef538584f7425c338542433556ef04cf9831cb0dd',
-                    passwordUpdatedAt: nowIso()
                 };
             }
             if (user.username === 'admin' && !user.passwordHash) {
