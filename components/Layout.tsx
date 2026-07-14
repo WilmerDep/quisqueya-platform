@@ -118,10 +118,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         { name: 'Empresas', href: '/master?section=companies', icon: Building2, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
         { name: 'Usuarios', href: '/super-admin/usuarios', icon: Users, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
         { name: 'Planes y Suscripciones', href: '/master?section=plans', icon: Package, roles: [Role.SUPER_ADMIN] },
-        { name: 'Facturacion', href: '/master?section=billing', icon: CreditCard, roles: [Role.SUPER_ADMIN] },
+        { name: 'Facturación', href: '/master?section=billing', icon: CreditCard, roles: [Role.SUPER_ADMIN] },
         { name: 'Reportes Globales', href: '/master?section=reports', icon: FileText, roles: [Role.SUPER_ADMIN] },
-        { name: 'Auditoria', href: '/master?section=audit', icon: History, roles: [Role.SUPER_ADMIN] },
-        { name: 'Configuracion', href: '/master?section=system', icon: Settings, roles: [Role.SUPER_ADMIN] },
+        { name: 'Auditoría', href: '/master?section=audit', icon: History, roles: [Role.SUPER_ADMIN] },
+        { name: 'Configuración', href: '/master?section=system', icon: Settings, roles: [Role.SUPER_ADMIN] },
         { name: 'Centro de Ayuda', href: '/master?section=help', icon: Headphones, roles: [Role.SUPER_ADMIN] },
       ];
     }
@@ -135,7 +135,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       { name: 'Reportes', href: '/reports', icon: BarChart3, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR] },
       { name: 'Actividad', href: '/activity', icon: Activity, roles: [Role.ADMIN, Role.SUPERVISOR, Role.COBRADOR] },
       { name: 'Usuarios', href: '/users', icon: UserCog, roles: [Role.ADMIN] },
-      { name: 'Configuracion', href: '/settings', icon: Settings, roles: [Role.ADMIN] },
+      { name: 'Configuración', href: '/settings', icon: Settings, roles: [Role.ADMIN] },
       { name: 'Super Admin', href: '/master', icon: Crown, roles: [Role.SUPER_ADMIN] },
     ];
   }, [isMasterPath, isSuperAdmin]);
@@ -709,7 +709,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     setIsSearchOpen(true);
                   }}
                   onFocus={() => setIsSearchOpen(true)}
-                  placeholder="Buscar clientes, prestamos, rutas..."
+                  placeholder={isMasterPath ? 'Buscar empresas, usuarios, facturas...' : 'Buscar clientes, préstamos, rutas...'}
                   className="ml-3 flex-1 border-0 bg-transparent text-[15px] font-medium text-[#111827] outline-none placeholder:text-[#9ca3af]"
                 />
                 <div className="flex h-7 min-w-[28px] items-center justify-center rounded-lg bg-[#f3f4f6] px-2 text-xs font-semibold text-[#6b7280]">

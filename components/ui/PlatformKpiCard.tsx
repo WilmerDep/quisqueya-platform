@@ -100,12 +100,13 @@ export const PlatformKpiCard: React.FC<PlatformKpiItem> = ({
   );
 };
 
-export const PlatformKpiGrid: React.FC<{ items: PlatformKpiItem[]; isLoading?: boolean; error?: string }> = ({
+export const PlatformKpiGrid: React.FC<{ items: PlatformKpiItem[]; isLoading?: boolean; error?: string; className?: string }> = ({
   items,
   isLoading = false,
   error,
+  className,
 }) => (
-  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-5">
+  <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-5 ${className ?? ''}`.trim()}>
     {items.map(item => (
       <PlatformKpiCard key={item.label} {...item} isLoading={isLoading || item.isLoading} error={error || item.error} />
     ))}
