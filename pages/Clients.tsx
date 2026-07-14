@@ -43,6 +43,7 @@ import { emitPlatformToast } from '../services/platformEvents';
 import { formatDate } from '../utils';
 import { Badge } from '../components/ui/Badge';
 import { ClientAvatar } from '../components/ui/ClientAvatar';
+import { platformMotionButtonClass as motionButtonClass } from '../components/ui/platformStyles';
 import { optimizeImageFile } from '../services/imageOptimizer';
 
 const scoreMap = {
@@ -75,9 +76,6 @@ const formatCedulaInput = (value: string) => {
   if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
   return `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10)}`;
 };
-
-const motionButtonClass =
-  'transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB] hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]';
 
 const escapeCsvValue = (value: string | number | undefined | null) => {
   const safeValue = `${value ?? ''}`.replace(/"/g, '""');

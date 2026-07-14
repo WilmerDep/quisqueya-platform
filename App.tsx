@@ -59,6 +59,12 @@ const AppRoutes: React.FC = () => {
             <Route path="/reports/*" element={<Reports />} />
             <Route path="/settings/*" element={<ConfigurationPage />} />
             <Route path="/master" element={<SuperAdminPage />} />
+            <Route path="/super-admin/usuarios" element={<SuperAdminPage />} />
+            <Route path="/super-admin/usuarios/equipo-saas" element={<SuperAdminPage />} />
+            <Route path="/super-admin/usuarios/empresas" element={<SuperAdminPage />} />
+            <Route path="/super-admin/usuarios/invitaciones" element={<SuperAdminPage />} />
+            <Route path="/super-admin/usuarios/roles-permisos" element={<SuperAdminPage />} />
+            <Route path="/super-admin/usuarios/sesiones" element={<SuperAdminPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes></Layout>}>
           <Route path="*" element={<></>} />

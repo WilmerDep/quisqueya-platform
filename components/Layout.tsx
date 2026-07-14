@@ -109,14 +109,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isSuperAdmin = currentUser?.role === Role.SUPER_ADMIN;
   const branchScope = useMemo(() => (currentUser ? getBranchScope(currentUser) : null), [currentUser]);
 
-  const isMasterPath = location.pathname.startsWith('/master');
+  const isMasterPath = location.pathname.startsWith('/master') || location.pathname.startsWith('/super-admin');
 
   const navigation = useMemo(() => {
     if (isMasterPath && isSuperAdmin) {
       return [
         { name: 'Dashboard', href: '/master?section=dashboard', icon: Globe, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
         { name: 'Empresas', href: '/master?section=companies', icon: Building2, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
-        { name: 'Usuarios Globales', href: '/master?section=users', icon: Users, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
+        { name: 'Usuarios', href: '/super-admin/usuarios', icon: Users, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
         { name: 'Planes y Suscripciones', href: '/master?section=plans', icon: Package, roles: [Role.SUPER_ADMIN] },
         { name: 'Facturacion', href: '/master?section=billing', icon: CreditCard, roles: [Role.SUPER_ADMIN] },
         { name: 'Reportes Globales', href: '/master?section=reports', icon: FileText, roles: [Role.SUPER_ADMIN] },
@@ -512,18 +512,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <nav className={`space-y-1.5 ${isSidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {filteredNav.map(item => {
-            let isActive = false;
-            if (isMasterPath) {
+            const isActive = (() => {
+              if (!isMasterPath) {
+                return item.href === '/'
+                  ? location.pathname === '/'
+                  : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
+              }
+
+              if (location.pathname.startsWith('/super-admin')) {
+                return location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
+              }
+
               const urlObj = new URL(item.href, 'http://localhost');
               const targetSection = urlObj.searchParams.get('section') || 'dashboard';
               const currentSection = new URLSearchParams(location.search).get('section') || 'dashboard';
-              isActive = targetSection === currentSection;
-            } else {
-              isActive =
-                item.href === '/'
-                  ? location.pathname === '/'
-                  : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
-            }
+              return targetSection === currentSection;
+            })();
 
             return (
               <Link

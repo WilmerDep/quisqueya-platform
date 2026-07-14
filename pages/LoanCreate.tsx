@@ -10,6 +10,7 @@ import { formatCurrency, formatDate, generateNewLoanMessage, generateSchedule } 
 import { useAuth } from '../context/AuthContext';
 import { apiClient, ApiRequestError, ApiUnavailableError } from '../services/apiClient';
 import { ClientAvatar } from '../components/ui/ClientAvatar';
+import { PlatformDateField } from '../components/ui/PlatformDateField';
 
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -697,7 +698,7 @@ export const LoanCreate: React.FC = () => {
                   <input type="number" value={duration} onChange={event => setDuration(Number(event.target.value))} className="h-12 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-base font-semibold text-[#111827] outline-none" />
                 </Field>
                 <Field label="Fecha de inicio">
-                  <input type="date" value={startDate} onChange={event => setStartDate(event.target.value)} className="h-12 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-base font-semibold text-[#111827] outline-none" />
+                  <PlatformDateField value={startDate} onChange={setStartDate} placeholder="dd/mm/aaaa" buttonClassName="h-12" />
                 </Field>
                 <Field label="Tipo de desembolso">
                   <FilterDropdown

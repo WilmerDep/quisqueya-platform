@@ -112,8 +112,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       return true;
     } catch (error) {
-      if (error instanceof ApiRequestError) return false;
-      if (!(error instanceof ApiUnavailableError)) return false;
+      // Solo tratamos 400/401 como credenciales invalidas. Si el endpoint responde
+      // con otro error (404/500/etc.), permitimos el fallback local para no romper
+      // el acceso demo ni el trabajo offline.
+      if (error instanceof ApiRequestError && [400, 401].includes(error.status)) return false;
+      if (!(error instanceof ApiUnavailableError) && !(error instanceof ApiRequestError)) return false;
     }
 
     const allUsers = getFromStorage<User[]>('prestard_users', []);

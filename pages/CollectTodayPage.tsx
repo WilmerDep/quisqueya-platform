@@ -43,6 +43,7 @@ import {
 } from '../services/dataService';
 import { getBranchScope, getScopedUsers } from '../services/viewScope';
 import { Branch, CollectionRoute, Role, RouteItem, RouteStatus, User } from '../types';
+import { PlatformDateField } from '../components/ui/PlatformDateField';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate } from '../utils';
 import { CollectionModal } from '../components/CollectionModal';
@@ -1329,13 +1330,7 @@ export const CollectTodayPage: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#94A3B8]">Fecha de ruta</label>
-                  <input
-                    type="date"
-                    required
-                    className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[15px] font-semibold text-[#111827] outline-none transition-all duration-200 focus:border-[#93C5FD]"
-                    value={routeDate}
-                    onChange={event => setRouteDate(event.target.value)}
-                  />
+                  <PlatformDateField value={routeDate} onChange={setRouteDate} placeholder="dd/mm/aaaa" required />
                 </div>
               </div>
 
