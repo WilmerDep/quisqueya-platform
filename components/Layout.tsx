@@ -114,10 +114,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigation = useMemo(() => {
     if (isMasterPath && isSuperAdmin) {
       return [
-        { name: 'Dashboard', href: '/master?section=dashboard', icon: Globe, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
+        { name: 'Escritorio', href: '/master?section=dashboard', icon: LayoutDashboard, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
         { name: 'Empresas', href: '/master?section=companies', icon: Building2, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
         { name: 'Usuarios', href: '/super-admin/usuarios', icon: Users, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
-        { name: 'Planes y Suscripciones', href: '/master?section=plans', icon: Package, roles: [Role.SUPER_ADMIN] },
+        { name: 'Planes', href: '/master?section=plans', icon: Package, roles: [Role.SUPER_ADMIN] },
         { name: 'Facturación', href: '/master?section=billing', icon: CreditCard, roles: [Role.SUPER_ADMIN] },
         { name: 'Reportes Globales', href: '/master?section=reports', icon: FileText, roles: [Role.SUPER_ADMIN] },
         { name: 'Auditoría', href: '/master?section=audit', icon: History, roles: [Role.SUPER_ADMIN] },
@@ -151,14 +151,31 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const mobilePrimaryNav = filteredNav.filter(item => item.mobilePrimary).slice(0, 4);
   const mobileSecondaryNav = filteredNav.filter(item => !item.mobilePrimary);
 
+  const isNavItemActive = useCallback((href: string) => {
+    if (!isMasterPath) {
+      return href === '/'
+        ? location.pathname === '/'
+        : location.pathname === href || location.pathname.startsWith(`${href}/`);
+    }
+
+    if (location.pathname.startsWith('/super-admin')) {
+      return href === '/super-admin/usuarios'
+        ? location.pathname === href || location.pathname.startsWith(`${href}/`)
+        : false;
+    }
+
+    if (!location.pathname.startsWith('/master')) return false;
+
+    const urlObj = new URL(href, 'http://localhost');
+    if (urlObj.pathname !== '/master') return false;
+    const targetSection = urlObj.searchParams.get('section') || 'dashboard';
+    const currentSection = new URLSearchParams(location.search).get('section') || 'dashboard';
+    return targetSection === currentSection;
+  }, [isMasterPath, location.pathname, location.search]);
+
   const currentNavItem = useMemo(() => {
-    return (
-      filteredNav.find(item => {
-        if (item.href === '/') return location.pathname === '/';
-        return location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
-      }) || filteredNav[0]
-    );
-  }, [filteredNav, location.pathname]);
+    return filteredNav.find(item => isNavItemActive(item.href)) || filteredNav[0];
+  }, [filteredNav, isNavItemActive]);
 
   const availableCompanies = useMemo(() => {
     if (!currentUser) return [];
@@ -512,22 +529,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <nav className={`space-y-1.5 ${isSidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {filteredNav.map(item => {
-            const isActive = (() => {
-              if (!isMasterPath) {
-                return item.href === '/'
-                  ? location.pathname === '/'
-                  : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
-              }
-
-              if (location.pathname.startsWith('/super-admin')) {
-                return location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
-              }
-
-              const urlObj = new URL(item.href, 'http://localhost');
-              const targetSection = urlObj.searchParams.get('section') || 'dashboard';
-              const currentSection = new URLSearchParams(location.search).get('section') || 'dashboard';
-              return targetSection === currentSection;
-            })();
+            const isActive = isNavItemActive(item.href);
 
             return (
               <Link
@@ -612,7 +614,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex items-center gap-3">
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-xs font-black uppercase tracking-wider text-blue-600">
                   <Crown size={12} />
-                  Super Admin SaaS
+                  Super Admin
                 </div>
               </div>
             ) : (
@@ -1072,10 +1074,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="space-y-6 overflow-y-auto px-5 py-5">
                 <nav className="space-y-2">
                   {filteredNav.map(item => {
-                    const isActive =
-                      item.href === '/'
-                        ? location.pathname === '/'
-                        : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
+                    const isActive = isNavItemActive(item.href);
 
                     return (
                       <Link
@@ -1108,10 +1107,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <nav className="fixed inset-x-0 bottom-0 z-[90] border-t border-[#e5e7eb] bg-white/95 px-2 py-2 backdrop-blur lg:hidden">
           <div className="grid grid-cols-4 gap-1">
             {mobilePrimaryNav.map(item => {
-              const isActive =
-                item.href === '/'
-                  ? location.pathname === '/'
-                  : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
+              const isActive = isNavItemActive(item.href);
 
               return (
                 <Link
@@ -1130,10 +1126,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {mobileSecondaryNav.length > 0 && (
             <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
               {mobileSecondaryNav.map(item => {
-                const isActive =
-                  item.href === '/'
-                    ? location.pathname === '/'
-                    : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`);
+                const isActive = isNavItemActive(item.href);
                 return (
                   <Link
                     key={item.name}

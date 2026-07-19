@@ -41,34 +41,39 @@ const AppRoutes: React.FC = () => {
         </>
       ) : (
         /* Rutas Privadas envueltas en Layout */
-        <Route element={<Layout><Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/activity" element={<ActivityPage />} />
-            <Route path="/collect-today" element={<CollectTodayPage />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/clients/:id" element={<ClientProfile />} />
-            <Route path="/loans" element={<LoansPage />} />
-            <Route path="/loans/new" element={<LoanCreate />} />
-            <Route path="/routes" element={<RoutesPage />} />
-            <Route path="/cash" element={<CashManagement />} />
-            <Route path="/users" element={<UsersManagement />} />
-            <Route path="/users/new" element={<UserCreateView />} />
-            <Route path="/users/invite" element={<UserInviteView />} />
-            <Route path="/users/roles" element={<UserPermissionsView />} />
-            <Route path="/users/:id" element={<UserProfileView />} />
-            <Route path="/reports/*" element={<Reports />} />
-            <Route path="/settings/*" element={<ConfigurationPage />} />
-            <Route path="/master" element={<SuperAdminPage />} />
-            <Route path="/super-admin/usuarios" element={<SuperAdminPage />} />
-            <Route path="/super-admin/usuarios/equipo-saas" element={<SuperAdminPage />} />
-            <Route path="/super-admin/usuarios/empresas" element={<SuperAdminPage />} />
-            <Route path="/super-admin/usuarios/invitaciones" element={<SuperAdminPage />} />
-            <Route path="/super-admin/usuarios/roles-permisos" element={<SuperAdminPage />} />
-            <Route path="/super-admin/usuarios/sesiones" element={<SuperAdminPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes></Layout>}>
-          <Route path="*" element={<></>} />
-        </Route>
+        <Route
+          path="/*"
+          element={
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/activity" element={<ActivityPage />} />
+                <Route path="/collect-today" element={<CollectTodayPage />} />
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/clients/:id" element={<ClientProfile />} />
+                <Route path="/loans" element={<LoansPage />} />
+                <Route path="/loans/new" element={<LoanCreate />} />
+                <Route path="/routes" element={<RoutesPage />} />
+                <Route path="/cash" element={<CashManagement />} />
+                <Route path="/users" element={<UsersManagement />} />
+                <Route path="/users/new" element={<UserCreateView />} />
+                <Route path="/users/invite" element={<UserInviteView />} />
+                <Route path="/users/roles" element={<UserPermissionsView />} />
+                <Route path="/users/:id" element={<UserProfileView />} />
+                <Route path="/reports/*" element={<Reports />} />
+                <Route path="/settings/*" element={<ConfigurationPage />} />
+                <Route path="/master" element={<SuperAdminPage />} />
+                <Route path="/super-admin/usuarios" element={<SuperAdminPage />} />
+                <Route path="/super-admin/usuarios/equipo-saas" element={<SuperAdminPage />} />
+                <Route path="/super-admin/usuarios/empresas" element={<SuperAdminPage />} />
+                <Route path="/super-admin/usuarios/invitaciones" element={<SuperAdminPage />} />
+                <Route path="/super-admin/usuarios/roles-permisos" element={<SuperAdminPage />} />
+                <Route path="/super-admin/usuarios/sesiones" element={<SuperAdminPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Layout>
+          }
+        />
       )}
     </Routes>
   );

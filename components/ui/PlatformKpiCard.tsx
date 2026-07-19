@@ -15,6 +15,7 @@ export type PlatformKpiItem = {
   trendDirection?: 'up' | 'down' | 'neutral';
   isLoading?: boolean;
   error?: string;
+  cardClassName?: string;
 };
 
 const toneMap: Record<PlatformKpiTone, { iconWrap: string; trend: string; watermark: string }> = {
@@ -38,13 +39,14 @@ export const PlatformKpiCard: React.FC<PlatformKpiItem> = ({
   trendDirection = 'up',
   isLoading = false,
   error,
+  cardClassName,
 }) => {
   const toneStyle = toneMap[tone];
   const TrendIcon = trendDirection === 'down' ? ArrowDownRight : ArrowUpRight;
 
   if (isLoading) {
     return (
-      <div className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+      <div data-super-kpi className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div className="h-14 w-14 animate-pulse rounded-[18px] bg-[#E5E7EB]" />
           <div className="h-7 w-20 animate-pulse rounded-full bg-[#F1F5F9]" />
@@ -60,7 +62,7 @@ export const PlatformKpiCard: React.FC<PlatformKpiItem> = ({
 
   if (error) {
     return (
-      <div className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#FECACA] bg-white p-6 shadow-sm">
+      <div data-super-kpi className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#FECACA] bg-white p-6 shadow-sm">
         <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#FEF2F2] text-[#DC2626]">
           <AlertTriangle size={24} />
         </div>
@@ -74,7 +76,10 @@ export const PlatformKpiCard: React.FC<PlatformKpiItem> = ({
   }
 
   return (
-    <div className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#DBEAFE] hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]">
+    <div
+      data-super-kpi
+      className={`relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-[2px] hover:border-[#BFDBFE] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] ${cardClassName ?? ''}`.trim()}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] ${toneStyle.iconWrap}`}>
           <Icon size={24} />
