@@ -1241,8 +1241,8 @@ export const ActivityPage: React.FC = () => {
       </section>
 
       {selectedEvent && (
-        <div className="fixed inset-0 z-[260] flex items-center justify-center bg-[#0F172A]/55 px-4 py-8 backdrop-blur-sm animate-[platform-fade-in_180ms_ease-out]">
-          <div className="relative w-full max-w-[860px] overflow-hidden rounded-[32px] border border-[#E2E8F0] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)] animate-[platform-modal-in_220ms_ease-out]">
+        <div className="fixed inset-0 z-[260] flex items-center justify-center bg-[#0F172A]/55 px-4 py-8 backdrop-blur-sm animate-[platform-fade-in_180ms_ease-out]" onClick={() => setSelectedEvent(null)}>
+          <div className="relative w-full max-w-[860px] overflow-hidden rounded-[32px] border border-[#E2E8F0] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.25)] animate-[platform-modal-in_220ms_ease-out]" onClick={e => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => setSelectedEvent(null)}

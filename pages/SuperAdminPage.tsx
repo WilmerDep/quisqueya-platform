@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
@@ -38,7 +38,7 @@ import {
   Package,
   Plus,
   RefreshCw,
-  Search,
+  Search, Save,
   Settings,
   ShieldAlert,
   ShieldCheck,
@@ -78,6 +78,7 @@ import { apiClient, ApiUnavailableError } from '../services/apiClient';
 import { PlatformKpiGrid, PlatformKpiItem } from '../components/ui/PlatformKpiCard';
 import { PlatformDateField } from '../components/ui/PlatformDateField';
 import { PlatformHeaderAction, PlatformPageHeader } from '../components/ui/PlatformPageHeader';
+import { PlatformKpiCard } from '../components/ui/PlatformKpiCard';
 import { emitPlatformToast, openPlatformCriticalModal, setPlatformLoading } from '../services/platformEvents';
 import {
   platformFilterFieldClass as filterFieldClass,
@@ -86,167 +87,34 @@ import {
   platformHeaderPrimaryActionClass,
   platformHeaderSecondaryActionClass,
   platformShellCardClass as shellCardClass,
+  platformSoftCardClass,
 } from '../components/ui/platformStyles';
 import { Company, GlobalConfig, Role, SaaSPlan, User } from '../types';
 import { formatCurrency, formatDate } from '../utils';
 
-type SuperAdminTab =
-  | 'DASHBOARD'
-  | 'COMPANIES'
-  | 'GLOBAL_USERS'
-  | 'PLANS'
-  | 'BILLING'
-  | 'REPORTS'
-  | 'AUDIT'
-  | 'SYSTEM'
-  | 'HELP';
-
-type UsersManagementTab = 'SAAS_TEAM' | 'TENANT_USERS' | 'INVITATIONS' | 'ROLES' | 'SESSIONS';
-
-type UsersFilterOption = {
-  value: string;
-  label: string;
-};
-
-type UsersFilterConfig = {
-  id: string;
-  label: string;
-  value: string;
-  placeholder: string;
-  options: UsersFilterOption[];
-  onChange: (value: string) => void;
-  disabled?: boolean;
-  isLoading?: boolean;
-  error?: string;
-};
-
-type TenantUserSortKey = 'name' | 'companyName' | 'branchName' | 'role' | 'status' | 'lastAccess' | 'twoFactorStatus';
-
-type TenantUserRow = {
-  id: string;
-  code: string;
-  companyId: string;
-  branchId: string;
-  name: string;
-  email: string;
-  phone: string;
-  companyName: string;
-  branchName: string;
-  role: Role;
-  status: string;
-  isActive: boolean;
-  lastAccess: string;
-  lastAccessBucket: string;
-  twoFactorStatus: string;
-  permissions: Record<string, boolean>;
-  createdAt: string;
-};
-
-type TenantUserActionKind =
-  | 'view-profile'
-  | 'open-company'
-  | 'open-context'
-  | 'sessions'
-  | 'activity'
-  | 'change-role'
-  | 'change-branch'
-  | 'reset-access'
-  | 'revoke-sessions'
-  | 'suspend'
-  | 'reactivate'
-  | 'audit'
-  | 'support-access';
-
-type SaasRole = string;
-type SaasMemberStatus = 'Activo' | 'Pendiente' | 'Suspendido';
-
-type SaasMember = {
-  id: string;
-  userScope: 'SAAS';
-  companyId: null;
-  name: string;
-  email: string;
-  phone: string;
-  role: SaasRole;
-  area: string;
-  status: SaasMemberStatus;
-  lastAccess: string;
-  twoFactor: boolean;
-  criticalAccess: boolean;
-  sessions: number;
-  createdAt: string;
-  permissions: string[];
-  isOwner?: boolean;
-};
-
-type SaasMemberActionKind =
-  | 'view-profile'
-  | 'edit'
-  | 'change-role'
-  | 'configure-permissions'
-  | 'force-password'
-  | 'force-2fa'
-  | 'revoke-sessions'
-  | 'suspend'
-  | 'reactivate'
-  | 'audit';
-
-type InvitationStatus = 'Pendiente' | 'Aceptada' | 'Expirada' | 'Revocada';
-type InvitationType = 'Equipo SaaS' | 'Usuario de empresa';
-
-type InvitationRow = {
-  id: string;
-  email: string;
-  type: InvitationType;
-  company: string;
-  companyId: string | null;
-  branch: string;
-  branchId: string | null;
-  role: SaasRole | Role;
-  invitedBy: string;
-  date: string;
-  expiresAt: string;
-  status: InvitationStatus;
-  token: string;
-  acceptedUserId?: string;
-};
-
-type InvitationActionKind =
-  | 'resend'
-  | 'copy-link'
-  | 'edit-role'
-  | 'change-company'
-  | 'change-branch'
-  | 'extend-expiration'
-  | 'revoke'
-  | 'renew'
-  | 'open-user';
-
-type RoleContext = 'SaaS' | 'Tenant';
-type RoleActionKind = 'create' | 'edit' | 'duplicate' | 'assign-users' | 'compare' | 'archive' | 'restore' | 'history';
-type PermissionModule = {
-  module: string;
-  permissions: string[];
-  critical?: string[];
-};
-
-type SuperAdminIcon = React.ComponentType<{ size: number; className?: string }>;
-type SessionStatus = 'Activa' | 'Inactiva' | 'Sospechosa' | 'Revocada' | 'Expirada';
-type SessionActionKind =
-  | 'view-detail'
-  | 'mark-suspicious'
-  | 'revoke'
-  | 'revoke-all'
-  | 'revoke-all-except-current'
-  | 'block-ip'
-  | 'force-password'
-  | 'suspend-user'
-  | 'activity';
+import {
+  SuperAdminTab, UsersManagementTab, UsersFilterOption, UsersFilterConfig, TenantUserSortKey, TenantUserRow, TenantUserActionKind, SaasRole, SaasMemberStatus, SaasMember, SaasMemberActionKind, InvitationStatus, InvitationType, InvitationRow, InvitationActionKind, RoleContext, RoleActionKind, PermissionModule, SuperAdminIcon, SessionStatus, SessionActionKind
+} from '../components/super-admin/types';
 
 const ALL_COMPANIES = 'Todas las empresas';
 const ALL_BRANCHES = 'Todas las sucursales';
 const ALL_ROLES = 'Todos los roles';
 const ALL_STATUSES = 'Todos los estados';
+import { getVisibleInternalRoleLabel, getVisibleInvitationTypeLabel, getVisibleSessionTypeLabel, getVisibleRoleContextLabel, getVisiblePermissionLabel, getSessionTone } from '../components/super-admin/utils';
+import { StatusBadge, MiniPanel, ActionListItem, ClearFiltersButton, SummaryMetric, SidebarInfoCard } from '../components/super-admin/ui/Shared';
+import { PlansDirectory } from '../components/super-admin/plans/PlansDirectory';
+import { BillingDirectory } from '../components/super-admin/billing/BillingDirectory';
+import { GlobalReportsDirectory } from '../components/super-admin/reports/GlobalReportsDirectory';
+
+import { FilterDropdown } from '../components/ui/FilterDropdown';
+import { TenantUserDetailDrawer } from '../components/super-admin/users/TenantUserDetailDrawer';
+import { SessionDetailDrawer } from '../components/super-admin/users/SessionDetailDrawer';
+import { RolePermissionsList, RolePermissionMatrix } from '../components/super-admin/users/RolePermissionsList';
+import { TenantUsersDirectory, TenantUsersSkeleton, TenantUsersState, TenantUserActionButton, TenantUserActionsCell, TenantUserMobileCard, TenantUserTableRow } from '../components/super-admin/users/TenantUsersDirectory';
+import { SessionDirectory, SessionTableRow, SessionMobileCard, SessionActionsCell } from '../components/super-admin/users/SessionDirectory';
+import { SaasTeamDirectory, SaasTeamTableRow, SaasTeamMobileCard, SaasMemberActionsCell } from '../components/super-admin/users/SaasTeamDirectory';
+import { InvitationDirectory, InvitationTableRow, InvitationMobileCard, InvitationActionsCell } from '../components/super-admin/users/InvitationDirectory';
+
 const ALL_ACCESS = 'Todos los accesos';
 const ALL_TWO_FACTOR = 'Todos los estados 2FA';
 const ALL_TYPES = 'Todos los tipos';
@@ -325,76 +193,6 @@ const usersManagementTabs: Array<{ id: UsersManagementTab; label: string; icon: 
   { id: 'SESSIONS', label: 'Sesiones', icon: Activity },
 ];
 
-const getVisibleInternalRoleLabel = (role: string) => {
-  if (role === 'Owner SaaS') return 'Propietario';
-  return role
-    .replace(/SaaS/g, 'plataforma')
-    .replace(/Tenant/g, 'empresa');
-};
-
-const getVisibleInvitationTypeLabel = (type: InvitationType) =>
-  type === 'Equipo SaaS' ? 'Equipo interno' : 'Usuario de empresa';
-
-const getVisibleSessionTypeLabel = (type: string) =>
-  type === 'SaaS' ? 'Interno' : 'Empresa';
-
-const getVisibleRoleContextLabel = (context: RoleContext) =>
-  context === 'SaaS' ? 'interno' : 'empresa';
-
-const getVisiblePermissionLabel = (permission: string) => {
-  const permissionMap: Record<string, string> = {
-    'saas.companies.view': 'Ver empresas',
-    'saas.billing.manage': 'Gestionar facturación',
-    'saas.billing.view': 'Ver facturación',
-    'saas.audit.view': 'Ver auditoría',
-    'saas.reports.view': 'Ver reportes globales',
-    'saas.users.manage': 'Gestionar usuarios internos',
-    'saas.users.view': 'Ver usuarios internos',
-    'saas.support.impersonate': 'Acceso de soporte',
-    'saas.companies.update': 'Editar empresas',
-    'saas.owner': 'Administración global',
-    'saas.config.manage': 'Gestionar configuración global',
-    'tenant.clients.view': 'Ver clientes',
-    'tenant.loans.create': 'Crear préstamos',
-    'tenant.users.manage': 'Gestionar usuarios',
-    'tenant.payments.create': 'Registrar pagos',
-    'tenant.routes.view': 'Ver rutas',
-    'tenant.cash.close': 'Cerrar caja',
-    'tenant.reports.view': 'Ver reportes',
-  };
-
-  return permissionMap[permission] || permission;
-};
-
-const SummaryMetric = ({
-  label,
-  value,
-  iconTone = 'blue',
-}: {
-  label: string;
-  value: string;
-  iconTone: 'blue' | 'violet' | 'green' | 'amber' | 'slate';
-}) => {
-  const toneClasses = {
-    blue: 'bg-blue-50 text-blue-600 shadow-[0_8px_20px_rgba(37,99,235,0.06)]',
-    violet: 'bg-purple-50 text-purple-600 shadow-[0_8px_20px_rgba(147,51,234,0.06)]',
-    green: 'bg-emerald-50 text-emerald-600 shadow-[0_8px_20px_rgba(16,185,129,0.06)]',
-    amber: 'bg-amber-50 text-amber-600 shadow-[0_8px_20px_rgba(245,158,11,0.06)]',
-    slate: 'bg-slate-50 text-slate-600 shadow-[0_8px_20px_rgba(71,85,105,0.06)]',
-  };
-
-  return (
-    <div className="flex items-center gap-4 rounded-[22px] border border-[#F1F5F9] bg-[#FCFDFF] p-4.5 transition-all duration-250 hover:shadow-sm hover:bg-[#FCFDFF]/95">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${toneClasses[iconTone]}`}>
-        <TrendingUp size={20} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">{label}</p>
-        <p className="mt-0.5 text-lg font-black text-slate-900 truncate leading-none">{value}</p>
-      </div>
-    </div>
-  );
-};
 const performanceData = [
   { name: 'Lun', value: 120 },
   { name: 'Mar', value: 230 },
@@ -411,7 +209,7 @@ const tabItems: Array<{ id: SuperAdminTab; label: string; icon: SuperAdminIcon }
   { id: 'GLOBAL_USERS', label: 'Usuarios', icon: Users },
   { id: 'PLANS', label: 'Planes', icon: Package },
   { id: 'BILLING', label: 'Facturación', icon: CreditCard },
-  { id: 'REPORTS', label: 'Reportes Globales', icon: FileText },
+  { id: 'REPORTS', label: 'Reportes', icon: FileText },
   { id: 'AUDIT', label: 'Auditoría', icon: History },
   { id: 'SYSTEM', label: 'Configuración del Sistema', icon: Settings },
   { id: 'HELP', label: 'Centro de Ayuda', icon: Headphones },
@@ -521,6 +319,8 @@ export const SuperAdminPage: React.FC = () => {
   const [tenantUsersSort, setTenantUsersSort] = useState<{ key: TenantUserSortKey; direction: 'asc' | 'desc' }>({ key: 'name', direction: 'asc' });
   const [selectedTenantUserId, setSelectedTenantUserId] = useState<string | null>(null);
   const [tenantUserDrawerOpen, setTenantUserDrawerOpen] = useState(false);
+  const [sessionDrawerOpen, setSessionDrawerOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [saasMemberOverrides, setSaasMemberOverrides] = useState<Record<string, Partial<SaasMember>>>({});
   const [createdSaasMembers, setCreatedSaasMembers] = useState<SaasMember[]>([]);
   const [isSaasMemberModalOpen, setIsSaasMemberModalOpen] = useState(false);
@@ -545,7 +345,11 @@ export const SuperAdminPage: React.FC = () => {
   const [createdInvitations, setCreatedInvitations] = useState<InvitationRow[]>([]);
   const [billingSearchTerm, setBillingSearchTerm] = useState('');
   const [billingStatusFilter, setBillingStatusFilter] = useState('Todos');
+  
   const [auditSearchTerm, setAuditSearchTerm] = useState('');
+  const [auditFilter, setAuditFilter] = useState('Todos');
+  const [auditPage, setAuditPage] = useState(1);
+
 
   const refreshData = useCallback(() => {
     setCompanies(getCompanies());
@@ -2370,12 +2174,8 @@ export const SuperAdminPage: React.FC = () => {
       setActiveActionsDropdown(null);
 
       if (action === 'view-detail' || action === 'activity') {
-        emitPlatformToast({
-          title: action === 'view-detail' ? 'Detalle de sesión' : 'Actividad de sesión',
-          message: `${session.user} · ${session.device} · ${session.ip} · ${session.location}.`,
-          tone: 'info',
-          durationMs: 4200,
-        });
+        setSelectedSession(session);
+        setSessionDrawerOpen(true);
         return;
       }
       const actionConfig: Record<Exclude<SessionActionKind, 'view-detail' | 'activity'>, { title: string; description: string; confirmLabel: string; tone: 'warning' | 'danger' | 'info'; onConfirm: () => void }> = {
@@ -2910,11 +2710,35 @@ export const SuperAdminPage: React.FC = () => {
   const paymentsCount = useMemo(() => getPayments('ALL').length, [companies]);
   const filteredMasterLogs = useMemo(() => {
     const query = auditSearchTerm.trim().toLowerCase();
-    if (!query) return masterLogs;
-    return masterLogs.filter(log =>
-      [log.action, log.detail, log.id].some(value => value.toLowerCase().includes(query)),
-    );
-  }, [auditSearchTerm, masterLogs]);
+    let result = masterLogs;
+    if (query) {
+      result = result.filter(log =>
+        [log.action, log.detail, log.id].some(value => value.toLowerCase().includes(query))
+      );
+    }
+    if (auditFilter !== 'Todos') {
+      result = result.filter(log => {
+        if (auditFilter === 'SYSTEM') return log.action.toUpperCase().includes('SYSTEM');
+        if (auditFilter === 'SECURITY') return log.action.toUpperCase().includes('SECURITY') || log.action.toUpperCase().includes('ACCESS');
+        if (auditFilter === 'DATA') return log.action.toUpperCase().includes('UPDATE') || log.action.toUpperCase().includes('CREATE') || log.action.toUpperCase().includes('DELETE');
+        return true;
+      });
+    }
+    return result;
+  }, [auditSearchTerm, auditFilter, masterLogs]);
+
+  const paginatedAuditLogs = useMemo(() => {
+    const start = (auditPage - 1) * 10;
+    return filteredMasterLogs.slice(start, start + 10);
+  }, [filteredMasterLogs, auditPage]);
+
+  const totalAuditPages = Math.ceil(filteredMasterLogs.length / 10) || 1;
+  const visibleAuditPages = useMemo(() => {
+    const pages = new Set<number>([1, totalAuditPages, auditPage - 1, auditPage, auditPage + 1]);
+    return Array.from(pages)
+      .filter(p => p >= 1 && p <= totalAuditPages)
+      .sort((a, b) => a - b);
+  }, [auditPage, totalAuditPages]);
 
   const navigateToSection = useCallback(
     (tab: SuperAdminTab) => {
@@ -2924,7 +2748,8 @@ export const SuperAdminPage: React.FC = () => {
       }
       const params = new URLSearchParams(location.search);
       params.set('section', tabToSectionMap[tab]);
-      navigate(`/master${params.toString()}`, { replace: false });
+      const basePath = location.pathname.startsWith('/super-admin') ? '/super-admin' : '/master';
+      navigate(`${basePath}?${params.toString()}`, { replace: false });
     },
     [location.search, navigate],
   );
@@ -3112,7 +2937,6 @@ export const SuperAdminPage: React.FC = () => {
 
     return [actionMap[usersManagementTab]];
   }, [handleExportTenantUsers, navigateToUsersTab, usersManagementTab]);
-
 
   const handleUpdateConfig = () => {
     updateGlobalConfig(platformConfig);
@@ -4708,6 +4532,12 @@ export const SuperAdminPage: React.FC = () => {
                         sessionItems={selectedTenantUserSessions}
                         auditItems={selectedTenantUserAudit}
                       />
+                      <SessionDetailDrawer
+                        session={selectedSession}
+                        open={sessionDrawerOpen}
+                        onClose={() => setSessionDrawerOpen(false)}
+                        onAction={handleSessionAction}
+                      />
                   </div>
                 ) : null}
                 {usersManagementTab === 'INVITATIONS' ? (
@@ -4872,7 +4702,13 @@ export const SuperAdminPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_360px]">
                       <div className="space-y-5">
-                        <RolePermissionsList roleCards={roleCards} />
+                        <RolePermissionsList 
+                          roleCards={roleCards}
+                          onAction={handleRoleAction}
+                          activeActionsDropdown={activeActionsDropdown}
+                          dropdownCoords={dropdownCoords}
+                          openContextMenu={openContextMenu}
+                        />
                         <RolePermissionMatrix permissionMatrix={permissionMatrix} onAction={handleRoleAction} />
                       </div>
                       <div className="hidden">
@@ -5112,444 +4948,286 @@ export const SuperAdminPage: React.FC = () => {
           </section>
         ) : null}
         {activeTab === 'PLANS' ? (
-          <section className="space-y-5">
-            <SectionHeader
-              title="Planes y Suscripciones"
-              description="Catalogo de planes, limites de recursos y precios del SaaS."
-            />
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className={`${shellCardClass} relative overflow-hidden p-6`}>
-                <div className="pointer-events-none absolute right-0 top-0 h-36 w-36 rounded-full bg-[#DBEAFE]/60 blur-3xl" />
-                <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#94A3B8]">Arquitectura comercial</p>
-                    <h3 className="mt-2 text-[26px] font-semibold tracking-tight text-[#111827]">Escala cada tenant con un pricing claro</h3>
-                    <p className="mt-2 max-w-2xl text-[14px] font-medium leading-7 text-[#6B7280]">
-                      Ajusta limites, cobertura operativa y posicionamiento de producto sin romper la lectura del dashboard.
-                    </p>
-                  </div>
-                  <div className="grid min-w-[280px] grid-cols-2 gap-3">
-                    <SummaryMetric label="Planes activos" value={`${plans.length}`} iconTone="blue" />
-                    <SummaryMetric label="Tenants en Pro" value={`${tenantCompanies.filter(company => company.planId === 'p2').length}`} iconTone="violet" />
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-end">
-                <div className="flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white p-1.5 shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => setIsYearly(false)}
-                  className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${!isYearly ? 'bg-[#EFF6FF] text-[#2563EB] shadow-sm' : 'text-[#6B7280] hover:text-[#2563EB]'}`}
-                >
-                  Mensual
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsYearly(true)}
-                  className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${isYearly ? 'bg-[#EFF6FF] text-[#2563EB] shadow-sm' : 'text-[#6B7280] hover:text-[#2563EB]'}`}
-                >
-                  Anual
-                </button>
-              </div>
-            </div>
-            </div>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {plans.map(plan => {
-                const price = isYearly ? (plan.yearlyPrice || plan.monthlyPrice * 10) : plan.monthlyPrice;
-                const isEnterprise = plan.id === 'p3';
-                const isPro = plan.id === 'p2';
-
-                return (
-                  <div
-                    key={plan.id}
-                    className={`${shellCardClass} flex flex-col p-6 rounded-[32px] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden border ${
-                      isEnterprise ?
-                         'border-purple-200 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-50/20 via-white to-white' 
-                        : isPro ?
-                           'border-blue-200 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/20 via-white to-white'
-                          : 'border-slate-200 bg-white'
-                    }`}
-                  >
-                    {/* Badge Popular / Recomendado */}
-                    {plan.isOffer && (
-                      <div className="absolute right-0 top-0 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-bl-2xl shadow-sm">
-                        {plan.offerText || 'Popular'}
-                      </div>
-                    )}
-                    <div className="space-y-1.5 pb-5 border-b border-slate-100">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Modelo de Suscripción</p>
-                      <h3 className="text-[25px] font-black tracking-tight text-slate-900">{plan.name}</h3>
-                    </div>
-
-                    <div className="py-6 space-y-1">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-[38px] font-black tracking-tight text-slate-900">{formatCurrency(price)}</span>
-                        <span className="text-sm font-semibold text-slate-400">/ {isYearly ? 'ao' : 'mes'}</span>
-                      </div>
-                      <p className="text-xs font-semibold text-slate-400">
-                        {isYearly ? 'Cobrado anualmente en una sola cuota' : 'Cobro recurrente mensual'}
-                      </p>
-                    </div>
-
-                    {/* Límites Cuantitativos del Plan */}
-                    <div className="flex-1 space-y-4 pt-2">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3">Límites y Recursos Incluidos</p>
-                      
-                      <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-[#FCFDFF] px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#DBEAFE] hover:shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <Users size={16} className="text-slate-400" />
-                          <span className="text-[13.5px] font-semibold text-slate-600">Clientes Máximos</span>
-                        </div>
-                        <span className="text-[14px] font-black text-slate-800">{plan.maxClients === 999999 ? 'Ilimitados' : plan.maxClients}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-[#FCFDFF] px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#DBEAFE] hover:shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <UserCog size={16} className="text-slate-400" />
-                          <span className="text-[13.5px] font-semibold text-slate-600">Usuarios por Empresa</span>
-                        </div>
-                        <span className="text-[14px] font-black text-slate-800">{plan.maxUsers === 999999 ? 'Ilimitados' : plan.maxUsers}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between rounded-2xl border border-slate-100 bg-[#FCFDFF] px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#DBEAFE] hover:shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <Building2 size={16} className="text-slate-400" />
-                          <span className="text-[13.5px] font-semibold text-slate-600">Sucursales Permitidas</span>
-                        </div>
-                        <span className="text-[14px] font-black text-slate-800">{plan.maxBranches === 999999 ? 'Ilimitadas' : plan.maxBranches}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingPlan(plan);
-                        setIsPlanModalOpen(true);
-                      }}
-                      className={`mt-8 flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-[14px] font-bold text-slate-700 cursor-pointer ${motionButtonClass}`}
-                    >
-                      <Edit3 size={15} />
-                      Editar parámetros del plan
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+          <PlansDirectory
+            plans={plans}
+            tenantCompanies={tenantCompanies}
+            setEditingPlan={setEditingPlan}
+            setIsPlanModalOpen={setIsPlanModalOpen}
+          />
         ) : null}
         {activeTab === 'BILLING' ? (
-          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
-            <SectionHeader
-              title="Facturación"
-              description="Seguimiento de suscripciones, cobros globales y estado de renovacion por empresa."
-              actionLabel="Exportar resumen"
-            />
-            <div className={`${shellCardClass} p-5`}>
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.4fr)_220px]">
-                <div className="relative">
-                  <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
-                  <input
-                    value={billingSearchTerm}
-                    onChange={event => setBillingSearchTerm(event.target.value)}
-                    placeholder="Buscar por empresa, plan, ciclo o estado..."
-                    className={`${filterFieldClass} w-full pl-11 pr-4 text-[#111827] placeholder:text-[#9CA3AF]`}
-                  />
-                </div>
-                <select value={billingStatusFilter} onChange={event => setBillingStatusFilter(event.target.value)} className={filterFieldClass}>
-                  <option value="Todos">Todos los estados</option>
-                  <option value="Pagada">Pagada</option>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="En mora">En mora</option>
-                </select>
-              </div>
-            </div>
-            <div className={`${shellCardClass} overflow-hidden rounded-[32px]`}>
-              <div className="grid gap-4 border-b border-[#E5E7EB] bg-slate-50/50 p-6 lg:grid-cols-4">
-                {[
-                  { label: 'MRR Mensual Estimado', value: formatCurrency(metrics.mrr), icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50', textColor: 'text-slate-900' },
-                  { label: 'Cobros Totales', value: formatCurrency(metrics.totalRevenue), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', textColor: 'text-slate-900' },
-                  { label: 'Tenants Activos', value: `${tenantCompanies.filter(c => c.status === 'ACTIVE').length}`, icon: Building2, color: 'text-indigo-600', bg: 'bg-indigo-50', textColor: 'text-slate-900' },
-                  { label: 'Facturas Pendientes', value: `${billingRows.filter(item => item.status !== 'Pagada').length}`, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-50', textColor: 'text-red-600' },
-                ].map(card => {
-                  const Icon = card.icon;
-                  return (
-                    <div key={card.label} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{card.label}</p>
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${card.bg} ${card.color}`}>
-                          <Icon size={16} />
-                        </div>
-                      </div>
-                      <p className={`mt-2 text-2xl font-black ${card.textColor}`}>{card.value}</p>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="overflow-x-auto">
-                <div className="min-w-[940px]">
-                  {/* Header */}
-                  <div className="grid grid-cols-[2fr_1.4fr_1.1fr_1.3fr_1.3fr_1.3fr] px-6 py-4.5 text-[11px] font-black uppercase tracking-wider text-slate-400 bg-[#F8FAFC]">
-                    <div>Empresa / Tenant</div>
-                    <div>Plan contratado</div>
-                    <div>Ciclo</div>
-                    <div>Monto</div>
-                    <div>Estado de pago</div>
-                    <div>Próx. Vencimiento</div>
-                  </div>
-                  {/* Body */}
-                  <div className="divide-y divide-slate-100 bg-white">
-                    {filteredBillingRows.map(row => (
-                      <div
-                        key={row.id}
-                        className="group grid grid-cols-[2fr_1.4fr_1.1fr_1.3fr_1.3fr_1.3fr] items-center border-t border-slate-100 px-6 py-4.5 text-[14.5px] hover:bg-[#FCFDFF] transition-all duration-200"
-                      >
-                        <div className="flex cursor-pointer items-center gap-3 text-left transition-all duration-200 group-hover:translate-x-1">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[12px] font-black uppercase text-[#2563EB] transition-all duration-200 group-hover:bg-[#DBEAFE]">
-                            {row.companyName.slice(0, 2)}
-                          </div>
-                          <span className="font-bold text-slate-900 group-hover:text-[#2563EB] transition-colors">{row.companyName}</span>
-                        </div>
-                        <div className="font-medium text-slate-600">{row.planName}</div>
-                        <div>
-                          <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold ${row.cycle === 'Anual' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}`}>
-                            {row.cycle}
-                          </span>
-                        </div>
-                        <div className="font-bold text-slate-900">{formatCurrency(row.amount)}</div>
-                        <div>
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold border ${
-                            row.status === 'Pagada' ?
-                               'bg-emerald-50 text-emerald-600 border-emerald-200' 
-                              : row.status === 'Pendiente' ?
-                                 'bg-amber-50 text-amber-600 border-amber-200' 
-                                : 'bg-red-50 text-red-600 border-red-200'
-                          }`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${
-                              row.status === 'Pagada' ? 'bg-emerald-500 animate-pulse' : row.status === 'Pendiente' ? 'bg-amber-500' : 'bg-red-500'
-                            }`} />
-                            {row.status}
-                          </span>
-                        </div>
-                        <div className="font-semibold text-slate-500">{formatDate(row.dueDate)}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+          <BillingDirectory
+            billingSearchTerm={billingSearchTerm}
+            setBillingSearchTerm={setBillingSearchTerm}
+            billingStatusFilter={billingStatusFilter}
+            setBillingStatusFilter={setBillingStatusFilter}
+            tenantCompanies={tenantCompanies}
+            filteredBillingRows={filteredBillingRows}
+            billingRows={billingRows}
+            metrics={metrics}
+            onCompanyClick={(companyId) => {
+              const company = tenantCompanies.find(c => c.id === companyId);
+              if (company) {
+                setSelectedCompanyDetail(company);
+                setDetailTab('RESUMEN');
+                navigateToSection('COMPANIES');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+          />
         ) : null}
         {activeTab === 'REPORTS' ? (
-          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
-            <SectionHeader
-              title="Reportes Globales"
-              description="Lectura ejecutiva del SaaS con resumen financiero, operativo y de riesgo."
-            />
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]">
-              <div className={`${shellCardClass} p-6`}>
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
-                  <FileText size={20} className="text-[#2563EB]" />
-                  <h2 className="text-[20px] font-black tracking-tight text-slate-900">Panel Ejecutivo de Reportes</h2>
-                </div>
-                <div className="space-y-4">
-                  {reportRows.map(row => (
-                    <div key={row.title} className="group rounded-[22px] border border-slate-200 bg-[#FCFDFF] p-5 transition-all duration-200 hover:translate-x-1 hover:border-slate-350">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-2">
-                          <p className="text-[16px] font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{row.title}</p>
-                          <p className="text-[13.5px] font-semibold leading-relaxed text-slate-500">{row.detail}</p>
-                        </div>
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider ${
-                          row.badge === 'Financiero' ?
-                             'bg-emerald-50 text-emerald-600 border border-emerald-200' 
-                            : row.badge === 'Operativo' ?
-                               'bg-blue-50 text-blue-600 border border-blue-200' 
-                              : 'bg-amber-50 text-amber-600 border border-amber-200'
-                        }`}>
-                          {row.badge}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className={`${shellCardClass} p-6 flex flex-col justify-between`}>
-                <div>
-                  <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
-                    <Download size={20} className="text-[#2563EB]" />
-                    <h2 className="text-[20px] font-black tracking-tight text-slate-900">Exportaciones en Vivo</h2>
-                  </div>
-                  <div className="space-y-3.5">
-                    <ExportRow title="Financiero global" detail="MRR, cobros, cartera y suscripciones." />
-                    <ExportRow title="Uso por empresa" detail="Usuarios, actividad y adopcion por tenant." />
-                    <ExportRow title="Auditoría consolidada" detail="Eventos críticos y trazabilidad del sistema." />
-                  </div>
-                </div>
-                
-                <div className="mt-8 pt-5 border-t border-slate-100 text-center">
-                  <p className="text-xs font-semibold text-slate-400 leading-relaxed">
-                    Las exportaciones se generan bajo demanda en formato CSV o PDF de alta definición.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
+          <GlobalReportsDirectory 
+             tenantCompanies={tenantCompanies} 
+             metrics={metrics} 
+             tenantUsersRows={tenantUsersRows} 
+             masterLogs={masterLogs} 
+          />
         ) : null}
         {activeTab === 'AUDIT' ? (
-          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
-            <SectionHeader
-              title="Auditoría"
-              description="Bitácora global de acciones críticas, cambios administrativos y eventos de seguridad."
-              actionLabel="Exportar log"
-            />
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_280px]">
-              <div className="rounded-[28px] border border-slate-800 bg-[#111827] p-4 shadow-[0_22px_60px_rgba(15,23,42,0.22)]">
-                <div className="relative">
-                  <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+          <section className="space-y-8 animate-[platform-fade-in_180ms_ease-out]">
+            <div data-super-hero>
+              <PlatformPageHeader
+                title="Auditoría"
+                description="Bitácora global de acciones críticas, cambios administrativos y eventos de seguridad."
+                actions={[{
+                  label: "Exportar log",
+                  icon: Download,
+                  onClick: () => {},
+                  variant: "secondary"
+                }]}
+              />
+            </div>
+            
+            <div data-super-panel className="relative z-40 rounded-[32px] border border-[#E5E7EB] bg-white p-4 shadow-sm mb-6">
+              <div className="grid grid-cols-1 gap-3 xl:grid-cols-[220px_minmax(320px,1fr)_auto]">
+                <FilterDropdown
+                  value={auditFilter === 'Todos' ? '' : auditFilter}
+                  onChange={(val) => { setAuditFilter(val || 'Todos'); setAuditPage(1); }}
+                  placeholder="Tipo de evento"
+                  options={[
+                    { value: 'SYSTEM', label: 'Sistema' },
+                    { value: 'SECURITY', label: 'Seguridad' },
+                    { value: 'DATA', label: 'Datos' },
+                  ]}
+                />
+                <div className="flex h-[56px] items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-5 transition-all duration-200 focus-within:border-[#93C5FD] focus-within:shadow-[0_10px_24px_rgba(37,99,235,0.10)]">
+                  <Search size={18} className="text-[#6B7280]" />
                   <input
                     value={auditSearchTerm}
-                    onChange={event => setAuditSearchTerm(event.target.value)}
-                    placeholder="Buscar por accion, detalle o trace id..."
-                    className="h-[52px] w-full rounded-2xl border border-slate-700 bg-slate-900/80 pl-11 pr-4 text-[14px] font-medium text-slate-100 outline-none transition-all duration-200 placeholder:text-slate-500 hover:border-slate-600 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15"
+                    onChange={event => { setAuditSearchTerm(event.target.value); setAuditPage(1); }}
+                    placeholder="Buscar por acción, detalle o trace id..."
+                    className="w-full bg-transparent text-[15px] font-medium text-[#111827] outline-none placeholder:text-[#94A3B8]"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3 xl:grid-cols-1">
-                <div className="rounded-[22px] border border-slate-800 bg-[#111827] px-4 py-3 shadow-[0_20px_40px_rgba(15,23,42,0.14)]">
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Eventos</p>
-                  <p className="mt-2 text-[24px] font-black text-slate-50">{filteredMasterLogs.length}</p>
-                </div>
-                <div className="rounded-[22px] border border-slate-800 bg-[#111827] px-4 py-3 shadow-[0_20px_40px_rgba(15,23,42,0.14)]">
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Criticos</p>
-                  <p className="mt-2 text-[24px] font-black text-amber-400">{masterLogs.filter(log => /suspend|error|riesgo|crit/i.test(`${log.action} ${log.detail}`)).length}</p>
-                </div>
-                <div className="rounded-[22px] border border-slate-800 bg-[#111827] px-4 py-3 shadow-[0_20px_40px_rgba(15,23,42,0.14)]">
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Live</p>
-                  <p className="mt-2 text-[24px] font-black text-emerald-400">Streaming</p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuditSearchTerm('');
+                    setAuditFilter('Todos');
+                    setAuditPage(1);
+                  }}
+                  className={`inline-flex h-[56px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[15px] font-semibold text-[#111827] ${motionButtonClass}`}
+                >
+                  <Filter size={18} />
+                  Limpiar filtro
+                </button>
               </div>
             </div>
 
-            {/* Consola Terminal Premium */}
-            <div className="rounded-[32px] bg-[#0F172A] border border-slate-800 shadow-2xl p-6 overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+            <div className="grid gap-4 md:grid-cols-3 mb-6">
+              <PlatformKpiCard
+                label="Eventos Registrados"
+                value={filteredMasterLogs.length.toString()}
+                helper="Eventos totales de sistema"
+                icon={Activity}
+                trend="Estable"
+                tone="blue"
+              />
+              <PlatformKpiCard
+                label="Alertas Críticas"
+                value={masterLogs.filter(log => /suspend|error|riesgo|crit/i.test(`${log.action} ${log.detail}`)).length.toString()}
+                helper="Eventos de riesgo alto"
+                icon={History}
+                trend="Requiere atención"
+                tone="rose"
+              />
+              <PlatformKpiCard
+                label="Estado de Conexión"
+                value="Streaming"
+                helper="Canal de auditoría en vivo"
+                icon={Activity}
+                trend="Activa"
+                tone="emerald"
+              />
+            </div>
+
+            {/* Consola Terminal Premium - White Version */}
+            <div className={`${shellCardClass} p-0 overflow-hidden`}>
+              <div className="flex items-center justify-between border-b border-[#E5E7EB] bg-[#F8FAFC] px-6 py-4">
                 <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-rose-500" />
-                  <div className="h-3 w-3 rounded-full bg-amber-500" />
-                  <div className="h-3 w-3 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-bold text-slate-500 font-mono ml-2">master_audit_stream.log</span>
+                  <History size={16} className="text-[#64748B]" />
+                  <span className="text-[13px] font-bold text-[#64748B] font-mono ml-2">master_audit_stream.log</span>
                 </div>
-                <div className="inline-flex rounded-lg bg-slate-800/60 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-wider text-emerald-400 font-mono">
+                <div className="inline-flex rounded-lg bg-[#ECFDF5] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#10B981] font-mono">
                   LIVE CONNECTION
                 </div>
               </div>
               
-              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 font-mono text-[13.5px] leading-relaxed custom-scrollbar">
-                {filteredMasterLogs.map(log => (
-                  <div key={log.id} className="group p-3.5 rounded-2xl bg-slate-900/60 border border-slate-850 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-900 hover:shadow-[0_18px_40px_rgba(15,23,42,0.16)]">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-blue-400 font-bold">[{formatDate(log.timestamp)} {new Date(log.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
-                          <span className="text-purple-400 font-bold transition-colors duration-200 group-hover:text-purple-300">&gt; {log.action}</span>
+              <div className="space-y-4 max-h-[600px] overflow-y-auto p-6 text-[14px] leading-relaxed custom-scrollbar bg-[#F8FAFC]">
+                {paginatedAuditLogs.map(log => {
+                  let badgeColor = 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]'; // Default Gray
+                  const action = log.action.toUpperCase();
+                  if (action.includes('ERROR') || action.includes('SECURITY') || action.includes('DELETE') || action.includes('FAIL')) {
+                    badgeColor = 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]'; // Red
+                  } else if (action.includes('CREATE') || action.includes('SUCCESS') || action.includes('ADD') || action.includes('NEW')) {
+                    badgeColor = 'bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0]'; // Green
+                  } else if (action.includes('UPDATE') || action.includes('EDIT') || action.includes('MODIFY')) {
+                    badgeColor = 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]'; // Blue
+                  } else if (action.includes('WARN') || action.includes('ALERT')) {
+                    badgeColor = 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]'; // Yellow
+                  }
+                  return (
+                    <div key={log.id} data-super-row className="group p-5 rounded-2xl bg-white border border-[#E5E7EB] transition-all duration-200 hover:translate-x-1 hover:border-[#BFDBFE] hover:shadow-[0_8px_24px_rgba(37,99,235,0.06)]">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-3 mb-3">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-bold border ${badgeColor}`}>
+                              {log.action}
+                            </span>
+                            <span className="text-[#64748B] font-medium text-[13px] flex items-center gap-1.5">
+                              <span className="w-1 h-1 rounded-full bg-[#CBD5E1]"></span>
+                              {formatDate(log.timestamp)} a las {new Date(log.timestamp).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-[#334155] font-medium leading-relaxed pl-4 border-l-2 border-[#E2E8F0] text-[14.5px]">
+                            {log.detail}
+                          </p>
                         </div>
-                        <p className="mt-2 text-emerald-400/90 break-words leading-relaxed pl-2 border-l-2 border-slate-700">
-                          {log.detail}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-slate-500 text-[11px] font-bold text-right pt-0.5">
-                        session_trace_id: <span className="text-slate-400">{log.id.slice(0, 8)}</span>
+                        <div className="shrink-0 text-[#94A3B8] text-[12px] font-bold text-right pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          trace: <span className="font-mono text-[#64748B] bg-[#F1F5F9] px-1.5 py-0.5 rounded">{log.id.slice(0, 8)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+              
+              {/* Paginación */}
+              <div className="flex flex-col gap-4 border-t border-[#E5E7EB] bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between rounded-b-3xl">
+                <p className="text-[14px] font-medium text-[#6B7280]">Mostrando {(auditPage - 1) * 10 + 1} a {Math.min(auditPage * 10, filteredMasterLogs.length)} de {filteredMasterLogs.length} eventos</p>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setAuditPage(prev => Math.max(1, prev - 1))} disabled={auditPage === 1} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#374151] transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB] disabled:opacity-40">
+                    <ChevronLeft size={16} />
+                  </button>
+                  {visibleAuditPages.map(item => (
+                    <button key={item} type="button" onClick={() => setAuditPage(item)} className={`flex h-10 min-w-10 items-center justify-center rounded-xl px-3 text-[15px] font-medium ${item === auditPage ? 'border border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]' : 'border border-transparent text-[#374151] transition-all duration-200 hover:translate-x-1 hover:bg-[#F8FAFC] hover:text-[#2563EB]'}`}>
+                      {item}
+                    </button>
+                  ))}
+                  <button type="button" onClick={() => setAuditPage(prev => Math.min(totalAuditPages, prev + 1))} disabled={auditPage === totalAuditPages} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#374151] transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB] disabled:opacity-40">
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           </section>
         ) : null}
         {activeTab === 'SYSTEM' ? (
-          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
-            <SectionHeader
+          <section className="space-y-6 animate-[platform-fade-in_180ms_ease-out]">
+            <PlatformPageHeader
               title="Configuración del Sistema"
               description="Mantenimiento global, versión del sistema y mensajes de difusión."
-              actionLabel="Guardar configuración"
-              onAction={handleUpdateConfig}
+              actions={[
+                {
+                  label: "Guardar configuración",
+                  icon: Save,
+                  onClick: handleUpdateConfig,
+                  variant: "primary"
+                }
+              ]}
             />
-            <div className={`${shellCardClass} p-6 lg:p-8 rounded-[32px]`}>
-              <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-                <div className="space-y-6">
-                  <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_right,_rgba(37,99,235,0.09),_transparent_38%),linear-gradient(180deg,#FCFDFF_0%,#FFFFFF_100%)] p-5 shadow-sm">
-                    <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-[#DBEAFE]/50 blur-3xl" />
-                    <div className="relative flex flex-wrap items-center gap-3 border-b border-slate-100 pb-4">
-                      <span className="inline-flex rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#2563EB]">
-                        Flow Designer
-                      </span>
-                      <span className="inline-flex rounded-full border border-[#E5E7EB] bg-white px-3 py-1 text-[11px] font-bold text-slate-500">
-                        Kernel operativo
-                      </span>
+            
+            <div className="space-y-6">
+              {/* Row 1: Full width Maintenance Mode */}
+              <div className={`relative overflow-hidden ${shellCardClass} p-8`}>
+                <div className="relative flex flex-wrap items-center gap-3 border-b border-[#E5E7EB] pb-5">
+                  <span className="inline-flex rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#2563EB]">
+                    Flow Designer
+                  </span>
+                  <span className="inline-flex rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-1 text-[11px] font-bold text-[#64748B]">
+                    Kernel operativo
+                  </span>
+                </div>
+                <div className="relative mt-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-all duration-200 ${
+                      platformConfig.maintenanceMode ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#DCFCE7] text-[#16A34A]'
+                    }`}>
+                      {platformConfig.maintenanceMode ? <ShieldAlert size={24} /> : <ShieldCheck size={24} />}
                     </div>
-                    <div className="relative mt-5 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm transition-all duration-200 ${
-                          platformConfig.maintenanceMode ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#DCFCE7] text-[#16A34A]'
-                        }`}>
-                          {platformConfig.maintenanceMode ? <ShieldAlert size={22} /> : <ShieldCheck size={22} />}
-                        </div>
-                        <div>
-                          <p className="text-[17px] font-black text-slate-900 leading-tight">Modo Mantenimiento Global</p>
-                          <p className="text-[13.5px] font-semibold text-slate-500 mt-1">Control global para restringir acceso temporalmente.</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setPlatformConfig(current => ({ ...current, maintenanceMode: !current.maintenanceMode }))}
-                        className={`inline-flex h-11 items-center justify-center rounded-2xl px-5 text-[13.5px] font-bold transition-all cursor-pointer ${
-                          platformConfig.maintenanceMode ?
-                             'border border-red-200 bg-red-50 text-red-600 hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-[0_12px_28px_rgba(220,38,38,0.12)]'
-                            : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:-translate-y-0.5 hover:bg-emerald-100 hover:shadow-[0_12px_28px_rgba(22,163,74,0.12)]'
-                        }`}
-                      >
-                        {platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'}
-                      </button>
-                    </div>
-                    <div className="relative mt-5 grid gap-3 md:grid-cols-3">
-                      <div className="rounded-[22px] border border-slate-100 bg-white/90 px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Flow activo</p>
-                        <p className="mt-2 text-[18px] font-black text-slate-900">Publicacion estable</p>
-                        <p className="mt-1 text-[12.5px] font-medium text-slate-500">Reglas globales sincronizadas</p>
-                      </div>
-                      <div className="rounded-[22px] border border-slate-100 bg-white/90 px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Ultimo push</p>
-                        <p className="mt-2 text-[18px] font-black text-slate-900">{platformConfig.maintenanceDate || 'Sin fecha'}</p>
-                        <p className="mt-1 text-[12.5px] font-medium text-slate-500">Ventana programada del kernel</p>
-                      </div>
-                      <div className="rounded-[22px] border border-slate-100 bg-white/90 px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">Version core</p>
-                        <p className="mt-2 text-[18px] font-black text-slate-900">{platformConfig.systemVersion}</p>
-                        <p className="mt-1 text-[12.5px] font-medium text-slate-500">Branch operativo del sistema</p>
-                      </div>
+                    <div>
+                      <p className="text-[19px] font-black tracking-tight text-[#111827] leading-tight">Modo Mantenimiento Global</p>
+                      <p className="text-[14px] font-medium text-[#64748B] mt-1">Control global para restringir acceso temporalmente a todos los tenants.</p>
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setPlatformConfig(current => ({ ...current, maintenanceMode: !current.maintenanceMode }))}
+                    className={`inline-flex h-12 shrink-0 items-center justify-center rounded-2xl px-8 text-[14px] font-bold transition-all cursor-pointer ${
+                      platformConfig.maintenanceMode ?
+                         'border border-red-200 bg-red-50 text-red-600 hover:-translate-y-0.5 hover:bg-red-100 hover:shadow-[0_12px_28px_rgba(220,38,38,0.12)]'
+                        : 'border border-emerald-200 bg-emerald-50 text-emerald-600 hover:-translate-y-0.5 hover:bg-emerald-100 hover:shadow-[0_12px_28px_rgba(22,163,74,0.12)]'
+                    }`}
+                  >
+                    {platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'}
+                  </button>
+                </div>
+                <div className="relative mt-6 grid gap-4 sm:grid-cols-3">
+                  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">Flow activo</p>
+                    <p className="mt-2 text-[17px] font-black tracking-tight text-[#111827]">Publicacion estable</p>
+                    <p className="mt-1 text-[13px] font-medium text-[#64748B]">Reglas globales sincronizadas</p>
+                  </div>
+                  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">Ultimo push</p>
+                    <p className="mt-2 text-[17px] font-black tracking-tight text-[#111827]">{platformConfig.maintenanceDate || 'Sin fecha'}</p>
+                    <p className="mt-1 text-[13px] font-medium text-[#64748B]">Ventana programada del kernel</p>
+                  </div>
+                  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
+                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">Version core</p>
+                    <p className="mt-2 text-[17px] font-black tracking-tight text-[#111827]">{platformConfig.systemVersion}</p>
+                    <p className="mt-1 text-[13px] font-medium text-[#64748B]">Branch operativo del sistema</p>
+                  </div>
+                </div>
+              </div>
 
-                  <FieldBlock label="Mensaje de Difusión (Broadcast)">
-                    <input
-                      value={platformConfig.broadcastMessage}
-                      onChange={event => setPlatformConfig(current => ({ ...current, broadcastMessage: event.target.value }))}
-                      className={premiumInputClass}
-                      placeholder="Escribe un aviso para todas las pantallas del SaaS..."
-                    />
-                  </FieldBlock>
-
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <FieldBlock label="Fecha programada de mantenimiento">
+              {/* Row 2: 3-column grid for remaining cards */}
+              <div className="grid gap-6 xl:grid-cols-3 items-start">
+                
+                {/* Variables del Entorno */}
+                <div className={`${shellCardClass} p-8`}>
+                  <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-5 mb-6">
+                    <Settings size={22} className="text-[#2563EB]" />
+                    <h2 className="text-[18px] font-black tracking-tight text-[#111827]">Entorno</h2>
+                  </div>
+                  <div className="space-y-6">
+                    <FieldBlock label="Difusión (Broadcast)">
+                      <input
+                        value={platformConfig.broadcastMessage}
+                        onChange={event => setPlatformConfig(current => ({ ...current, broadcastMessage: event.target.value }))}
+                        className={premiumInputClass}
+                        placeholder="Mensaje global..."
+                      />
+                    </FieldBlock>
+                    <FieldBlock label="Mantenimiento">
                       <PlatformDateField
                         value={platformConfig.maintenanceDate}
                         onChange={value => setPlatformConfig(current => ({ ...current, maintenanceDate: value }))}
-                        placeholder="Seleccionar fecha"
+                        placeholder="Fecha"
                       />
                     </FieldBlock>
-                    <FieldBlock label="Versión del Core">
+                    <FieldBlock label="Versión">
                       <input
                         value={platformConfig.systemVersion}
                         onChange={event => setPlatformConfig(current => ({ ...current, systemVersion: event.target.value }))}
@@ -5559,56 +5237,58 @@ export const SuperAdminPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <SidebarInfoCard title="Estado del Kernel" icon={Activity}>
-                    <SummaryRow label="Versión del Core" value={platformConfig.systemVersion} tone="blue" />
-                    <SummaryRow label="Mantenimiento" value={platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'} tone={platformConfig.maintenanceMode ? 'danger' : 'success'} />
-                    <SummaryRow label="Mensaje Broadcast" value={platformConfig.broadcastMessage || 'Sin mensaje activo'} tone="neutral" />
-                  </SidebarInfoCard>
-                  <div className={`${shellCardClass} p-6`}>
-                    <div className="flex items-center gap-3">
-                      <Settings size={20} className="text-[#2563EB]" />
-                      <h3 className="text-[20px] font-semibold text-[#111827]">Acciones del Diseñador</h3>
-                    </div>
-                    <div className="mt-5 space-y-3">
-                      <button type="button" onClick={() => navigateToSection('AUDIT')} className={`flex h-12 w-full items-center justify-between rounded-[20px] border border-[#E5E7EB] bg-white px-4 text-left text-[14px] font-semibold text-[#111827] ${motionButtonClass}`}>
-                        <span>Revisar auditoría del flujo</span>
-                        <ArrowUpRight size={16} />
-                      </button>
-                      <button type="button" className={`flex h-12 w-full items-center justify-between rounded-[20px] border border-[#E5E7EB] bg-white px-4 text-left text-[14px] font-semibold text-[#111827] ${motionButtonClass}`}>
-                        <span>Validar publicacion del kernel</span>
-                        <CheckCircle2 size={16} />
-                      </button>
-                      <button type="button" className={`flex h-12 w-full items-center justify-between rounded-[20px] border border-[#E5E7EB] bg-white px-4 text-left text-[14px] font-semibold text-[#111827] ${motionButtonClass}`}>
-                        <span>Preparar ventana de mantenimiento</span>
-                        <Calendar size={16} />
-                      </button>
-                    </div>
+                {/* Estado del Kernel */}
+                <SidebarInfoCard title="Estado" icon={Activity}>
+                  <SummaryRow label="Core" value={platformConfig.systemVersion} tone="blue" />
+                  <SummaryRow label="Mantenimiento" value={platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'} tone={platformConfig.maintenanceMode ? 'danger' : 'success'} />
+                  <SummaryRow label="Broadcast" value={platformConfig.broadcastMessage || 'Sin mensaje activo'} tone="neutral" />
+                </SidebarInfoCard>
+
+                {/* Acciones del Diseñador */}
+                <div className={`${shellCardClass} p-8`}>
+                  <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-5 mb-6">
+                    <Terminal size={22} className="text-[#2563EB]" />
+                    <h3 className="text-[18px] font-black tracking-tight text-[#111827]">Acciones</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <button type="button" onClick={() => navigateToSection('AUDIT')} className={`flex h-[52px] w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-5 text-left text-[13px] font-semibold text-[#111827] ${motionButtonClass}`}>
+                      <span>Revisar auditoría</span>
+                      <ArrowUpRight size={16} className="text-[#64748B]" />
+                    </button>
+                    <button type="button" className={`flex h-[52px] w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-5 text-left text-[13px] font-semibold text-[#111827] ${motionButtonClass}`}>
+                      <span>Validar publicacion</span>
+                      <CheckCircle2 size={16} className="text-[#64748B]" />
+                    </button>
+                    <button type="button" className={`flex h-[52px] w-full items-center justify-between rounded-2xl border border-[#E5E7EB] bg-white px-5 text-left text-[13px] font-semibold text-[#111827] ${motionButtonClass}`}>
+                      <span>Preparar ventana</span>
+                      <Calendar size={16} className="text-[#64748B]" />
+                    </button>
                   </div>
                 </div>
+
               </div>
             </div>
           </section>
         ) : null}
         {activeTab === 'HELP' ? (
           <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
-            <SectionHeader
+            <PlatformPageHeader
               title="Centro de Ayuda"
               description="Soporte para empresas, material de onboarding y atencion operativa del SaaS."
             />
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_1fr]">
               <div className={`${shellCardClass} p-6`}>
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-5">
+                <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-4 mb-5">
                   <LifeBuoy size={20} className="text-[#2563EB]" />
-                  <h2 className="text-[20px] font-black tracking-tight text-slate-900">Cola de Ayuda & Tickets Activos</h2>
+                  <h2 className="text-[20px] font-black tracking-tight text-[#111827]">Cola de Ayuda & Tickets Activos</h2>
                 </div>
                 <div className="space-y-4">
                   {helpRows.map(row => (
-                    <div key={row.title} className="group rounded-[22px] border border-slate-200 bg-[#FCFDFF] p-5 transition-all duration-200 hover:translate-x-1 hover:border-slate-350 hover:shadow-sm">
+                    <div key={row.title} className="group rounded-[22px] border border-[#E5E7EB] bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-2">
-                          <p className="text-[16px] font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{row.title}</p>
-                          <p className="text-[13.5px] font-semibold leading-relaxed text-slate-500">{row.detail}</p>
+                          <p className="text-[16px] font-bold text-[#111827] leading-tight group-hover:text-[#2563EB] transition-colors">{row.title}</p>
+                          <p className="text-[13.5px] font-semibold leading-relaxed text-[#64748B]">{row.detail}</p>
                         </div>
                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider ${
                           row.tag === 'Soporte' ?
@@ -5799,29 +5479,29 @@ export const SuperAdminPage: React.FC = () => {
             </form>
           </ModalFrame>
         ) : null}
-        {isPlanModalOpen && editingPlan ? (
-          <ModalFrame title={`Editar plan: ${editingPlan.name}`} onClose={() => { setIsPlanModalOpen(false); setEditingPlan(null); }}>
+        {isPlanModalOpen ? (
+          <ModalFrame title={editingPlan ? `Editar plan: ${editingPlan.name}` : 'Crear nuevo plan'} onClose={() => { setIsPlanModalOpen(false); setEditingPlan(null); }}>
             <form onSubmit={handleUpdatePlan} className="space-y-5">
               <FieldBlock label="Nombre">
-                <input name="name" defaultValue={editingPlan.name} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                <input name="name" defaultValue={editingPlan?.name || ''} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
               </FieldBlock>
               <div className="grid gap-4 md:grid-cols-3">
                 <FieldBlock label="Max clientes">
-                  <input name="maxClients" type="number" defaultValue={editingPlan.maxClients} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                  <input name="maxClients" type="number" defaultValue={editingPlan?.maxClients || ''} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
                 </FieldBlock>
                 <FieldBlock label="Max usuarios">
-                  <input name="maxUsers" type="number" defaultValue={editingPlan.maxUsers} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                  <input name="maxUsers" type="number" defaultValue={editingPlan?.maxUsers || ''} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
                 </FieldBlock>
                 <FieldBlock label="Max sucursales">
-                  <input name="maxBranches" type="number" defaultValue={editingPlan.maxBranches} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                  <input name="maxBranches" type="number" defaultValue={editingPlan?.maxBranches || ''} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
                 </FieldBlock>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <FieldBlock label="Precio mensual">
-                  <input name="monthlyPrice" type="number" defaultValue={editingPlan.monthlyPrice} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                  <input name="monthlyPrice" type="number" defaultValue={editingPlan?.monthlyPrice || ''} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
                 </FieldBlock>
                 <FieldBlock label="Precio anual">
-                  <input name="yearlyPrice" type="number" defaultValue={editingPlan.yearlyPrice || editingPlan.monthlyPrice * 10} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
+                  <input name="yearlyPrice" type="number" defaultValue={editingPlan?.yearlyPrice || (editingPlan?.monthlyPrice ? editingPlan.monthlyPrice * 10 : '')} className="h-[56px] w-full rounded-2xl border border-[#E5E7EB] px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]" />
                 </FieldBlock>
               </div>
               <div className="flex justify-end">
@@ -6026,29 +5706,10 @@ const InfoChip = ({
   </span>
 );
 
-const StatusBadge = ({ label, tone }: { label: string; tone: 'success' | 'warning' | 'danger' | 'blue' | 'neutral' }) => {
-  const toneMap = {
-    success: 'border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]',
-    warning: 'border-[#FDE68A] bg-[#FFFBEB] text-[#D97706]',
-    danger: 'border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]',
-    blue: 'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]',
-    neutral: 'border-[#E5E7EB] bg-[#F8FAFC] text-[#6B7280]',
-  };
-
-  return <span className={`inline-flex w-fit items-center justify-self-start whitespace-nowrap rounded-full border px-3 py-1 text-[12px] font-semibold leading-none ${toneMap[tone]}`}>{label}</span>;
-};
-
 const MiniStat = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-2xl border border-[#E5E7EB] bg-[#FCFDFF] px-4 py-3 text-center">
     <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">{label}</p>
     <p className="mt-2 text-[22px] font-semibold text-[#111827]">{value}</p>
-  </div>
-);
-
-const MiniPanel = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex items-center justify-between rounded-[18px] border border-[#E5E7EB] bg-[#FCFDFF] px-4 py-3">
-    <p className="text-[14px] font-medium text-[#6B7280]">{label}</p>
-    <p className="text-[16px] font-semibold text-[#111827]">{value}</p>
   </div>
 );
 
@@ -6278,958 +5939,6 @@ const UsersFilterBar = ({
   );
 };
 
-const UserAvatar = ({ name }: { name: string }) => (
-  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[12px] font-black uppercase text-[#2563EB] transition-all duration-200 group-hover:scale-[1.04] group-hover:bg-[#DBEAFE]">
-    {name.slice(0, 2)}
-  </div>
-);
-
-const getInvitationTone = (status: InvitationStatus): 'success' | 'warning' | 'danger' | 'neutral' => {
-  if (status === 'Aceptada') return 'success';
-  if (status === 'Pendiente') return 'warning';
-  if (status === 'Revocada') return 'danger';
-  return 'neutral';
-};
-
-const SaasTeamDirectory = ({
-  rows,
-  totalRows,
-  isLoading,
-  error,
-  onAction,
-  activeActionsDropdown,
-  dropdownCoords,
-  openContextMenu,
-}: {
-  rows: SaasMember[];
-  totalRows: number;
-  isLoading: boolean;
-  error: string;
-  onAction: (member: SaasMember, action: SaasMemberActionKind) => void;
-  activeActionsDropdown: string | null;
-  dropdownCoords: { top: number; left: number; openUpward: boolean } | null;
-  openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void;
-}) => {
-  if (isLoading) return <TenantUsersSkeleton />;
-  if (error) return <TenantUsersState icon={AlertTriangle} title="No se pudo cargar el equipo interno" detail={error} tone="danger" />;
-  if (!totalRows) return <TenantUsersState icon={Users} title="Sin miembros internos" detail="Aún no hay operadores internos registrados." tone="neutral" />;
-  if (!rows.length) return <TenantUsersState icon={Search} title="Sin resultados" detail="Ajusta la búsqueda para ver más miembros internos." tone="warning" />;
-
-  return (
-    <div data-super-panel className={`${shellCardClass} overflow-visible`}>
-      <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F7] px-5 py-4">
-        <div>
-          <h4 className="text-[18px] font-semibold text-[#111827]">Directorio del equipo interno</h4>
-          <p className="mt-1 text-[13px] font-medium text-[#6B7280]">Solo miembros internos de ABUNDRA, sin empresa asignada.</p>
-        </div>
-        <StatusBadge label={`${rows.length} visibles`} tone="blue" />
-      </div>
-      <div className="hidden lg:block">
-        <div className="grid grid-cols-[minmax(0,1.45fr)_0.8fr_0.64fr_0.5fr_0.76fr_0.48fr_0.66fr_48px] bg-[#F8FAFC] px-5 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">
-          <div>Usuario</div>
-          <div>Rol interno</div>
-          <div>Estado</div>
-          <div>2FA</div>
-          <div>Último acceso</div>
-          <div>Ses.</div>
-          <div>Creado</div>
-          <div className="text-center">Acc.</div>
-        </div>
-        <div className="divide-y divide-[#EEF2F7]">
-          {rows.map(member => (
-            <SaasTeamTableRow key={member.id} member={member} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-          ))}
-        </div>
-      </div>
-      <div className="divide-y divide-[#EEF2F7] lg:hidden">
-        {rows.map(member => (
-          <SaasTeamMobileCard key={member.id} member={member} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const SaasTeamTableRow = ({ member, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { member: SaasMember; onAction: (member: SaasMember, action: SaasMemberActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => (
-  <div data-super-row className="group grid grid-cols-[minmax(0,1.45fr)_0.8fr_0.64fr_0.5fr_0.76fr_0.48fr_0.66fr_48px] items-center px-5 py-4 transition-all duration-200 hover:bg-[#F8FAFC] hover:translate-x-1">
-    <div className="flex min-w-0 items-center gap-3 transition-transform duration-200 group-hover:translate-x-1.5">
-      <UserAvatar name={member.name} />
-      <div className="min-w-0">
-        <p className="truncate text-[14px] font-semibold text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">{member.name}</p>
-        <p className="mt-1 truncate text-[13px] font-medium text-[#6B7280]">{member.email}</p>
-      </div>
-    </div>
-    <StatusBadge label={getVisibleInternalRoleLabel(member.role)} tone={member.role === 'Owner SaaS' || member.role === 'Super Admin' ? 'blue' : 'neutral'} />
-    <StatusBadge label={member.status} tone={member.status === 'Activo' ? 'success' : member.status === 'Suspendido' ? 'danger' : 'warning'} />
-    <StatusBadge label={member.twoFactor ? 'Activo' : 'Pendiente'} tone={member.twoFactor ? 'success' : 'warning'} />
-    <div className="truncate text-[13px] font-medium text-[#6B7280]">{member.lastAccess}</div>
-    <div className="text-[14px] font-semibold text-[#111827]">{member.sessions}</div>
-    <div className="truncate text-[13px] font-medium text-[#6B7280]">{member.createdAt}</div>
-    <SaasMemberActionsCell member={member} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-  </div>
-);
-
-const SaasTeamMobileCard = ({ member, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { member: SaasMember; onAction: (member: SaasMember, action: SaasMemberActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => (
-  <div className="space-y-4 p-5">
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <UserAvatar name={member.name} />
-        <div className="min-w-0">
-          <p className="truncate text-[15px] font-semibold text-[#111827]">{member.name}</p>
-          <p className="mt-1 truncate text-[13px] font-medium text-[#6B7280]">{member.email}</p>
-        </div>
-      </div>
-      <SaasMemberActionsCell member={member} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-    </div>
-    <div className="flex flex-wrap gap-2">
-      <StatusBadge label={getVisibleInternalRoleLabel(member.role)} tone={member.role === 'Owner SaaS' || member.role === 'Super Admin' ? 'blue' : 'neutral'} />
-      <StatusBadge label={member.status} tone={member.status === 'Activo' ? 'success' : member.status === 'Suspendido' ? 'danger' : 'warning'} />
-      <StatusBadge label={member.twoFactor ? '2FA activo' : '2FA pendiente'} tone={member.twoFactor ? 'success' : 'warning'} />
-    </div>
-  </div>
-);
-
-const SaasMemberActionsCell = ({ member, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { member: SaasMember; onAction: (member: SaasMember, action: SaasMemberActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => {
-  const menuId = `saas-member-${member.id}`;
-  return (
-    <div className="relative flex items-center justify-end" onClick={event => event.stopPropagation()}>
-      <button type="button" onClick={event => openContextMenu(event, menuId)} className={`inline-flex h-9 w-9 items-center justify-center rounded-2xl border transition-all ${activeActionsDropdown === menuId ? 'border-[#2563EB] bg-[#EFF6FF] text-[#2563EB] shadow-[0_14px_32px_rgba(37,99,235,0.14)]' : 'border-[#E5E7EB] bg-white text-[#64748B] hover:border-[#DBEAFE] hover:bg-[#F8FBFF]'} ${motionButtonClass}`} aria-label={`Acciones de ${member.name}`}>
-        <MoreHorizontal size={16} />
-      </button>
-      {activeActionsDropdown === menuId && dropdownCoords && createPortal(
-        <div style={{ position: 'absolute', top: `${dropdownCoords.top}px`, left: `${dropdownCoords.left}px` }} className="z-[9999] w-[260px] rounded-[26px] border border-[#E5E7EB] bg-white p-2 shadow-[0_28px_70px_rgba(15,23,42,0.16)] animate-[platform-fade-in_140ms_ease-out]" onClick={event => event.stopPropagation()}>
-          <TenantUserActionButton icon={UserCog} label="Ver perfil" onClick={() => onAction(member, 'view-profile')} />
-          <TenantUserActionButton icon={Edit3} label="Editar" onClick={() => onAction(member, 'edit')} />
-          <TenantUserActionButton icon={Crown} label="Cambiar rol" onClick={() => onAction(member, 'change-role')} />
-          <TenantUserActionButton icon={ShieldCheck} label="Configurar permisos" onClick={() => onAction(member, 'configure-permissions')} />
-          <TenantUserActionButton icon={RefreshCw} label="Forzar cambio de contraseña" onClick={() => onAction(member, 'force-password')} />
-          <TenantUserActionButton icon={ShieldAlert} label="Forzar 2FA" onClick={() => onAction(member, 'force-2fa')} />
-          <TenantUserActionButton icon={Activity} label="Revocar sesiones" tone="danger" onClick={() => onAction(member, 'revoke-sessions')} />
-          <TenantUserActionButton icon={member.status === 'Suspendido' ? CheckCircle2 : AlertTriangle} label={member.status === 'Suspendido' ? 'Reactivar' : 'Suspender'} tone={member.status === 'Suspendido' ? 'success' : 'danger'} onClick={() => onAction(member, member.status === 'Suspendido' ? 'reactivate' : 'suspend')} />
-          <TenantUserActionButton icon={FileClock} label="Ver auditoría" onClick={() => onAction(member, 'audit')} />
-        </div>,
-        document.body,
-      )}
-    </div>
-  );
-};
-
-const InvitationDirectory = ({ rows, totalRows, isLoading, error, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { rows: InvitationRow[]; totalRows: number; isLoading: boolean; error: string; onAction: (invitation: InvitationRow, action: InvitationActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => {
-  if (isLoading) return <TenantUsersSkeleton />;
-  if (error) return <TenantUsersState icon={AlertTriangle} title="No se pudieron cargar invitaciones" detail={error} tone="danger" />;
-  if (!totalRows) return <TenantUsersState icon={Bell} title="Sin invitaciones" detail="Aún no hay invitaciones generadas." tone="neutral" />;
-  if (!rows.length) return <TenantUsersState icon={Search} title="Sin resultados" detail="Ajusta los filtros para ver más invitaciones." tone="warning" />;
-
-  return (
-    <div data-super-panel className={`${shellCardClass} overflow-visible`}>
-      <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F7] px-5 py-4">
-        <div>
-          <h4 className="text-[18px] font-semibold text-[#111827]">Bandeja de invitaciones</h4>
-          <p className="mt-1 text-[13px] font-medium text-[#6B7280]">Controla token, expiración, contexto y estado sin llenar artificialmente la pantalla.</p>
-        </div>
-        <StatusBadge label={`${rows.length} visibles`} tone="blue" />
-      </div>
-      <div className="hidden xl:block">
-        <div className="grid grid-cols-[minmax(0,1.15fr)_0.68fr_minmax(0,0.9fr)_0.64fr_0.72fr_0.62fr_0.62fr_0.62fr_48px] bg-[#F8FAFC] px-5 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">
-          <div>Correo</div>
-          <div>Tipo</div>
-          <div>Empresa</div>
-          <div>Rol</div>
-          <div>Invitado por</div>
-          <div>Envío</div>
-          <div>Expiración</div>
-          <div>Estado</div>
-          <div className="text-center">Acc.</div>
-        </div>
-        <div className="divide-y divide-[#EEF2F7]">
-          {rows.map(invitation => (
-            <InvitationTableRow key={invitation.id} invitation={invitation} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-          ))}
-        </div>
-      </div>
-      <div className="divide-y divide-[#EEF2F7] xl:hidden">
-        {rows.map(invitation => (
-          <InvitationMobileCard key={invitation.id} invitation={invitation} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const InvitationTableRow = ({ invitation, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { invitation: InvitationRow; onAction: (invitation: InvitationRow, action: InvitationActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => (
-  <div data-super-row className="group grid grid-cols-[minmax(0,1.15fr)_0.68fr_minmax(0,0.9fr)_0.64fr_0.72fr_0.62fr_0.62fr_0.62fr_48px] items-center px-5 py-4 transition-all duration-200 hover:bg-[#F8FAFC] hover:translate-x-1">
-    <div className="truncate text-[14px] font-semibold text-[#111827] transition-transform duration-200 group-hover:translate-x-1.5 group-hover:text-[#2563EB]">{invitation.email}</div>
-    <StatusBadge label={getVisibleInvitationTypeLabel(invitation.type)} tone={invitation.type === 'Equipo SaaS' ? 'blue' : 'neutral'} />
-    <div className="min-w-0">
-      <p className="truncate text-[14px] font-semibold text-[#111827]">{invitation.company}</p>
-      <p className="mt-1 truncate text-[12px] font-medium text-[#6B7280]">{invitation.branch}</p>
-    </div>
-    <StatusBadge label={invitation.type === 'Equipo SaaS' ? getVisibleInternalRoleLabel(invitation.role) : `${invitation.role}`} tone={invitation.type === 'Equipo SaaS' ? 'blue' : 'success'} />
-    <div className="truncate text-[13px] font-medium text-[#6B7280]">{invitation.invitedBy}</div>
-    <div className="truncate text-[13px] font-medium text-[#6B7280]">{invitation.date}</div>
-    <div className="truncate text-[13px] font-medium text-[#6B7280]">{invitation.expiresAt}</div>
-    <StatusBadge label={invitation.status} tone={getInvitationTone(invitation.status)} />
-    <InvitationActionsCell invitation={invitation} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-  </div>
-);
-
-const InvitationMobileCard = ({ invitation, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { invitation: InvitationRow; onAction: (invitation: InvitationRow, action: InvitationActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => (
-  <div className="space-y-4 p-5">
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <p className="truncate text-[15px] font-semibold text-[#111827]">{invitation.email}</p>
-        <p className="mt-1 truncate text-[13px] font-medium text-[#6B7280]">{invitation.company} · {invitation.branch}</p>
-      </div>
-      <InvitationActionsCell invitation={invitation} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-    </div>
-    <div className="flex flex-wrap gap-2">
-      <StatusBadge label={getVisibleInvitationTypeLabel(invitation.type)} tone={invitation.type === 'Equipo SaaS' ? 'blue' : 'neutral'} />
-      <StatusBadge label={invitation.type === 'Equipo SaaS' ? getVisibleInternalRoleLabel(invitation.role) : `${invitation.role}`} tone={invitation.type === 'Equipo SaaS' ? 'blue' : 'success'} />
-      <StatusBadge label={invitation.status} tone={getInvitationTone(invitation.status)} />
-    </div>
-  </div>
-);
-
-const InvitationActionsCell = ({ invitation, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { invitation: InvitationRow; onAction: (invitation: InvitationRow, action: InvitationActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => {
-  const menuId = `invitation-row-${invitation.id}`;
-  return (
-    <div className="relative flex items-center justify-end" onClick={event => event.stopPropagation()}>
-      <button type="button" onClick={event => openContextMenu(event, menuId)} className={`inline-flex h-9 w-9 items-center justify-center rounded-2xl border transition-all ${activeActionsDropdown === menuId ? 'border-[#2563EB] bg-[#EFF6FF] text-[#2563EB] shadow-[0_14px_32px_rgba(37,99,235,0.14)]' : 'border-[#E5E7EB] bg-white text-[#64748B] hover:border-[#DBEAFE] hover:bg-[#F8FBFF]'} ${motionButtonClass}`} aria-label={`Acciones de invitación ${invitation.email}`}>
-        <MoreHorizontal size={16} />
-      </button>
-      {activeActionsDropdown === menuId && dropdownCoords && createPortal(
-        <div style={{ position: 'absolute', top: `${dropdownCoords.top}px`, left: `${dropdownCoords.left}px` }} className="z-[9999] w-[250px] rounded-[26px] border border-[#E5E7EB] bg-white p-2 shadow-[0_28px_70px_rgba(15,23,42,0.16)] animate-[platform-fade-in_140ms_ease-out]" onClick={event => event.stopPropagation()}>
-          <TenantUserActionButton icon={RefreshCw} label="Reenviar" onClick={() => onAction(invitation, 'resend')} />
-          <TenantUserActionButton icon={Globe} label="Copiar enlace" onClick={() => onAction(invitation, 'copy-link')} />
-          <TenantUserActionButton icon={Crown} label="Editar rol" onClick={() => onAction(invitation, 'edit-role')} />
-          <TenantUserActionButton icon={Building2} label="Cambiar empresa" onClick={() => onAction(invitation, 'change-company')} />
-          <TenantUserActionButton icon={MapPin} label="Cambiar sucursal" onClick={() => onAction(invitation, 'change-branch')} />
-          <TenantUserActionButton icon={CalendarCheck} label="Extender expiración" onClick={() => onAction(invitation, 'extend-expiration')} />
-          <TenantUserActionButton icon={ShieldAlert} label="Revocar" tone="danger" onClick={() => onAction(invitation, 'revoke')} />
-          <TenantUserActionButton icon={Sparkles} label="Renovar" onClick={() => onAction(invitation, 'renew')} />
-          <TenantUserActionButton icon={UserCog} label="Abrir usuario" onClick={() => onAction(invitation, 'open-user')} />
-        </div>,
-        document.body,
-      )}
-    </div>
-  );
-};
-
-const TenantUsersDirectory = ({
-  rows,
-  totalRows,
-  baseRows,
-  isLoading,
-  error,
-  permissionError,
-  sort,
-  onSort,
-  page,
-  totalPages,
-  visiblePages,
-  onPageChange,
-  onAction,
-  activeActionsDropdown,
-  dropdownCoords,
-  openContextMenu,
-  canUseSupportAccess,
-}: {
-  rows: TenantUserRow[];
-  totalRows: number;
-  baseRows: number;
-  isLoading: boolean;
-  error: string;
-  permissionError: string;
-  sort: { key: TenantUserSortKey; direction: 'asc' | 'desc' };
-  onSort: (key: TenantUserSortKey) => void;
-  page: number;
-  totalPages: number;
-  visiblePages: number[];
-  onPageChange: (page: number) => void;
-  onAction: (user: TenantUserRow, action: TenantUserActionKind) => void;
-  activeActionsDropdown: string | null;
-  dropdownCoords: { top: number; left: number; openUpward: boolean } | null;
-  openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void;
-  canUseSupportAccess: boolean;
-}) => {
-  const hasRows = rows.length > 0;
-  const emptyTitle = baseRows === 0 ? 'No hay usuarios de empresas registrados' : 'No hay resultados con estos filtros';
-  const emptyDetail =
-    baseRows === 0 ?
-       'Cuando las empresas tengan usuarios operativos, aparecerán aquí sin mezclarse con el equipo interno.'
-      : 'Ajusta filtros o búsqueda para ampliar el directorio.';
-  const start = totalRows ? (page - 1) * TENANT_USERS_PAGE_SIZE + 1 : 0;
-  const end = Math.min(page * TENANT_USERS_PAGE_SIZE, totalRows);
-
-  return (
-    <div data-super-panel className={`${shellCardClass} relative z-0 overflow-hidden`} data-tenant-users-list>
-      <div className="flex flex-col gap-3 border-b border-[#E5E7EB] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h4 className="text-[20px] font-semibold text-[#111827]">Directorio de usuarios</h4>
-          <p className="mt-1 text-[13px] font-medium text-[#6B7280]">Vista global de empresas con sucursal, rol, seguridad y trazabilidad.</p>
-        </div>
-        <span className="rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-1.5 text-[13px] font-semibold text-[#475569]">{totalRows} visibles</span>
-      </div>
-      {permissionError ? (
-        <TenantUsersState icon={ShieldAlert} title="Error de permisos" detail={permissionError} tone="danger" />
-      ) : error ? (
-        <TenantUsersState icon={AlertTriangle} title="No se pudo cargar el directorio" detail={error} tone="warning" />
-      ) : isLoading ? (
-        <TenantUsersSkeleton />
-      ) : !hasRows ? (
-        <TenantUsersState icon={Users} title={emptyTitle} detail={emptyDetail} tone="neutral" />
-      ) : (
-        <>
-          <div className="hidden lg:block">
-            <div className="min-w-0">
-              <div className="grid grid-cols-[minmax(0,1.55fr)_minmax(0,1.05fr)_minmax(0,0.95fr)_0.72fr_0.72fr_0.86fr_0.58fr_58px] bg-[#F8FAFC] px-5 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">
-                <TenantUsersSortButton label="Usuario" sortKey="name" sort={sort} onSort={onSort} />
-                <TenantUsersSortButton label="Empresa" sortKey="companyName" sort={sort} onSort={onSort} />
-                <TenantUsersSortButton label="Sucursal" sortKey="branchName" sort={sort} onSort={onSort} />
-                <TenantUsersSortButton label="Rol" sortKey="role" sort={sort} onSort={onSort} />
-                <TenantUsersSortButton label="Estado" sortKey="status" sort={sort} onSort={onSort} />
-                <TenantUsersSortButton label="Último acceso" sortKey="lastAccess" sort={sort} onSort={onSort} />
-                <TenantUsersSortButton label="2FA" sortKey="twoFactorStatus" sort={sort} onSort={onSort} />
-                <div className="text-center">Acc.</div>
-              </div>
-              <div className="divide-y divide-[#EEF2F7]">
-                {rows.map(user => (
-                  <TenantUserTableRow
-                    key={user.id}
-                    user={user}
-                    activeActionsDropdown={activeActionsDropdown}
-                    dropdownCoords={dropdownCoords}
-                    openContextMenu={openContextMenu}
-                    onAction={onAction}
-                    canUseSupportAccess={canUseSupportAccess}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="divide-y divide-[#EEF2F7] lg:hidden">
-            {rows.map(user => (
-              <TenantUserMobileCard
-                key={user.id}
-                user={user}
-                activeActionsDropdown={activeActionsDropdown}
-                dropdownCoords={dropdownCoords}
-                openContextMenu={openContextMenu}
-                onAction={onAction}
-                canUseSupportAccess={canUseSupportAccess}
-              />
-            ))}
-          </div>
-          <div className="flex flex-col gap-4 border-t border-[#E5E7EB] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[14px] font-medium text-[#6B7280]">Mostrando {start} a {end} de {totalRows} usuarios</p>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page === 1} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#374151] transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB] disabled:opacity-40">
-                <ChevronLeft size={16} />
-              </button>
-              {visiblePages.map(item => (
-                <button key={item} type="button" onClick={() => onPageChange(item)} className={`flex h-10 min-w-10 items-center justify-center rounded-xl px-3 text-[15px] font-medium ${item === page ? 'border border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]' : 'border border-transparent text-[#374151] transition-all duration-200 hover:translate-x-1 hover:bg-[#F8FAFC] hover:text-[#2563EB]'}`}>
-                  {item}
-                </button>
-              ))}
-              <button type="button" onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#374151] transition-all duration-200 hover:translate-x-1 hover:border-[#DBEAFE] hover:bg-[#F8FAFC] hover:text-[#2563EB] disabled:opacity-40">
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
-
-const TenantUsersSortButton = ({ label, sortKey, sort, onSort }: { label: string; sortKey: TenantUserSortKey; sort: { key: TenantUserSortKey; direction: 'asc' | 'desc' }; onSort: (key: TenantUserSortKey) => void }) => {
-  const active = sort.key === sortKey;
-  return (
-    <button type="button" onClick={() => onSort(sortKey)} className={`flex items-center gap-1 text-left transition-colors duration-200 hover:text-[#2563EB] ${active ? 'text-[#2563EB]' : ''}`}>
-      <span>{label}</span>
-      {active ? <ChevronDown size={13} className={`transition-transform duration-200 ${sort.direction === 'asc' ? 'rotate-180' : ''}`} /> : null}
-    </button>
-  );
-};
-
-const TenantUserTableRow = ({ user, activeActionsDropdown, dropdownCoords, openContextMenu, onAction, canUseSupportAccess }: { user: TenantUserRow; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void; onAction: (user: TenantUserRow, action: TenantUserActionKind) => void; canUseSupportAccess: boolean }) => {
-  const menuId = `tenant-user-${user.id}`;
-  return (
-    <div data-super-row className="group grid grid-cols-[minmax(0,1.55fr)_minmax(0,1.05fr)_minmax(0,0.95fr)_0.72fr_0.72fr_0.86fr_0.58fr_58px] items-center px-5 py-4 text-[15px] transition-all duration-200 hover:bg-[#F8FAFC] hover:translate-x-1">
-      <button type="button" onClick={() => onAction(user, 'view-profile')} className="group/user flex min-w-0 cursor-pointer items-center gap-4 text-left transition-all duration-200 hover:translate-x-1">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EFF6FF] text-[13px] font-black uppercase text-[#2563EB] shadow-[0_10px_22px_rgba(37,99,235,0.14)]">{user.name.slice(0, 2)}</div>
-        <div className="min-w-0">
-          <p className="truncate text-[16px] font-semibold text-[#111827] transition-colors duration-200 group-hover/user:text-[#2563EB]">{user.name}</p>
-          <p className="mt-1 truncate text-[13px] font-medium text-[#6B7280]">{user.email}</p>
-        </div>
-      </button>
-      <div className="min-w-0"><p className="truncate font-semibold text-[#111827]">{user.companyName}</p><p className="mt-1 truncate text-[12px] font-medium text-[#6B7280]">ID: {user.companyId}</p></div>
-      <div className="truncate font-medium text-[#374151]">{user.branchName}</div>
-      <div><StatusBadge label={user.role} tone={getUserRoleTone(user.role)} /></div>
-      <div><StatusBadge label={user.status} tone={user.status === 'Activo' ? 'success' : 'danger'} /></div>
-      <div className="truncate text-[13px] font-medium text-[#6B7280]">{user.lastAccess}</div>
-      <div><StatusBadge label={user.twoFactorStatus} tone={user.twoFactorStatus === 'Pendiente' ? 'warning' : 'neutral'} /></div>
-      <TenantUserActionsCell user={user} menuId={menuId} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} onAction={onAction} canUseSupportAccess={canUseSupportAccess} />
-    </div>
-  );
-};
-
-const TenantUserMobileCard = ({ user, activeActionsDropdown, dropdownCoords, openContextMenu, onAction, canUseSupportAccess }: { user: TenantUserRow; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void; onAction: (user: TenantUserRow, action: TenantUserActionKind) => void; canUseSupportAccess: boolean }) => {
-  const menuId = `tenant-user-mobile-${user.id}`;
-  return (
-    <div className="p-5">
-      <div className="flex items-start justify-between gap-3">
-        <button type="button" onClick={() => onAction(user, 'view-profile')} className="flex min-w-0 items-center gap-3 text-left">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EFF6FF] text-[13px] font-black uppercase text-[#2563EB]">{user.name.slice(0, 2)}</div>
-          <div className="min-w-0"><p className="truncate text-[16px] font-semibold text-[#111827]">{user.name}</p><p className="mt-1 truncate text-[13px] font-medium text-[#6B7280]">{user.email}</p></div>
-        </button>
-        <TenantUserActionsCell user={user} menuId={menuId} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} onAction={onAction} canUseSupportAccess={canUseSupportAccess} />
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <MiniPanel label="Empresa" value={user.companyName} />
-        <MiniPanel label="Sucursal" value={user.branchName} />
-        <MiniPanel label="Rol" value={user.role} />
-        <MiniPanel label="Último acceso" value={user.lastAccess} />
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <StatusBadge label={user.status} tone={user.status === 'Activo' ? 'success' : 'danger'} />
-        <StatusBadge label={`2FA ${user.twoFactorStatus}`} tone={user.twoFactorStatus === 'Pendiente' ? 'warning' : 'neutral'} />
-      </div>
-    </div>
-  );
-};
-
-const TenantUserActionsCell = ({ user, menuId, activeActionsDropdown, dropdownCoords, openContextMenu, onAction, canUseSupportAccess }: { user: TenantUserRow; menuId: string; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void; onAction: (user: TenantUserRow, action: TenantUserActionKind) => void; canUseSupportAccess: boolean }) => (
-  <div className="relative flex items-center justify-end" onClick={event => event.stopPropagation()}>
-    <button type="button" onClick={event => openContextMenu(event, menuId)} className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition-all ${activeActionsDropdown === menuId ? 'border-[#2563EB] bg-[#EFF6FF] text-[#2563EB] shadow-[0_14px_32px_rgba(37,99,235,0.14)]' : 'border-[#E5E7EB] bg-white text-[#64748B] hover:border-[#DBEAFE] hover:bg-[#F8FBFF]'} ${motionButtonClass}`} aria-label={`Acciones para ${user.name}`}>
-      <MoreHorizontal size={16} />
-    </button>
-    {activeActionsDropdown === menuId && dropdownCoords ?
-       createPortal(
-          <div style={{ position: 'absolute', top: `${dropdownCoords.top}px`, left: `${dropdownCoords.left}px` }} className="z-[9999] w-[268px] rounded-[26px] border border-[#E5E7EB] bg-white p-2 shadow-[0_28px_70px_rgba(15,23,42,0.16)] animate-[platform-fade-in_140ms_ease-out]" onClick={event => event.stopPropagation()}>
-            <TenantUserActionButton icon={Eye} label="Ver perfil" onClick={() => onAction(user, 'view-profile')} />
-            <TenantUserActionButton icon={Building2} label="Abrir empresa" onClick={() => onAction(user, 'open-company')} />
-            <TenantUserActionButton icon={UserCog} label="Abrir usuario en contexto" onClick={() => onAction(user, 'open-context')} />
-            <TenantUserActionButton icon={Activity} label="Ver sesiones" onClick={() => onAction(user, 'sessions')} />
-            <TenantUserActionButton icon={History} label="Ver actividad" onClick={() => onAction(user, 'activity')} />
-            <TenantUserActionButton icon={ShieldCheck} label="Cambiar rol" onClick={() => onAction(user, 'change-role')} />
-            <TenantUserActionButton icon={MapPin} label="Cambiar sucursal" onClick={() => onAction(user, 'change-branch')} />
-            <TenantUserActionButton icon={RefreshCw} label="Restablecer acceso" onClick={() => onAction(user, 'reset-access')} />
-            <TenantUserActionButton icon={RefreshCw} label="Revocar sesiones" tone="danger" onClick={() => onAction(user, 'revoke-sessions')} />
-            {user.isActive ? (
-              <TenantUserActionButton icon={ShieldAlert} label="Suspender" tone="danger" onClick={() => onAction(user, 'suspend')} />
-            ) : (
-              <TenantUserActionButton icon={CheckCircle2} label="Reactivar" tone="success" onClick={() => onAction(user, 'reactivate')} />
-            )}
-          <TenantUserActionButton icon={FileText} label="Ver auditoría" onClick={() => onAction(user, 'audit')} />
-            {canUseSupportAccess ? <TenantUserActionButton icon={Headphones} label="Acceder como soporte" tone="danger" onClick={() => onAction(user, 'support-access')} /> : null}
-          </div>,
-          document.body,
-        )
-      : null}
-  </div>
-);
-
-const TenantUserActionButton = ({ icon: Icon, label, tone = 'neutral', onClick }: { icon: SuperAdminIcon; label: string; tone?: 'neutral' | 'danger' | 'success'; onClick: () => void }) => {
-  const toneClass = tone === 'danger' ? 'hover:bg-rose-50 hover:text-rose-700' : tone === 'success' ? 'hover:bg-emerald-50 hover:text-emerald-700' : 'hover:bg-[#F8FAFC] hover:text-[#2563EB]';
-  return (
-    <button type="button" onClick={onClick} className={`flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-[14px] font-semibold text-slate-700 transition-all hover:translate-x-1 ${toneClass}`}>
-      <Icon size={16} className={tone === 'danger' ? 'text-rose-500' : tone === 'success' ? 'text-emerald-600' : 'text-[#2563EB]'} />
-      {label}
-    </button>
-  );
-};
-
-const TenantUsersSkeleton = () => (
-  <div className="divide-y divide-[#EEF2F7]">
-    {Array.from({ length: 6 }).map((_, index) => (
-      <div key={index} className="grid grid-cols-[minmax(0,1.55fr)_minmax(0,1.05fr)_minmax(0,0.95fr)_0.72fr_0.72fr_0.86fr_0.58fr_58px] items-center px-5 py-4">
-        {Array.from({ length: 8 }).map((__, itemIndex) => <div key={itemIndex} className="mr-4 h-5 animate-pulse rounded-full bg-[#EEF2F7]" />)}
-      </div>
-    ))}
-  </div>
-);
-
-const TenantUsersState = ({ icon: Icon, title, detail, tone }: { icon: SuperAdminIcon; title: string; detail: string; tone: 'neutral' | 'warning' | 'danger' }) => {
-  const toneClass = tone === 'danger' ? 'bg-rose-50 text-rose-600' : tone === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-[#EFF6FF] text-[#2563EB]';
-  return (
-    <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-12 text-center">
-      <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${toneClass}`}><Icon size={24} /></div>
-      <h4 className="mt-5 text-[20px] font-semibold text-[#111827]">{title}</h4>
-      <p className="mt-2 max-w-lg text-[14px] font-medium leading-6 text-[#6B7280]">{detail}</p>
-    </div>
-  );
-};
-
-const TenantUserDetailDrawer = ({
-  user,
-  open,
-  onClose,
-  onAction,
-  activityItems,
-  sessionItems,
-  auditItems,
-}: {
-  user: TenantUserRow | null;
-  open: boolean;
-  onClose: () => void;
-  onAction: (user: TenantUserRow, action: TenantUserActionKind) => void;
-  activityItems: Array<{ id: string; action?: string; detail?: string; timestamp?: string; type?: string; description?: string }>;
-  sessionItems: Array<{ id: string; user?: string; company?: string; ip?: string; device?: string; activity?: string; status?: string }>;
-  auditItems: Array<{ id: string; action: string; detail?: string; timestamp?: string }>;
-}) => {
-  if (!open || !user) return null;
-  return createPortal(
-    <div className="fixed inset-0 z-[9997] bg-[#0F172A]/35 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-[560px] flex-col border-l border-[#E5E7EB] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.24)]">
-        <div className="border-b border-[#E5E7EB] px-6 py-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[22px] bg-[#EFF6FF] text-[15px] font-black uppercase text-[#2563EB]">{user.name.slice(0, 2)}</div>
-              <div className="min-w-0">
-                <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#94A3B8]">Detalle de usuario de empresa</p>
-                <h3 className="mt-1 truncate text-[24px] font-semibold text-[#111827]">{user.name}</h3>
-                <p className="mt-1 truncate text-[14px] font-medium text-[#6B7280]">{user.email}</p>
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#64748B] transition-all hover:border-[#FECACA] hover:bg-[#FEF2F2] hover:text-[#DC2626]"><X size={18} /></button>
-          </div>
-        </div>
-        <div className="flex-1 space-y-4 overflow-y-auto bg-[#F9FAFB] p-5">
-          <TenantDrawerSection title="1. Identidad">
-            <MiniPanel label="Nombre" value={user.name} />
-            <MiniPanel label="Correo" value={user.email} />
-            <MiniPanel label="Teléfono" value={user.phone} />
-            <MiniPanel label="Código interno" value={user.code} />
-          </TenantDrawerSection>
-          <TenantDrawerSection title="2. Empresa y sucursal">
-            <MiniPanel label="Empresa" value={user.companyName} />
-            <MiniPanel label="Empresa ID" value={user.companyId} />
-            <MiniPanel label="Sucursal" value={user.branchName} />
-            <MiniPanel label="Sucursal ID" value={user.branchId} />
-          </TenantDrawerSection>
-          <TenantDrawerSection title="3. Rol y permisos">
-            <MiniPanel label="Rol" value={user.role} />
-            <MiniPanel label="Permisos explícitos" value={`${Object.keys(user.permissions).length}`} />
-          </TenantDrawerSection>
-          <TenantDrawerSection title="4. Seguridad">
-            <MiniPanel label="Estado" value={user.status} />
-            <MiniPanel label="2FA" value={user.twoFactorStatus} />
-            <MiniPanel label="Último acceso" value={user.lastAccess} />
-            <MiniPanel label="Creado" value={formatDate(user.createdAt)} />
-          </TenantDrawerSection>
-          <TenantDrawerSection title="5. Actividad reciente">
-            {activityItems.length ? activityItems.slice(0, 4).map(item => <ActionListItem key={item.id} icon={Activity} title={item.action || item.type || 'Actividad'} detail={item.detail || item.description || item.timestamp || 'Evento registrado'} />) : <p className="text-[14px] font-medium text-[#6B7280]">Sin actividad reciente disponible.</p>}
-          </TenantDrawerSection>
-          <TenantDrawerSection title="6. Sesiones">
-            {sessionItems.length ? sessionItems.slice(0, 4).map(item => <ActionListItem key={item.id} icon={Terminal} title={`${item.device || 'Sin dispositivo'} · ${item.ip || 'Sin IP'}`} detail={`${item.status || 'Sin estado'} · ${item.activity || 'Sin actividad'}`} />) : <p className="text-[14px] font-medium text-[#6B7280]">Sin sesiones activas visibles.</p>}
-          </TenantDrawerSection>
-          <TenantDrawerSection title="7. Auditoría">
-            {auditItems.length ? auditItems.slice(0, 4).map(item => <ActionListItem key={item.id} icon={FileText} title={item.action} detail={item.detail || item.timestamp || 'Evento auditado'} />) : <p className="text-[14px] font-medium text-[#6B7280]">Sin auditoría específica para este usuario.</p>}
-          </TenantDrawerSection>
-        </div>
-        <div className="grid grid-cols-2 gap-3 border-t border-[#E5E7EB] bg-white p-5">
-          <button type="button" onClick={() => onAction(user, 'sessions')} className={`flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white text-[14px] font-semibold text-[#111827] ${motionButtonClass}`}><Activity size={16} />Sesiones</button>
-          <button type="button" onClick={() => onAction(user, user.isActive ? 'suspend' : 'reactivate')} className={`flex h-12 items-center justify-center gap-2 rounded-2xl border text-[14px] font-semibold ${user.isActive ? 'border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]' : 'border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]'}`}>
-            {user.isActive ? <ShieldAlert size={16} /> : <CheckCircle2 size={16} />}
-            {user.isActive ? 'Suspender' : 'Reactivar'}
-          </button>
-        </div>
-      </aside>
-    </div>,
-    document.body,
-  );
-};
-
-const TenantDrawerSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="rounded-[24px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
-    <h4 className="text-[15px] font-semibold text-[#111827]">{title}</h4>
-    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
-  </section>
-);
-
-const ClearFiltersButton = ({ onClick }: { onClick: () => void }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="ml-auto inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-5 text-[14px] font-semibold text-[#111827] shadow-sm transition-all duration-200 hover:translate-x-1 hover:border-[#BFDBFE] hover:bg-[#F8FBFF] hover:text-[#2563EB] hover:shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
-  >
-    <Filter size={17} className="text-[#2563EB]" />
-    <span>Limpiar filtros</span>
-  </button>
-);
-
-const RolePermissionsList = ({
-  roleCards,
-}: {
-  roleCards: {
-    saas: Array<{ role: string; users: number; permissions: string[] }>;
-    tenant: Array<{ role: string; users: number; permissions: string[] }>;
-  };
-}) => {
-  const renderRows = (
-    rows: Array<{ role: string; users: number; permissions: string[] }>,
-    context: 'SaaS' | 'Tenant',
-  ) => {
-    const isSaaS = context === 'SaaS';
-    const Icon = isSaaS ? Crown : Building2;
-
-    return rows.map(card => (
-      <div
-        data-super-row
-        key={`${context}-${card.role}`}
-        className="group grid grid-cols-[minmax(0,1.2fr)_0.58fr_minmax(0,1.65fr)_48px] items-center px-5 py-4 transition-all duration-200 hover:bg-[#F8FAFC] hover:translate-x-1"
-      >
-        <div className="flex min-w-0 items-center gap-3 transition-transform duration-200 group-hover:translate-x-1.5">
-          <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all duration-200 ${
-              isSaaS ?
-                 'bg-[#EFF6FF] text-[#2563EB] group-hover:bg-[#DBEAFE]'
-                : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
-            }`}
-          >
-            <Icon size={16} />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-[14px] font-semibold text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">{isSaaS ? getVisibleInternalRoleLabel(card.role) : card.role}</p>
-            <p className="mt-1 text-[12px] font-medium text-[#6B7280]">Contexto {getVisibleRoleContextLabel(context)}</p>
-          </div>
-        </div>
-        <div className="text-[14px] font-semibold text-[#111827]">{card.users}</div>
-        <div className="flex min-w-0 flex-wrap gap-2">
-          {card.permissions.slice(0, 2).map(permission => (
-            <span
-              key={permission}
-              className="max-w-[220px] truncate rounded-full border border-[#E5E7EB] bg-[#F8FAFC] px-3 py-1.5 text-[12px] font-semibold text-[#475569]"
-            >
-              {getVisiblePermissionLabel(permission)}
-            </span>
-          ))}
-          {card.permissions.length > 2 ? (
-            <span
-              className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold ${
-                isSaaS ?
-                   'border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]'
-                  : 'border-[#BBF7D0] bg-[#F0FDF4] text-[#16A34A]'
-              }`}
-            >
-              +{card.permissions.length - 2}
-            </span>
-          ) : null}
-        </div>
-        <div className="flex items-center justify-end">
-          <button type="button" className={`inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-[#64748B] ${motionButtonClass}`}>
-            <MoreHorizontal size={16} />
-          </button>
-        </div>
-      </div>
-    ));
-  };
-
-  return (
-    <div data-super-panel className={`${shellCardClass} overflow-hidden`}>
-      <div className="flex items-center justify-between gap-3 border-b border-[#EEF2F7] px-5 py-4">
-        <div>
-          <h4 className="text-[18px] font-semibold text-[#111827]">Matriz de roles y permisos</h4>
-          <p className="mt-1 text-[13px] font-medium text-[#6B7280]">Vista por contexto, usuarios asignados y permisos principales.</p>
-        </div>
-        <button type="button" className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[13px] font-semibold text-[#111827] ${motionButtonClass}`}>
-          <ShieldCheck size={15} />
-          Nuevo rol
-        </button>
-      </div>
-
-      <div className="border-b border-[#EEF2F7] bg-[#FCFDFF] px-5 py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
-            <Crown size={17} />
-          </div>
-          <div>
-            <p className="text-[14px] font-semibold text-[#111827]">Roles internos</p>
-            <p className="text-[12px] font-medium text-[#6B7280]">Accesos internos de ABUNDRA y soporte global.</p>
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-[minmax(0,1.2fr)_0.58fr_minmax(0,1.65fr)_48px] bg-[#F8FAFC] px-5 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">
-        <div>Rol</div>
-        <div>Usuarios</div>
-        <div>Permisos principales</div>
-        <div className="text-center">Acc.</div>
-      </div>
-      <div className="divide-y divide-[#EEF2F7]">{renderRows(roleCards.saas, 'SaaS')}</div>
-
-      <div className="border-y border-[#EEF2F7] bg-[#FCFDFF] px-5 py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-            <Building2 size={17} />
-          </div>
-          <div>
-            <p className="text-[14px] font-semibold text-[#111827]">Roles de empresas</p>
-            <p className="text-[12px] font-medium text-[#6B7280]">Accesos ligados a empresas y operación diaria.</p>
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-[minmax(0,1.2fr)_0.58fr_minmax(0,1.65fr)_48px] bg-[#F8FAFC] px-5 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">
-        <div>Rol</div>
-        <div>Usuarios</div>
-        <div>Permisos principales</div>
-        <div className="text-center">Acc.</div>
-      </div>
-      <div className="divide-y divide-[#EEF2F7]">{renderRows(roleCards.tenant, 'Tenant')}</div>
-    </div>
-  );
-};
-
-const RolePermissionMatrix = ({
-  permissionMatrix,
-  onAction,
-}: {
-  permissionMatrix: Record<RoleContext, PermissionModule[]>;
-  onAction: (roleName: string, context: RoleContext, action: RoleActionKind) => void;
-}) => {
-  const renderMatrix = (context: RoleContext) => {
-    const isSaaS = context === 'SaaS';
-    return (
-      <div data-super-panel className={`${shellCardClass} overflow-hidden`}>
-        <div className="flex flex-col gap-3 border-b border-[#EEF2F7] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isSaaS ? 'bg-[#EFF6FF] text-[#2563EB]' : 'bg-emerald-50 text-emerald-600'}`}>
-              {isSaaS ? <Crown size={18} /> : <Building2 size={18} />}
-            </div>
-            <div>
-              <h4 className="text-[18px] font-semibold text-[#111827]">Matriz {isSaaS ? 'interna' : 'de empresa'} por módulos</h4>
-              <p className="mt-1 text-[13px] font-medium text-[#6B7280]">
-                {isSaaS ? 'Permisos globales de la plataforma separados de la operación de empresas.' : 'Permisos operativos de empresa sin alcance sobre la plataforma global.'}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => onAction(isSaaS ? 'Roles internos' : 'Roles de empresas', context, 'compare')} className="rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#475569] transition-all duration-200 hover:translate-x-1 hover:text-[#2563EB]">Comparar</button>
-            <button type="button" onClick={() => onAction(isSaaS ? 'Roles internos' : 'Roles de empresas', context, 'archive')} className="rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-3 py-1.5 text-[12px] font-semibold text-[#D97706] transition-all duration-200 hover:translate-x-1">Archivar</button>
-            <button type="button" onClick={() => onAction(isSaaS ? 'Roles internos' : 'Roles de empresas', context, 'restore')} className="rounded-full border border-[#BBF7D0] bg-[#F0FDF4] px-3 py-1.5 text-[12px] font-semibold text-[#16A34A] transition-all duration-200 hover:translate-x-1">Restaurar</button>
-            <button type="button" onClick={() => onAction(isSaaS ? 'Roles internos' : 'Roles de empresas', context, 'history')} className="rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#475569] transition-all duration-200 hover:translate-x-1 hover:text-[#2563EB]">Historial</button>
-          </div>
-        </div>
-        <div className="grid gap-3 p-5 lg:grid-cols-2">
-          {permissionMatrix[context].map(group => (
-            <div data-super-row key={`${context}-${group.module}`} className="group rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-4 transition-all duration-200 hover:translate-x-1 hover:border-[#BFDBFE] hover:bg-white hover:shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[14px] font-semibold text-[#111827] transition-colors duration-200 group-hover:text-[#2563EB]">{group.module}</p>
-                  <p className="mt-1 text-[12px] font-medium text-[#6B7280]">{group.permissions.length} permisos configurados</p>
-                </div>
-                {group.critical?.length ? <StatusBadge label="Crítico" tone="danger" /> : <StatusBadge label={isSaaS ? 'Interno' : 'Empresa'} tone={isSaaS ? 'blue' : 'success'} />}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {group.permissions.map(permission => {
-                  const isCritical = group.critical?.includes(permission);
-                  return (
-                    <span key={permission} className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold ${isCritical ? 'border-[#FECACA] bg-[#FEF2F2] text-[#DC2626]' : 'border-[#E5E7EB] bg-white text-[#475569]'}`}>
-                      {getVisiblePermissionLabel(permission)}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="space-y-5">
-      {renderMatrix('SaaS')}
-      {renderMatrix('Tenant')}
-    </div>
-  );
-};
-
-const SessionDirectory = ({
-  rows,
-  totalRows,
-  isLoading,
-  error,
-  onAction,
-  onHardenPolicies,
-  activeActionsDropdown,
-  dropdownCoords,
-  openContextMenu,
-}: {
-  rows: Array<{
-    id: string;
-    user: string;
-    type: string;
-    company: string;
-    ip: string;
-    device: string;
-    location: string;
-    activity: string;
-    createdAt: string;
-    status: SessionStatus;
-    browser: string;
-    deviceFamily: string;
-  }>;
-  totalRows: number;
-  isLoading: boolean;
-  error?: string;
-  onAction: (session: any, action: SessionActionKind) => void;
-  onHardenPolicies: () => void;
-  activeActionsDropdown: string | null;
-  dropdownCoords: { top: number; left: number; openUpward: boolean } | null;
-  openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void;
-}) => {
-  if (isLoading) return <TenantUsersSkeleton />;
-  if (error) return <TenantUsersState icon={AlertTriangle} title="No se pudieron cargar sesiones" detail={error} tone="danger" />;
-  if (!totalRows) return <TenantUsersState icon={Activity} title="Sin sesiones" detail="No hay sesiones registradas para mostrar." tone="neutral" />;
-  if (!rows.length) return <TenantUsersState icon={Search} title="Sin resultados" detail="Ajusta los filtros para ver más sesiones." tone="warning" />;
-
-  return (
-  <div data-super-panel className={`${shellCardClass} overflow-visible`}>
-      <div className="flex flex-col gap-3 border-b border-[#EEF2F7] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h4 className="text-[18px] font-semibold text-[#111827]">Sesiones activas y trazabilidad</h4>
-          <p className="mt-1 text-[13px] font-medium text-[#6B7280]">La tabla tiene prioridad; paneles laterales quedan como lectura secundaria.</p>
-        </div>
-        <button type="button" onClick={onHardenPolicies} className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[13px] font-semibold text-[#111827] ${motionButtonClass}`}>
-          <ShieldCheck size={15} />
-          Endurecer políticas
-        </button>
-      </div>
-      <div className="hidden xl:block">
-        <div className="grid grid-cols-[minmax(0,1.04fr)_0.54fr_minmax(0,0.82fr)_minmax(0,1.04fr)_0.62fr_0.74fr_0.62fr_48px] bg-[#F8FAFC] px-5 py-4 text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">
-          <div>Usuario</div>
-          <div>Tipo</div>
-          <div>Empresa</div>
-          <div>Dispositivo / IP</div>
-          <div>Ubicación</div>
-          <div>Actividad / creada</div>
-          <div>Estado</div>
-          <div className="text-center">Acc.</div>
-        </div>
-        <div className="divide-y divide-[#EEF2F7]">
-          {rows.map(session => (
-            <SessionTableRow key={session.id} session={session} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-          ))}
-        </div>
-      </div>
-      <div className="divide-y divide-[#EEF2F7] xl:hidden">
-        {rows.map(session => (
-          <SessionMobileCard key={session.id} session={session} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const getSessionTone = (status: SessionStatus): 'success' | 'warning' | 'danger' | 'neutral' => {
-  if (status === 'Activa') return 'success';
-  if (status === 'Sospechosa') return 'warning';
-  if (status === 'Revocada') return 'danger';
-  return 'neutral';
-};
-
-const SessionTableRow = ({ session, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { session: any; onAction: (session: any, action: SessionActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => (
-  <div data-super-row className="group grid grid-cols-[minmax(0,1.04fr)_0.54fr_minmax(0,0.82fr)_minmax(0,1.04fr)_0.62fr_0.74fr_0.62fr_48px] items-center px-5 py-4 transition-all duration-200 hover:bg-[#F8FAFC] hover:translate-x-1">
-    <div className="truncate text-[14px] font-semibold text-[#111827] transition-transform duration-200 group-hover:translate-x-1.5 group-hover:text-[#2563EB]">{session.user}</div>
-    <StatusBadge label={getVisibleSessionTypeLabel(session.type)} tone={session.type === 'SaaS' ? 'blue' : 'neutral'} />
-    <div className="truncate text-[14px] font-medium text-[#475569]">{session.company}</div>
-    <div className="min-w-0">
-      <p className="truncate text-[14px] font-semibold text-[#475569]">{session.device}</p>
-      <p className="mt-1 truncate text-[12px] font-medium text-[#6B7280]">{session.ip}</p>
-    </div>
-    <div className="truncate text-[13px] font-medium text-[#6B7280]">{session.location}</div>
-    <div className="min-w-0">
-      <p className="truncate text-[13px] font-semibold text-[#475569]">{session.activity}</p>
-      <p className="mt-1 truncate text-[12px] font-medium text-[#6B7280]">{session.createdAt}</p>
-    </div>
-    <StatusBadge label={session.status} tone={getSessionTone(session.status)} />
-    <SessionActionsCell session={session} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-  </div>
-);
-
-const SessionMobileCard = ({ session, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { session: any; onAction: (session: any, action: SessionActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => (
-  <div className="space-y-4 p-5">
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <p className="truncate text-[15px] font-semibold text-[#111827]">{session.user}</p>
-        <p className="mt-1 truncate text-[13px] font-medium text-[#6B7280]">{session.company} · {session.device}</p>
-      </div>
-      <SessionActionsCell session={session} onAction={onAction} activeActionsDropdown={activeActionsDropdown} dropdownCoords={dropdownCoords} openContextMenu={openContextMenu} />
-    </div>
-    <div className="flex flex-wrap gap-2">
-      <StatusBadge label={getVisibleSessionTypeLabel(session.type)} tone={session.type === 'SaaS' ? 'blue' : 'neutral'} />
-      <StatusBadge label={session.status} tone={getSessionTone(session.status)} />
-      <StatusBadge label={session.ip} tone="neutral" />
-    </div>
-  </div>
-);
-
-const SessionActionsCell = ({ session, onAction, activeActionsDropdown, dropdownCoords, openContextMenu }: { session: any; onAction: (session: any, action: SessionActionKind) => void; activeActionsDropdown: string | null; dropdownCoords: { top: number; left: number; openUpward: boolean } | null; openContextMenu: (event: React.MouseEvent<HTMLButtonElement>, menuId: string) => void }) => {
-  const menuId = `session-row-${session.id}`;
-  return (
-    <div className="relative flex items-center justify-end" onClick={event => event.stopPropagation()}>
-      <button type="button" onClick={event => openContextMenu(event, menuId)} className={`inline-flex h-9 w-9 items-center justify-center rounded-2xl border transition-all ${activeActionsDropdown === menuId ? 'border-[#2563EB] bg-[#EFF6FF] text-[#2563EB] shadow-[0_14px_32px_rgba(37,99,235,0.14)]' : 'border-[#E5E7EB] bg-white text-[#64748B] hover:border-[#DBEAFE] hover:bg-[#F8FBFF]'} ${motionButtonClass}`} aria-label={`Acciones de sesión ${session.user}`}>
-        <MoreHorizontal size={16} />
-      </button>
-      {activeActionsDropdown === menuId && dropdownCoords && createPortal(
-        <div style={{ position: 'absolute', top: `${dropdownCoords.top}px`, left: `${dropdownCoords.left}px` }} className="z-[9999] w-[270px] rounded-[26px] border border-[#E5E7EB] bg-white p-2 shadow-[0_28px_70px_rgba(15,23,42,0.16)] animate-[platform-fade-in_140ms_ease-out]" onClick={event => event.stopPropagation()}>
-          <TenantUserActionButton icon={Eye} label="Ver detalle" onClick={() => onAction(session, 'view-detail')} />
-          <TenantUserActionButton icon={AlertTriangle} label="Marcar sospechosa" onClick={() => onAction(session, 'mark-suspicious')} />
-          <TenantUserActionButton icon={RefreshCw} label="Revocar sesión" tone="danger" onClick={() => onAction(session, 'revoke')} />
-          <TenantUserActionButton icon={ShieldAlert} label="Revocar todas" tone="danger" onClick={() => onAction(session, 'revoke-all')} />
-          <TenantUserActionButton icon={ShieldCheck} label="Revocar excepto actual" tone="danger" onClick={() => onAction(session, 'revoke-all-except-current')} />
-          <TenantUserActionButton icon={Globe} label="Bloquear IP" tone="danger" onClick={() => onAction(session, 'block-ip')} />
-          <TenantUserActionButton icon={RefreshCw} label="Forzar contraseña" onClick={() => onAction(session, 'force-password')} />
-          <TenantUserActionButton icon={UserCog} label="Suspender usuario" tone="danger" onClick={() => onAction(session, 'suspend-user')} />
-          <TenantUserActionButton icon={Activity} label="Ver actividad" onClick={() => onAction(session, 'activity')} />
-        </div>,
-        document.body,
-      )}
-    </div>
-  );
-};
-
-const SidebarInfoCard = ({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: SuperAdminIcon;
-  children: React.ReactNode;
-}) => (
-  <div className={`${shellCardClass} p-6`}>
-    <div className="flex items-center gap-3">
-      <Icon size={20} className="text-[#2563EB]" />
-      <h2 className="text-[20px] font-semibold text-[#111827]">{title}</h2>
-    </div>
-    <div className="mt-5 space-y-3">{children}</div>
-  </div>
-);
-
-const ActionListItem = ({
-  icon: Icon,
-  title,
-  detail,
-}: {
-  icon: SuperAdminIcon;
-  title: string;
-  detail: string;
-}) => (
-  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#FCFDFF] p-4">
-    <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
-        <Icon size={16} />
-      </div>
-      <div>
-        <p className="text-[15px] font-semibold text-[#111827]">{title}</p>
-        <p className="mt-2 text-[14px] font-medium leading-7 text-[#6B7280]">{detail}</p>
-      </div>
-    </div>
-  </div>
-);
-
 const FieldBlock = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="space-y-2">
     <label className="text-[12px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">{label}</label>
@@ -7283,88 +5992,5 @@ const getUserRoleTone = (role: User['role']): 'success' | 'blue' | 'warning' => 
   return 'blue';
 };
 
-const FilterDropdown = ({
-  value,
-  onChange,
-  options,
-  placeholder,
-  disabled,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
-  placeholder: string;
-  disabled?: boolean;
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const selected = options.find(option => option.value === value);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className={`relative ${isOpen ? 'z-[70]' : 'z-20'}`} ref={containerRef}>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => setIsOpen(open => !open)}
-        className={`flex h-[56px] w-full items-center gap-3 rounded-2xl border bg-white px-4 text-left transition-all duration-200 cursor-pointer ${
-          disabled ?
-             'border-[#E5E7EB] opacity-60'
-            : isOpen ?
-               'border-[#93C5FD] shadow-[0_10px_24px_rgba(37,99,235,0.10)]'
-              : 'border-[#E5E7EB] hover:border-[#DBEAFE] hover:shadow-sm'
-        }`}
-      >
-        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[#111827]">{selected?.label || placeholder}</span>
-        <ChevronDown size={18} className={`shrink-0 text-[#6B7280] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && !disabled && (
-        <div className="absolute left-0 top-[calc(100%+10px)] z-[80] w-max min-w-[260px] max-w-[340px] rounded-3xl border border-[#E5E7EB] bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-          <button
-            type="button"
-            onClick={() => {
-              onChange('');
-              setIsOpen(false);
-            }}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-2xl px-4 py-3 text-left text-[15px] font-semibold transition-all duration-200 hover:translate-x-1 ${
-              !value ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#111827] hover:bg-[#F8FAFC] hover:text-[#2563EB]'
-            }`}
-          >
-            <span>{placeholder}</span>
-            {!value && <span className="h-2.5 w-2.5 rounded-full bg-[#2563EB]" />}
-          </button>
-          {options.map(option => {
-            const isSelected = option.value === value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`flex w-full cursor-pointer items-center justify-between rounded-2xl px-4 py-3 text-left text-[15px] font-semibold transition-all duration-200 hover:translate-x-1 ${
-                  isSelected ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#111827] hover:bg-[#F8FAFC] hover:text-[#2563EB]'
-                }`}
-              >
-                <span>{option.label}</span>
-                {isSelected && <span className="h-2.5 w-2.5 rounded-full bg-[#2563EB]" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-};
-
+    

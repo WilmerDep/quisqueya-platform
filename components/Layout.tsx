@@ -119,7 +119,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         { name: 'Usuarios', href: '/super-admin/usuarios', icon: Users, roles: [Role.SUPER_ADMIN], mobilePrimary: true },
         { name: 'Planes', href: '/master?section=plans', icon: Package, roles: [Role.SUPER_ADMIN] },
         { name: 'Facturación', href: '/master?section=billing', icon: CreditCard, roles: [Role.SUPER_ADMIN] },
-        { name: 'Reportes Globales', href: '/master?section=reports', icon: FileText, roles: [Role.SUPER_ADMIN] },
+        { name: 'Reportes', href: '/master?section=reports', icon: FileText, roles: [Role.SUPER_ADMIN] },
         { name: 'Auditoría', href: '/master?section=audit', icon: History, roles: [Role.SUPER_ADMIN] },
         { name: 'Configuración', href: '/master?section=system', icon: Settings, roles: [Role.SUPER_ADMIN] },
         { name: 'Centro de Ayuda', href: '/master?section=help', icon: Headphones, roles: [Role.SUPER_ADMIN] },

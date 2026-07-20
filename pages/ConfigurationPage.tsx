@@ -46,6 +46,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { formatCurrency } from '../utils';
 import { PdfTemplateBuilder } from '../components/PdfTemplateBuilder';
+import { platformShellCardClass, platformPrimaryButtonClass, platformHeaderSecondaryActionClass, platformMotionButtonClass, platformPageTitleClass, platformPageDescriptionClass } from '../components/ui/platformStyles';
 
 const horizontalMotionClass = 'transition-all duration-200 hover:translate-x-1';
 
@@ -154,9 +155,9 @@ const SectionShell: React.FC<{
     <section data-settings-hero={isMainView ? "" : undefined}>
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
-          <p className="text-[12px] font-black uppercase tracking-[0.24em] text-[#2563EB]">{eyebrow}</p>
-          <h1 className="mt-3 text-[44px] font-black leading-none tracking-tight text-[#111827]">{title}</h1>
-          <p className="mt-4 max-w-3xl text-[18px] font-medium text-[#64748B]">{description}</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#2563EB] mb-2">{eyebrow}</p>
+          <h1 className={platformPageTitleClass}>{title}</h1>
+          <p className={platformPageDescriptionClass}>{description}</p>
         </div>
         {actions ? <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap xl:flex-nowrap xl:justify-end">{actions}</div> : null}
       </div>
@@ -178,8 +179,8 @@ const ActionButton: React.FC<{
     disabled={disabled}
     className={
       primary
-        ? 'inline-flex h-[56px] min-w-[188px] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-[#2563EB] px-6 text-[16px] font-semibold text-white shadow-[0_24px_48px_rgba(37,99,235,0.24)] transition-all duration-200 hover:translate-x-1 hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60'
-        : `inline-flex h-[56px] min-w-[176px] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-[#E5E7EB] bg-white px-6 text-[16px] font-semibold text-[#111827] ${horizontalMotionClass} disabled:cursor-not-allowed disabled:opacity-60`
+        ? `${platformPrimaryButtonClass} h-[54px] min-w-[188px] px-6 text-[17px] disabled:cursor-not-allowed disabled:opacity-60`
+        : `${platformHeaderSecondaryActionClass} ${platformMotionButtonClass} min-w-[176px] disabled:cursor-not-allowed disabled:opacity-60`
     }
   >
     {icon}
@@ -219,7 +220,7 @@ const KpiCard: React.FC<{
   } as const;
 
   return (
-    <article className="relative min-h-[214px] overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+    <article className={`relative min-h-[214px] overflow-hidden ${platformShellCardClass} p-6`}>
       <div className="flex items-start justify-between gap-4">
         <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] ${tones[tone].chip}`}>
           <Icon size={24} strokeWidth={2.2} />
@@ -257,11 +258,11 @@ const SettingsKpiGrid: React.FC<{
 );
 
 const Panel: React.FC<{ title: string; description?: string; action?: React.ReactNode; children: React.ReactNode }> = ({ title, description, action, children }) => (
-  <section className="rounded-[32px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
+  <section className={`${platformShellCardClass} p-6`}>
     <div className="flex flex-col gap-4 border-b border-[#E5E7EB] pb-5 md:flex-row md:items-start md:justify-between">
       <div>
-        <h2 className="text-[28px] font-black tracking-tight text-[#111827]">{title}</h2>
-        {description ? <p className="mt-2 text-[15px] font-medium text-[#64748B]">{description}</p> : null}
+        <h2 className="text-[20px] font-bold tracking-tight text-[#111827]">{title}</h2>
+        {description ? <p className="mt-2 text-[14px] font-medium text-[#64748B]">{description}</p> : null}
       </div>
       {action}
     </div>
@@ -288,7 +289,7 @@ const SubviewTabs: React.FC<{
   }, [canManageSettings]);
 
   return (
-    <section data-settings-menu className="rounded-[28px] border border-[#E5E7EB] bg-white p-2 shadow-sm">
+    <section data-settings-menu className={`${platformShellCardClass} p-2`}>
       <div className="flex flex-wrap gap-2">
         {visibleSubviews.map(item => {
           const active = item.id === activeSubview;
