@@ -137,6 +137,97 @@ const subviews = [
 ] as const;
 
 type SubviewId = (typeof subviews)[number]['id'];
+import { platformShellCardClass, platformPrimaryButtonClass, platformHeaderSecondaryActionClass, platformMotionButtonClass, platformPageTitleClass, platformPageDescriptionClass } from '../components/ui/platformStyles';
+
+const horizontalMotionClass = 'transition-all duration-200 hover:translate-x-1';
+
+const cleanTextInput = (value: string) => value.replace(/\s+/g, ' ').trimStart();
+const formatPhoneInput = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+const formatRncInput = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 9);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 8)}-${digits.slice(8)}`;
+};
+
+const getMoraTypeLabel = (value: CompanyConfig['moraType']) =>
+  value === 'DAILY' ? 'Diaria' : value === 'PERCENT' ? 'Porcentaje' : 'Monto fijo';
+
+const getMoraTypeSummary = (value: CompanyConfig['moraType']) =>
+  value === 'DAILY' ? 'Incremento por dia' : value === 'PERCENT' ? 'Basado en la cuota' : 'Cargo unico por atraso';
+
+const whatsappDefaults = {
+  welcome:
+    'Hola [CLIENTE], te damos la bienvenida a PrestaFacil RD. Tu gestion fue registrada en [SUCURSAL]. Si necesitas soporte o seguimiento, responde a este mensaje.',
+  receipt:
+    'Hola [CLIENTE], confirmamos tu pago por [MONTO] con recibo [RECIBO] en fecha [FECHA]. Gracias por mantener tu cuenta al dia con PrestaFacil RD.',
+};
+
+const whatsappShortcodes = ['[CLIENTE]', '[MONTO]', '[RECIBO]', '[SUCURSAL]', '[FECHA]', '[CUOTA]', '[SALDO]'];
+
+type SettingsFallbackReason = 'missing-session' | 'token-expired' | 'api-unavailable';
+
+const getSettingsFallbackReason = (error: unknown): SettingsFallbackReason | null => {
+  if (error instanceof ApiRequestError && error.status === 401) return 'token-expired';
+  if (error instanceof ApiUnavailableError && error.message === 'Missing API session') return 'missing-session';
+  if (error instanceof ApiUnavailableError) return 'api-unavailable';
+  return null;
+};
+
+const getSettingsFallbackToast = (reason: SettingsFallbackReason, scope: string) => {
+  if (reason === 'missing-session') {
+    return {
+      title: `${scope} guardado localmente`,
+      message: 'Estas en modo local o de simulacion. El cambio no se sincronizo con el servidor.',
+      tone: 'warning' as const,
+    };
+  }
+
+  if (reason === 'token-expired') {
+    return {
+      title: `${scope} guardado localmente`,
+      message: 'La sesion API vencio. El cambio quedo local y requiere volver a iniciar sesion para sincronizar.',
+      tone: 'warning' as const,
+    };
+  }
+
+  return {
+    title: `${scope} guardado localmente`,
+    message: 'La API no estuvo disponible. El cambio se mantuvo local hasta recuperar conexion.',
+    tone: 'warning' as const,
+  };
+};
+
+const getSettingsNotice = (reason: SettingsFallbackReason | null) => {
+  if (reason === 'missing-session') {
+    return 'Estas trabajando en modo local o de simulacion. Para guardar en servidor, inicia sesion por API.';
+  }
+  if (reason === 'token-expired') {
+    return 'La sesion API vencio. Vuelve a iniciar sesion para sincronizar los cambios con servidor.';
+  }
+  if (reason === 'api-unavailable') {
+    return 'La API no estuvo disponible en este momento. Los cambios solo quedaron locales.';
+  }
+  return '';
+};
+
+const subviews = [
+  { id: 'profile', label: 'Mi Perfil', path: '/settings/profile', icon: UserRound },
+  { id: 'overview', label: 'Resumen', path: '/settings', icon: Sliders },
+  { id: 'identity', label: 'Marca', path: '/settings/identity', icon: ImageIcon },
+  { id: 'collections', label: 'Cobro', path: '/settings/collections', icon: Wallet },
+  { id: 'scoring', label: 'Conducta', path: '/settings/scoring', icon: ShieldCheck },
+  { id: 'whatsapp', label: 'WhatsApp', path: '/settings/whatsapp', icon: MessageCircle },
+  { id: 'branches', label: 'Sucursales', path: '/settings/branches', icon: Building },
+  { id: 'templates', label: 'Plantillas', path: '/settings/templates', icon: FileText },
+] as const;
+
+type SubviewId = (typeof subviews)[number]['id'];
 
 const inputClassName =
   'h-14 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]';
@@ -151,7 +242,7 @@ const SectionShell: React.FC<{
   children: React.ReactNode;
   isMainView?: boolean;
 }> = ({ eyebrow, title, description, actions, children, isMainView }) => (
-  <div className="space-y-6 pb-24 lg:pb-0">
+  <div className="space-y-6 pb-24 lg:pb-0 animate-[platform-fade-in_180ms_ease-out]">
     <section data-settings-hero={isMainView ? "" : undefined}>
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
@@ -1434,7 +1525,7 @@ const ConfigurationPage: React.FC = () => {
       actions={<ActionButton label="Ir a sucursales" icon={<Building size={18} />} onClick={() => navigate('/settings/branches')} primary />}
       isMainView={true}
     >
-      <div data-settings-panel className="space-y-6">
+      <div data-settings-panel className="space-y-6 animate-[platform-fade-in_180ms_ease-out]">
         <SettingsKpiGrid
           branchesCount={branches.length}
           branchMonthlyGoal={branchMonthlyGoal}

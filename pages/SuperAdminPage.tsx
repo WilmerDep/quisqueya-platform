@@ -78,6 +78,7 @@ import { apiClient, ApiUnavailableError } from '../services/apiClient';
 import { PlatformKpiGrid, PlatformKpiItem } from '../components/ui/PlatformKpiCard';
 import { PlatformDateField } from '../components/ui/PlatformDateField';
 import { PlatformHeaderAction, PlatformPageHeader } from '../components/ui/PlatformPageHeader';
+import { HelpCenterTab } from '../components/HelpCenterTab';
 import { PlatformKpiCard } from '../components/ui/PlatformKpiCard';
 import { emitPlatformToast, openPlatformCriticalModal, setPlatformLoading } from '../services/platformEvents';
 import {
@@ -2941,6 +2942,11 @@ export const SuperAdminPage: React.FC = () => {
   const handleUpdateConfig = () => {
     updateGlobalConfig(platformConfig);
     refreshData();
+    emitPlatformToast({
+      title: 'Configuración de plataforma guardada',
+      message: 'Los parámetros globales han sido actualizados y persistidos con éxito.',
+      tone: 'success'
+    });
   };
 
   const handleToggleCompany = (id: string, status: Company['status']) => {
@@ -5271,48 +5277,12 @@ export const SuperAdminPage: React.FC = () => {
           </section>
         ) : null}
         {activeTab === 'HELP' ? (
-          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
+          <section className="space-y-5">
             <PlatformPageHeader
               title="Centro de Ayuda"
               description="Soporte para empresas, material de onboarding y atencion operativa del SaaS."
             />
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_1fr]">
-              <div className={`${shellCardClass} p-6`}>
-                <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-4 mb-5">
-                  <LifeBuoy size={20} className="text-[#2563EB]" />
-                  <h2 className="text-[20px] font-black tracking-tight text-[#111827]">Cola de Ayuda & Tickets Activos</h2>
-                </div>
-                <div className="space-y-4">
-                  {helpRows.map(row => (
-                    <div key={row.title} className="group rounded-[22px] border border-[#E5E7EB] bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-2">
-                          <p className="text-[16px] font-bold text-[#111827] leading-tight group-hover:text-[#2563EB] transition-colors">{row.title}</p>
-                          <p className="text-[13.5px] font-semibold leading-relaxed text-[#64748B]">{row.detail}</p>
-                        </div>
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10.5px] font-black uppercase tracking-wider ${
-                          row.tag === 'Soporte' ?
-                             'bg-amber-50 text-amber-600 border border-amber-200' 
-                            : row.tag === 'Tutoriales' ?
-                               'bg-blue-50 text-blue-600 border border-blue-200' 
-                              : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                        }`}>
-                          {row.tag}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <SidebarInfoCard title="Atajos de soporte" icon={Headphones}>
-                  <ActionListItem icon={FileClock} title="Tickets recientes" detail="Seguimiento a casos abiertos de empresas y administradores." />
-                  <ActionListItem icon={Sparkles} title="Tutoriales" detail="Guias visuales para adopcion del panel global." />
-                  <ActionListItem icon={AlertCircle} title="Incidentes" detail="Revision de alertas y mantenimiento del sistema." />
-                </SidebarInfoCard>
-              </div>
-            </div>
+            <HelpCenterTab />
           </section>
         ) : null}
         {isSessionPolicyModalOpen ? (
