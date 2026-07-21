@@ -4,6 +4,7 @@ import {
   ArrowLeft, CheckCircle2, FileText, Send, Image as ImageIcon,
   PlayCircle, ChevronDown
 } from 'lucide-react';
+import gsap from 'gsap';
 import { 
   platformShellCardClass, platformSoftCardClass, 
   platformInputClass, platformMotionButtonClass 
@@ -104,6 +105,23 @@ export const HelpCenterTab: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo('[data-help-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+      gsap.fromTo('[data-help-panel]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.12 });
+      gsap.fromTo(
+        '[data-help-card]',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', stagger: 0.05, delay: 0.18 }
+      );
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [activeHelpView, selectedTicketId]);
+
   const handleSendComment = () => {
     if (!newComment.trim() || !selectedTicketId) return;
     const newMessage = {
@@ -137,8 +155,8 @@ export const HelpCenterTab: React.FC = () => {
 
   const renderMain = () => (
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.25fr_1fr]">
-      <div className={`${platformShellCardClass} p-6`}>
-        <div className="flex items-center gap-3 border-b border-slate-200 pb-4 mb-5">
+      <div data-help-panel className={`${platformShellCardClass} p-6`}>
+        <div data-help-hero className="flex items-center gap-3 border-b border-slate-200 pb-4 mb-5">
           <LifeBuoy size={20} className="text-blue-600" />
           <h2 className="text-[20px] font-black tracking-tight text-slate-900">Cola de Ayuda & Tickets Activos</h2>
         </div>
@@ -146,6 +164,7 @@ export const HelpCenterTab: React.FC = () => {
           {helpRows.map(row => (
             <div 
               key={row.title} 
+              data-help-card
               onClick={() => setActiveHelpView(row.view as any)}
               className="group rounded-[22px] border border-slate-200 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-sm cursor-pointer"
             >
@@ -269,9 +288,9 @@ export const HelpCenterTab: React.FC = () => {
     const isResolved = selectedTicketId === '3810';
 
     return (
-      <div className={`${platformShellCardClass} p-0 overflow-hidden flex flex-col h-[600px] animate-[platform-fade-in_180ms_ease-out]`}>
+      <div data-help-panel className={`${platformShellCardClass} p-0 overflow-hidden flex flex-col h-[600px]`}>
         {/* Cabecera del chat al estilo sub-vista / builder */}
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <div data-help-hero className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setSelectedTicketId(null)} 
@@ -485,9 +504,9 @@ export const HelpCenterTab: React.FC = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_350px] animate-[platform-fade-in_180ms_ease-out]">
-        <div className={`${platformShellCardClass} p-0 overflow-hidden flex flex-col`}>
-          <div className="flex items-center gap-4 border-b border-slate-200 bg-slate-50 p-5">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_350px]">
+        <div data-help-panel className={`${platformShellCardClass} p-0 overflow-hidden flex flex-col`}>
+          <div data-help-hero className="flex items-center gap-4 border-b border-slate-200 bg-slate-50 p-5">
             <button onClick={() => { setActiveHelpView('MAIN'); setSelectedTicketId(null); }} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">
               <ArrowLeft size={18} />
             </button>
@@ -501,13 +520,14 @@ export const HelpCenterTab: React.FC = () => {
         </div>
         
         <div className="space-y-5">
-          <div className={`${platformSoftCardClass} p-5`}>
-            <div className="flex items-center gap-3 mb-4 border-b border-slate-200 pb-3 text-slate-900">
+          <div data-help-panel className={`${platformSoftCardClass} p-5`}>
+            <div data-help-hero className="flex items-center gap-3 mb-4 border-b border-slate-200 pb-3 text-slate-900">
               <FileClock size={18} />
               <h3 className="text-[15px] font-bold">Mis Tickets</h3>
             </div>
             <div className="space-y-3">
               <div 
+                data-help-card
                 onClick={() => setSelectedTicketId('3842')}
                 className="rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-blue-300 transition-all hover:-translate-y-0.5 hover:shadow-sm"
               >
@@ -520,6 +540,7 @@ export const HelpCenterTab: React.FC = () => {
               </div>
               
               <div 
+                data-help-card
                 onClick={() => setSelectedTicketId('3810')}
                 className="rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:border-blue-300 transition-all hover:-translate-y-0.5 hover:shadow-sm opacity-75 hover:opacity-100"
               >
@@ -583,7 +604,7 @@ export const HelpCenterTab: React.FC = () => {
   );
 
   return (
-    <div className="animate-[platform-fade-in_180ms_ease-out]">
+    <div ref={containerRef}>
       {activeHelpView === 'MAIN' && renderMain()}
       {activeHelpView === 'ONBOARDING' && renderOnboarding()}
       {activeHelpView === 'TICKETS' && renderTickets()}

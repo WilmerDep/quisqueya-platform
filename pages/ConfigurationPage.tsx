@@ -138,6 +138,10 @@ const subviews = [
 
 type SubviewId = (typeof subviews)[number]['id'];
 
+const inputClassName =
+  'h-14 w-full rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]';
+const textareaClassName =
+  'min-h-[138px] w-full rounded-[24px] border border-[#E5E7EB] bg-white px-4 py-4 text-[15px] font-medium text-[#111827] outline-none transition-all duration-200 hover:border-[#DBEAFE] focus:border-[#93C5FD]';
 
 const SectionShell: React.FC<{
   eyebrow: string;
@@ -146,9 +150,9 @@ const SectionShell: React.FC<{
   actions?: React.ReactNode;
   children: React.ReactNode;
   isMainView?: boolean;
-}> = ({ eyebrow, title, description, actions, children, isMainView }) => (
-  <div className="space-y-6 pb-24 lg:pb-0 animate-[platform-fade-in_180ms_ease-out]">
-    <section data-settings-hero={isMainView ? "" : undefined}>
+}> = ({ eyebrow, title, description, actions, children }) => (
+  <div className="space-y-6 pb-24 lg:pb-0">
+    <section data-settings-hero="">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#2563EB] mb-2">{eyebrow}</p>
@@ -158,7 +162,9 @@ const SectionShell: React.FC<{
         {actions ? <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap xl:flex-nowrap xl:justify-end">{actions}</div> : null}
       </div>
     </section>
-    {children}
+    <div data-settings-panel="">
+      {children}
+    </div>
   </div>
 );
 
@@ -471,10 +477,19 @@ const ConfigurationPage: React.FC = () => {
   }, [refreshData]);
 
   useEffect(() => {
-    gsap.fromTo('[data-settings-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
-    gsap.fromTo('[data-settings-menu]', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out', delay: 0.1 });
-    gsap.fromTo('[data-settings-panel]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.18 });
-  }, []);
+    const ctx = gsap.context(() => {
+      gsap.fromTo('[data-settings-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
+      gsap.fromTo('[data-settings-menu]', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out', delay: 0.08 });
+      gsap.fromTo('[data-settings-panel]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.14 });
+      gsap.fromTo(
+        '[data-settings-card]',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', stagger: 0.05, delay: 0.18 }
+      );
+    });
+
+    return () => ctx.revert();
+  }, [activeSubview]);
 
   useEffect(() => {
     if (isApiSessionActive) {
