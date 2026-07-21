@@ -5140,23 +5140,25 @@ export const SuperAdminPage: React.FC = () => {
           </section>
         ) : null}
         {activeTab === 'SYSTEM' ? (
-          <section className="space-y-6 animate-[platform-fade-in_180ms_ease-out]">
-            <PlatformPageHeader
-              title="Configuración del Sistema"
-              description="Mantenimiento global, versión del sistema y mensajes de difusión."
-              actions={[
-                {
-                  label: "Guardar configuración",
-                  icon: Save,
-                  onClick: handleUpdateConfig,
-                  variant: "primary"
-                }
-              ]}
-            />
+          <section className="space-y-6">
+            <div data-super-hero>
+              <PlatformPageHeader
+                title="Configuración del Sistema"
+                description="Mantenimiento global, versión del sistema y mensajes de difusión."
+                actions={[
+                  {
+                    label: "Guardar configuración",
+                    icon: Save,
+                    onClick: handleUpdateConfig,
+                    variant: "primary"
+                  }
+                ]}
+              />
+            </div>
             
             <div className="space-y-6">
               {/* Row 1: Full width Maintenance Mode */}
-              <div className={`relative overflow-hidden ${shellCardClass} p-8`}>
+              <div data-super-panel className={`relative overflow-hidden ${shellCardClass} p-8`}>
                 <div className="relative flex flex-wrap items-center gap-3 border-b border-[#E5E7EB] pb-5">
                   <span className="inline-flex rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-[#2563EB]">
                     Flow Designer
@@ -5190,17 +5192,17 @@ export const SuperAdminPage: React.FC = () => {
                   </button>
                 </div>
                 <div className="relative mt-6 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
+                  <div data-super-kpi className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
                     <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">Flow activo</p>
                     <p className="mt-2 text-[17px] font-black tracking-tight text-[#111827]">Publicacion estable</p>
                     <p className="mt-1 text-[13px] font-medium text-[#64748B]">Reglas globales sincronizadas</p>
                   </div>
-                  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
+                  <div data-super-kpi className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
                     <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">Ultimo push</p>
                     <p className="mt-2 text-[17px] font-black tracking-tight text-[#111827]">{platformConfig.maintenanceDate || 'Sin fecha'}</p>
                     <p className="mt-1 text-[13px] font-medium text-[#64748B]">Ventana programada del kernel</p>
                   </div>
-                  <div className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
+                  <div data-super-kpi className="rounded-[22px] border border-[#E5E7EB] bg-[#F8FAFC] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#BFDBFE] hover:shadow-sm">
                     <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#94A3B8]">Version core</p>
                     <p className="mt-2 text-[17px] font-black tracking-tight text-[#111827]">{platformConfig.systemVersion}</p>
                     <p className="mt-1 text-[13px] font-medium text-[#64748B]">Branch operativo del sistema</p>
@@ -5212,7 +5214,7 @@ export const SuperAdminPage: React.FC = () => {
               <div className="grid gap-6 xl:grid-cols-3 items-start">
                 
                 {/* Variables del Entorno */}
-                <div className={`${shellCardClass} p-8`}>
+                <div data-super-panel className={`${shellCardClass} p-8`}>
                   <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-5 mb-6">
                     <Settings size={22} className="text-[#2563EB]" />
                     <h2 className="text-[18px] font-black tracking-tight text-[#111827]">Entorno</h2>
@@ -5244,14 +5246,16 @@ export const SuperAdminPage: React.FC = () => {
                 </div>
 
                 {/* Estado del Kernel */}
-                <SidebarInfoCard title="Estado" icon={Activity}>
-                  <SummaryRow label="Core" value={platformConfig.systemVersion} tone="blue" />
-                  <SummaryRow label="Mantenimiento" value={platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'} tone={platformConfig.maintenanceMode ? 'danger' : 'success'} />
-                  <SummaryRow label="Broadcast" value={platformConfig.broadcastMessage || 'Sin mensaje activo'} tone="neutral" />
-                </SidebarInfoCard>
+                <div data-super-panel>
+                  <SidebarInfoCard title="Estado" icon={Activity}>
+                    <SummaryRow label="Core" value={platformConfig.systemVersion} tone="blue" />
+                    <SummaryRow label="Mantenimiento" value={platformConfig.maintenanceMode ? 'Activo' : 'Desactivado'} tone={platformConfig.maintenanceMode ? 'danger' : 'success'} />
+                    <SummaryRow label="Broadcast" value={platformConfig.broadcastMessage || 'Sin mensaje activo'} tone="neutral" />
+                  </SidebarInfoCard>
+                </div>
 
                 {/* Acciones del Diseñador */}
-                <div className={`${shellCardClass} p-8`}>
+                <div data-super-panel className={`${shellCardClass} p-8`}>
                   <div className="flex items-center gap-3 border-b border-[#E5E7EB] pb-5 mb-6">
                     <Terminal size={22} className="text-[#2563EB]" />
                     <h3 className="text-[18px] font-black tracking-tight text-[#111827]">Acciones</h3>
