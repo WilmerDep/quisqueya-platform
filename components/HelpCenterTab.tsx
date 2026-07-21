@@ -108,8 +108,7 @@ export const HelpCenterTab: React.FC = () => {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (!containerRef.current) return;
-    const ctx = gsap.context(() => {
+    const timer = setTimeout(() => {
       gsap.fromTo('[data-help-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
       gsap.fromTo('[data-help-panel]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.12 });
       gsap.fromTo(
@@ -117,10 +116,10 @@ export const HelpCenterTab: React.FC = () => {
         { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', stagger: 0.05, delay: 0.18 }
       );
-    }, containerRef);
+    }, 20);
 
-    return () => ctx.revert();
-  }, [activeHelpView, selectedTicketId]);
+    return () => clearTimeout(timer);
+  }, [activeHelpView, selectedTicketId, currentStepIndex]);
 
   const handleSendComment = () => {
     if (!newComment.trim() || !selectedTicketId) return;
@@ -207,8 +206,8 @@ export const HelpCenterTab: React.FC = () => {
   const renderOnboarding = () => {
     const step = onboardingSteps[currentStepIndex];
     return (
-      <div className={`${platformShellCardClass} p-0 overflow-hidden flex flex-col min-h-[600px]`}>
-        <div className="flex items-center gap-4 border-b border-slate-200 bg-slate-50 p-5">
+      <div data-help-panel className={`${platformShellCardClass} p-0 overflow-hidden flex flex-col min-h-[600px]`}>
+        <div data-help-hero className="flex items-center gap-4 border-b border-slate-200 bg-slate-50 p-5">
           <button onClick={() => { setActiveHelpView('MAIN'); setCurrentStepIndex(0); }} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">
             <ArrowLeft size={18} />
           </button>
@@ -560,8 +559,8 @@ export const HelpCenterTab: React.FC = () => {
 
 
   const renderTutorials = () => (
-    <div className={`${platformShellCardClass} p-0 overflow-hidden flex flex-col`}>
-      <div className="flex items-center gap-4 border-b border-slate-200 bg-slate-50 p-5">
+    <div data-help-panel className={`${platformShellCardClass} p-0 overflow-hidden flex flex-col`}>
+      <div data-help-hero className="flex items-center gap-4 border-b border-slate-200 bg-slate-50 p-5">
         <button onClick={() => setActiveHelpView('MAIN')} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">
           <ArrowLeft size={18} />
         </button>
@@ -574,7 +573,7 @@ export const HelpCenterTab: React.FC = () => {
       <div className="p-6 bg-white">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
           {onboardingSteps.map(step => (
-            <div key={step.id} className="group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer" onClick={() => setSelectedImage(`/onboarding/${step.img}`)}>
+            <div key={step.id} data-help-card className="group rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer" onClick={() => setSelectedImage(`/onboarding/${step.img}`)}>
               <div className="aspect-video bg-slate-200 relative overflow-hidden">
                 {/* Fallback pattern si la imagen falla en cargar inmediatamente */}
                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#111827_1px,transparent_1px)] [background-size:16px_16px]"></div>

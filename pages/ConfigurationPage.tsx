@@ -477,7 +477,7 @@ const ConfigurationPage: React.FC = () => {
   }, [refreshData]);
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
+    const timer = setTimeout(() => {
       gsap.fromTo('[data-settings-hero]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' });
       gsap.fromTo('[data-settings-menu]', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out', delay: 0.08 });
       gsap.fromTo('[data-settings-panel]', { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.14 });
@@ -486,9 +486,9 @@ const ConfigurationPage: React.FC = () => {
         { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.45, ease: 'power3.out', stagger: 0.05, delay: 0.18 }
       );
-    });
+    }, 20);
 
-    return () => ctx.revert();
+    return () => clearTimeout(timer);
   }, [activeSubview]);
 
   useEffect(() => {
