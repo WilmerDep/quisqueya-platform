@@ -5277,7 +5277,7 @@ export const SuperAdminPage: React.FC = () => {
           </section>
         ) : null}
         {activeTab === 'HELP' ? (
-          <section className="space-y-5">
+          <section className="space-y-5 animate-[platform-fade-in_180ms_ease-out]">
             <PlatformPageHeader
               title="Centro de Ayuda"
               description="Soporte para empresas, material de onboarding y atencion operativa del SaaS."
