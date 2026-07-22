@@ -221,4 +221,49 @@ describe('AuthService (Authentication & Authorization unit tests)', () => {
     await expect(authService.login('admin', 'admin123')).rejects.toThrow(UnauthorizedException);
     expect(mockPrisma.user.update).not.toHaveBeenCalled();
   });
+
+  it('rejects invalid Bcrypt password', async () => {
+    const adminHash = await bcrypt.hash('admin123', 10);
+    const mockUsers = {
+      admin: {
+        id: 'U1',
+        companyId: 'C1',
+        branchId: 'MAIN',
+        username: 'admin',
+        name: 'Admin PrestaFácil',
+        role: 'ADMINISTRADOR',
+        passwordHash: adminHash,
+        isActive: true,
+        createdAt: new Date(),
+      },
+    };
+
+    const { authService } = createMockServices(mockUsers);
+    await expect(authService.login('admin', 'wrongpass')).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects non-existent user', async () => {
+    const { authService } = createMockServices({});
+    await expect(authService.login('nonexistent', 'admin123')).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects inactive user', async () => {
+    const adminHash = await bcrypt.hash('admin123', 10);
+    const mockUsers = {
+      admin: {
+        id: 'U1',
+        companyId: 'C1',
+        branchId: 'MAIN',
+        username: 'admin',
+        name: 'Admin PrestaFácil',
+        role: 'ADMINISTRADOR',
+        passwordHash: adminHash,
+        isActive: false,
+        createdAt: new Date(),
+      },
+    };
+
+    const { authService } = createMockServices(mockUsers);
+    await expect(authService.login('admin', 'admin123')).rejects.toThrow(UnauthorizedException);
+  });
 });

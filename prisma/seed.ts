@@ -13,37 +13,50 @@ const adapter = new PrismaMariaDb({
 const prisma = new PrismaClient({ adapter });
 
 export async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('⚠️ Seeding omitido en entorno de producción (NODE_ENV=production).');
+    return;
+  }
+
   const masterHash = await bcrypt.hash('master123', 10);
   const adminHash = await bcrypt.hash('admin123', 10);
 
-  // Asegurar Empresas
+  // Asegurar Empresa Sistema (SaaS Master)
   await prisma.company.upsert({
     where: { id: 'SYSTEM' },
     update: {},
     create: { id: 'SYSTEM', name: 'Nexus Core Admin', status: 'ACTIVE', planId: 'p3', billingCycle: 'YEARLY' },
   });
 
+  // Asegurar Sucursal Principal del Sistema SaaS
+  await prisma.branch.upsert({
+    where: { id: 'SYS_MAIN' },
+    update: {},
+    create: { id: 'SYS_MAIN', companyId: 'SYSTEM', name: 'Sede Central Nexus', address: 'Santo Domingo, RD' },
+  });
+
+  // Asegurar Empresa Demo / Cliente
   await prisma.company.upsert({
     where: { id: 'C1' },
     update: {},
     create: { id: 'C1', name: 'PrestaFácil RD', status: 'ACTIVE', planId: 'p2', billingCycle: 'MONTHLY' },
   });
 
-  // Asegurar Sucursal Principal
+  // Asegurar Sucursal Principal Cliente C1
   await prisma.branch.upsert({
     where: { id: 'MAIN' },
     update: {},
     create: { id: 'MAIN', companyId: 'C1', name: 'Sede Principal', address: 'Santo Domingo, RD' },
   });
 
-  // Idempotent Seed: Super Admin / Master
+  // Idempotent Seed: Super Admin / Master (pertenece a SYSTEM / SYS_MAIN)
   await prisma.user.upsert({
     where: { username: 'master' },
-    update: { passwordHash: masterHash, isActive: true, role: 'SUPER_ADMIN' },
+    update: {},
     create: {
       id: 'M1',
       companyId: 'SYSTEM',
-      branchId: 'MAIN',
+      branchId: 'SYS_MAIN',
       username: 'master',
       name: 'Nexus Master',
       role: 'SUPER_ADMIN',
@@ -53,10 +66,10 @@ export async function main() {
     },
   });
 
-  // Idempotent Seed: Admin Empresa
+  // Idempotent Seed: Admin Empresa (pertenece a C1 / MAIN)
   await prisma.user.upsert({
     where: { username: 'admin' },
-    update: { passwordHash: adminHash, isActive: true, role: 'ADMINISTRADOR' },
+    update: {},
     create: {
       id: 'U1',
       companyId: 'C1',
