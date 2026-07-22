@@ -288,25 +288,27 @@ export const AuthPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900">
-              Demo activa: `admin/admin123` o `master/master123`.
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => void handleQuickDemo('admin')}
-                  className="inline-flex h-9 items-center rounded-lg border border-blue-200 bg-white px-3 text-xs font-black text-blue-700 transition-colors hover:bg-blue-100"
-                >
-                  Entrar como admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleQuickDemo('master')}
-                  className="inline-flex h-9 items-center rounded-lg border border-blue-200 bg-white px-3 text-xs font-black text-blue-700 transition-colors hover:bg-blue-100"
-                >
-                  Entrar como master
-                </button>
+            {Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) && (
+              <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900">
+                Demo activa: `admin/admin123` o `master/master123`.
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleQuickDemo('admin')}
+                    className="inline-flex h-9 items-center rounded-lg border border-blue-200 bg-white px-3 text-xs font-black text-blue-700 transition-colors hover:bg-blue-100"
+                  >
+                    Entrar como admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleQuickDemo('master')}
+                    className="inline-flex h-9 items-center rounded-lg border border-blue-200 bg-white px-3 text-xs font-black text-blue-700 transition-colors hover:bg-blue-100"
+                  >
+                    Entrar como master
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {error && (
               <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
