@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Prisma, RouteStatus } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
@@ -8,6 +8,8 @@ import { AuthUser, CurrentUser } from '../../shared/current-user.js';
 import { Roles } from '../../shared/roles.decorator.js';
 import { RolesGuard } from '../../shared/roles.guard.js';
 import { assertBranchScope } from '../../shared/scope.js';
+import { calculateTrackingConnectivity, validateLocationPayload } from './tracking-validation.js';
+
 
 interface RouteRow {
   id: string;
@@ -300,12 +302,13 @@ export class RoutesController {
     };
   }
 
+  @Roles('Cobrador')
   @Post(':routeId/tracking/location')
   async saveLocation(
     @CurrentUser() user: AuthUser,
     @Param('routeId') routeId: string,
     @Body() body: {
-      collectorId: string;
+      collectorId?: string;
       lat: number;
       lng: number;
       accuracy?: number;
@@ -314,17 +317,36 @@ export class RoutesController {
       battery?: number;
     }
   ) {
+    if (user.role !== 'Cobrador') {
+      throw new ForbiddenException('Solo los cobradores pueden publicar ubicación GPS.');
+    }
+
     const route = await this.prisma.collectionRoute.findFirst({
       where: { id: routeId, companyId: user.companyId }
     });
     if (!route) throw new BadRequestException('Ruta no encontrada.');
-    this.assertRouteScope(user, route);
+    
+    assertBranchScope(user, route.branchId);
+
+    if (route.collectorId !== user.id) {
+      throw new ForbiddenException('No está autorizado para publicar ubicación en esta ruta.');
+    }
+
+    const normalizedStatus = this.fromRouteStatus(route.status);
+    if (normalizedStatus !== 'En Curso' && normalizedStatus !== 'Abierta') {
+      throw new BadRequestException('Solo se permite publicar ubicación en rutas abiertas o en curso.');
+    }
+
+    const validation = validateLocationPayload(body);
+    if (!validation.isValid) {
+      throw new BadRequestException(validation.error);
+    }
 
     const point = await this.prisma.routeTrackingPoint.create({
       data: {
         id: randomUUID(),
         routeId,
-        collectorId: body.collectorId,
+        collectorId: user.id,
         latitude: new Prisma.Decimal(body.lat),
         longitude: new Prisma.Decimal(body.lng),
         accuracy: new Prisma.Decimal(body.accuracy ?? 0),
@@ -362,7 +384,6 @@ export class RoutesController {
     if (!route) throw new BadRequestException('Ruta no encontrada.');
     this.assertRouteScope(user, route);
 
-    // Obtener los últimos 20 puntos de tracking para dibujar el historial si se desea
     const points = await this.prisma.routeTrackingPoint.findMany({
       where: { routeId },
       orderBy: { createdAt: 'desc' },
@@ -370,16 +391,15 @@ export class RoutesController {
     });
 
     const latestPoint = points[0] || null;
+    const connectivityStatus = calculateTrackingConnectivity(latestPoint?.createdAt);
 
-    // Coordenadas reales base para Santo Domingo (Av. Winston Churchill / Av. 27 de Febrero) si no tienen lat/lng.
-    // Usaremos un mapeo secuencial dinámico sobre calles reales de Santo Domingo de prueba.
     const defaultCoords = [
-      { lat: 18.4742, lng: -69.9415 }, // Av. Winston Churchill, Santo Domingo
-      { lat: 18.4770, lng: -69.9390 }, // Calle El Conde
-      { lat: 18.4810, lng: -69.9425 }, // Av. Sarasota
-      { lat: 18.4845, lng: -69.9320 }, // Av. Abraham Lincoln
-      { lat: 18.4872, lng: -69.9412 }, // Av. Gustavo Mejía Ricart
-      { lat: 18.4900, lng: -69.9350 }  // Calle Heriberto Pieter
+      { lat: 18.4742, lng: -69.9415 },
+      { lat: 18.4770, lng: -69.9390 },
+      { lat: 18.4810, lng: -69.9425 },
+      { lat: 18.4845, lng: -69.9320 },
+      { lat: 18.4872, lng: -69.9412 },
+      { lat: 18.4900, lng: -69.9350 }
     ];
 
     const collectorData = {
@@ -388,17 +408,15 @@ export class RoutesController {
       phone: route.collector.phone,
       lat: latestPoint ? Number(latestPoint.latitude) : 18.4861,
       lng: latestPoint ? Number(latestPoint.longitude) : -69.9312,
-      accuracy: latestPoint ? Number(latestPoint.accuracy) : 6,
+      accuracy: latestPoint ? Number(latestPoint.accuracy) : 0,
       speed: latestPoint ? Number(latestPoint.speed) : 0,
       heading: latestPoint ? Number(latestPoint.heading) : 0,
-      battery: latestPoint ? latestPoint.battery : 88,
-      status: latestPoint && (Date.now() - new Date(latestPoint.createdAt).getTime() < 60000) ? 'online' : 'online', // forzar online para simulación GPS web
-      updatedAt: latestPoint ? latestPoint.createdAt.toISOString() : new Date().toISOString()
+      battery: latestPoint ? latestPoint.battery : 100,
+      status: connectivityStatus,
+      updatedAt: latestPoint ? latestPoint.createdAt.toISOString() : null
     };
 
     const clientsData = route.items.map((item, idx) => {
-      // Intentamos usar lat/lng reales si están en el modelo Client.
-      // Si no están definidos, asignamos una coordenada secuencial de defaultCoords
       const d = defaultCoords[idx % defaultCoords.length];
       return {
         id: item.id,
@@ -425,3 +443,4 @@ export class RoutesController {
     });
   }
 }
+
