@@ -1,9 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '../types';
-import { addSecurityAuditLog, getFromStorage, seedInitialData, updateUser } from '../services/dataService';
-import { clearSession, createApiSession, createSession, isSessionValid, persistSession, readSession, verifyPassword } from '../services/authService';
-import { apiClient, ApiRequestError, ApiUnavailableError } from '../services/apiClient';
-import { emitPlatformToast, openPlatformBlockingState } from '../services/platformEvents';
+import { clearSession, createApiSession, isSessionValid, persistSession, readSession } from '../services/authService';
+import { apiClient, ApiRequestError } from '../services/apiClient';
+import { openPlatformBlockingState } from '../services/platformEvents';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -25,59 +24,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedBranchId, setSelectedBranchId] = useState('');
 
-  const initAuth = useCallback(async () => {
-    seedInitialData();
-    const allUsers = getFromStorage<User[]>('prestard_users', []);
-    setAvailableUsers(allUsers);
-
+  const loadApiSession = useCallback(async () => {
     const savedSession = readSession();
-    if (isSessionValid(savedSession)) {
-      if (savedSession?.mode === 'api' && savedSession.accessToken) {
+    if (!isSessionValid(savedSession) || savedSession?.mode !== 'api' || !savedSession.accessToken) {
+      clearSession();
+      setCurrentUser(null);
+      setAvailableUsers([]);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await apiClient.me(savedSession.accessToken);
+      setCurrentUser(response.data);
+      setAvailableUsers([response.data]);
+      setIsLoading(false);
+      return;
+    } catch {
+      if (savedSession.refreshToken) {
         try {
-          const response = await apiClient.me(savedSession.accessToken);
-          setCurrentUser(response.data);
+          const refreshed = await apiClient.refresh(savedSession.refreshToken);
+          persistSession(createApiSession(refreshed.user.id, refreshed.accessToken, refreshed.refreshToken));
+          setCurrentUser(refreshed.user);
+          setAvailableUsers([refreshed.user]);
           setIsLoading(false);
           return;
         } catch {
-          if (savedSession.refreshToken) {
-            try {
-              const refreshed = await apiClient.refresh(savedSession.refreshToken);
-              persistSession(createApiSession(refreshed.user.id, refreshed.accessToken, refreshed.refreshToken));
-              setCurrentUser(refreshed.user);
-              setIsLoading(false);
-              return;
-            } catch {
-              clearSession();
-            }
-          } else {
-            clearSession();
-          }
+          // Session refresh failed. Fall through to a clean logout state.
         }
       }
-
-      if (savedSession?.mode !== 'api') {
-        const user = allUsers.find(item => item.id === savedSession?.userId && item.isActive);
-        if (user) {
-          setCurrentUser(user);
-        } else {
-          clearSession();
-        }
-      }
-    } else {
-      clearSession();
     }
 
+    clearSession();
+    setCurrentUser(null);
+    setAvailableUsers([]);
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    initAuth();
-  }, [initAuth]);
+    loadApiSession();
+  }, [loadApiSession]);
 
   useEffect(() => {
-    if (currentUser && !selectedBranchId) {
-      setSelectedBranchId(currentUser.branchId);
-    }
+    if (currentUser && !selectedBranchId) setSelectedBranchId(currentUser.branchId);
   }, [currentUser, selectedBranchId]);
 
   useEffect(() => {
@@ -91,6 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         primaryHref: '/auth',
       });
       setCurrentUser(null);
+      setAvailableUsers([]);
       clearSession();
     };
 
@@ -106,82 +96,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const result = await apiClient.login({ username: normalizedUsername, password: normalizedPassword });
       persistSession(createApiSession(result.user.id, result.accessToken, result.refreshToken));
       setCurrentUser(result.user);
-      setAvailableUsers(previous => {
-        const exists = previous.some(user => user.id === result.user.id);
-        return exists ? previous.map(user => user.id === result.user.id ? result.user : user) : [result.user, ...previous];
-      });
+      setAvailableUsers([result.user]);
       return true;
     } catch (error) {
-      // Solo tratamos 400/401 como credenciales invalidas. Si el endpoint responde
-      // con otro error (404/500/etc.), permitimos el fallback local para no romper
-      // el acceso demo ni el trabajo offline.
       if (error instanceof ApiRequestError && [400, 401].includes(error.status)) return false;
-      if (!(error instanceof ApiUnavailableError) && !(error instanceof ApiRequestError)) return false;
-    }
-
-    const allUsers = getFromStorage<User[]>('prestard_users', []);
-    const user = allUsers.find(item => item.isActive && item.username.toLowerCase() === normalizedUsername);
-
-    if (!user) {
-      addSecurityAuditLog('Inicio de sesion fallido', `Usuario inexistente: ${normalizedUsername}`, { id: 'SYSTEM', name: 'Sistema', companyId: 'SYSTEM' });
       return false;
     }
-
-    const isValidPassword = await verifyPassword(normalizedPassword, user);
-    if (!isValidPassword) {
-      addSecurityAuditLog('Inicio de sesion fallido', `Clave incorrecta para ${user.username}`, user);
-      return false;
-    }
-
-    const updatedUser = updateUser(user.id, { lastLoginAt: new Date().toISOString() }) || user;
-    setCurrentUser(updatedUser);
-    persistSession(createSession(updatedUser.id));
-    addSecurityAuditLog('Inicio de sesion exitoso', `Sesion iniciada para ${updatedUser.username}`, updatedUser);
-    emitPlatformToast({
-      title: 'Sesion iniciada en modo local',
-      message: 'El panel funciona con datos locales. Para sincronizar con el servidor, vuelve a iniciar sesion cuando la API este disponible.',
-      tone: 'warning',
-    });
-    return true;
   };
 
   const logout = () => {
-    if (currentUser) {
-      addSecurityAuditLog('Cierre de sesion', `Sesion cerrada para ${currentUser.username}`, currentUser);
-    }
     setCurrentUser(null);
+    setAvailableUsers([]);
     clearSession();
   };
 
   const refreshUser = useCallback(() => {
-    const allUsers = getFromStorage<User[]>('prestard_users', []);
-    setAvailableUsers(allUsers);
+    void loadApiSession();
+  }, [loadApiSession]);
 
-    if (currentUser) {
-      const updatedSelf = allUsers.find(user => user.id === currentUser.id);
-      if (updatedSelf) {
-        setCurrentUser(updatedSelf);
-      } else {
-        setCurrentUser(null);
-        clearSession();
-      }
-    }
-  }, [currentUser]);
-
-  const switchUser = useCallback((userId: string) => {
-    const allUsers = getFromStorage<User[]>('prestard_users', []);
-    const user = allUsers.find(item => item.id === userId && item.isActive);
-
-    if (user) {
-      setCurrentUser(user);
-      persistSession(createSession(user.id));
-      addSecurityAuditLog('Profile switch', `Cambio manual de perfil hacia ${user.username}`, user);
-      emitPlatformToast({
-        title: 'Perfil cambiado en modo local',
-        message: 'Este cambio rapido usa simulacion local. Las acciones administrativas no se sincronizaran con servidor hasta volver a iniciar sesion por API.',
-        tone: 'warning',
-      });
-    }
+  const switchUser = useCallback((_userId: string) => {
+    // Cross-user impersonation is intentionally disabled until it is backed by
+    // an audited server-side endpoint with explicit authorization.
   }, []);
 
   return (
