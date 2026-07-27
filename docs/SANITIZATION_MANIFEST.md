@@ -27,7 +27,7 @@ Source: `server/src/app.module.ts` inherited module registration.
 |---|---|---|
 | HealthModule | KEEP | active platform infrastructure |
 | PrismaModule | KEEP | active persistence infrastructure |
-| AuthModule | KEEP + HARDEN | active; remaining auth hardening tracked below |
+| AuthModule | KEEP + HARDEN | active; production secret checks and bcrypt-only login are now enforced |
 | CompaniesModule | KEEP + ADAPT | active organization root |
 | BranchesModule | KEEP + ADAPT | active office/location concept |
 | UsersModule | KEEP + ADAPT | active; lending roles still need replacement |
@@ -80,10 +80,10 @@ Prisma dependency edges from Company / Branch / User have now been inventoried a
 
 | Item | Current inherited behavior | Target | Status |
 |---|---|---|---|
-| Access JWT secret | development fallback exists | mandatory in production; fail fast | PENDING |
-| Refresh JWT secret | development fallback exists | mandatory in production; fail fast | PENDING |
-| Refresh sessions | signed refresh JWT | persistent revocable session model | PENDING |
-| Password hashes | bcrypt + legacy SHA-256 migration | bcrypt-only after migration verification | PENDING |
+| Access JWT secret | inherited development fallback | mandatory in production; fail fast | DONE — production startup now rejects a missing `JWT_ACCESS_SECRET`; development fallback is explicitly Quisqueya-only |
+| Refresh JWT secret | inherited development fallback | mandatory in production; fail fast | DONE — production refresh signing rejects a missing `JWT_REFRESH_SECRET`; development fallback is explicitly Quisqueya-only |
+| Refresh sessions | signed refresh JWT | persistent revocable session model | PENDING — belongs to the later identity/session hardening pass, not the content-readiness gate |
+| Password hashes | bcrypt + legacy PrestaFacil SHA-256 migration | bcrypt-only | DONE — legacy SHA-256 compatibility removed from active API login |
 | CORS | formerly globally open | environment allowlist | DONE — bootstrap now defaults to Quisqueya production origins and local development origins |
 | Frontend auth fallback | local demo users + local password verification | API-backed authentication only | DONE — local auth fallback removed from active AuthContext |
 | Cross-user switching | local simulated profile switch | audited server-side impersonation only | QUARANTINED — frontend switch is intentionally disabled |
@@ -179,4 +179,5 @@ Phase 0 is complete when:
 - dependency inventory for lending modules is complete;
 - lending modules and routes are removed from active runtime before physical deletion;
 - API-backed authentication no longer depends on local demo fallback;
+- production auth configuration no longer accepts inherited generic secrets;
 - the first local quality-gate run establishes a clean migration baseline.
