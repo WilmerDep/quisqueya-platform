@@ -34,28 +34,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user || !user.isActive) throw new UnauthorizedException('Invalid credentials');
 
-    let passwordOk = await bcrypt.compare(password, user.passwordHash);
-
-    // Fallback de compatibilidad para hashes legacy de desarrollo (SHA-256 con salt de 64 caracteres hex)
-    const isLegacySha256Format = /^[a-fA-F0-9]{64}$/.test(user.passwordHash);
-    if (!passwordOk && isLegacySha256Format) {
-      const crypto = await import('node:crypto');
-      const possibleSalts = [`prestafacil-${username.toLowerCase()}`, 'prestafacil-admin', 'prestafacil-master'];
-      for (const salt of possibleSalts) {
-        const hash = crypto.createHash('sha256').update(`${salt}:${password}`).digest('hex');
-        if (hash === user.passwordHash) {
-          passwordOk = true;
-          // Auto-migrar hash a bcrypt
-          const newBcryptHash = await bcrypt.hash(password, 10);
-          await this.prisma.user.update({
-            where: { id: user.id },
-            data: { passwordHash: newBcryptHash },
-          });
-          break;
-        }
-      }
-    }
-
+    const passwordOk = await bcrypt.compare(password, user.passwordHash);
     if (!passwordOk) throw new UnauthorizedException('Invalid credentials');
 
     await this.prisma.$transaction([
@@ -116,10 +95,17 @@ export class AuthService {
   }
 
   private signRefreshToken(user: UserRow) {
+    const configuredSecret = this.config.get<string>('JWT_REFRESH_SECRET')?.trim();
+    const isProduction = this.config.get<string>('NODE_ENV') === 'production';
+
+    if (!configuredSecret && isProduction) {
+      throw new Error('JWT_REFRESH_SECRET is required in production');
+    }
+
     return this.jwt.signAsync(
       { sub: user.id, type: 'refresh' },
       {
-        secret: this.config.get<string>('JWT_REFRESH_SECRET', 'dev-refresh-secret-change-me'),
+        secret: configuredSecret || 'quisqueya-development-refresh-secret',
         expiresIn: (this.config.get<string>('JWT_REFRESH_TTL', '7d') as `${number}d`),
       },
     );
