@@ -1,6 +1,6 @@
 # Quisqueya Platform — Sanitization Manifest
 
-Status: **Phase 0 / active**
+Status: **Phase 0.2 / active**
 
 This manifest controls the removal/adaptation of inherited PrestaFacil domain code. It is intentionally conservative: infrastructure is preserved until dependency edges are verified.
 
@@ -17,28 +17,30 @@ This manifest controls the removal/adaptation of inherited PrestaFacil domain co
 | package.json name | `prestafácil-rd` → `quisqueya-platform` | DONE |
 | package-lock identity | Regenerate during first validated local install | PENDING |
 | demo credentials in README | Remove from primary documentation | DONE |
-| inherited product strings in UI/code | Remove during domain cleanup | PENDING |
+| inherited product strings in UI/code | Remove during domain cleanup | ACTIVE |
 
 ## Backend modules
 
 Source: `server/src/app.module.ts` inherited module registration.
 
-| Module | Decision | Notes |
+| Module | Decision | Status / Notes |
 |---|---|---|
-| HealthModule | KEEP | platform infrastructure |
-| PrismaModule | KEEP | persistence infrastructure |
-| AuthModule | KEEP + HARDEN | remove legacy lending compatibility after verification; production secrets required |
-| CompaniesModule | KEEP + ADAPT | organization root |
-| BranchesModule | KEEP + ADAPT | office/location concept |
-| UsersModule | KEEP + ADAPT | replace lending roles/labels |
-| AuditModule | KEEP | platform audit trail |
-| ReportsModule | ADAPT | replace lending reports with travel/commercial/operations reports |
-| SyncModule | RECONVERT | imports/reconciliation/jobs; future WordPress importer |
-| ClientsModule | RECONVERT | split responsibilities into Contact/Customer/Traveler as CRM model is introduced |
-| LoansModule | REMOVE | lending-only domain |
-| PaymentsModule | REMOVE/REPLACE | inherited loan-payment domain is not the future travel payment domain |
-| CashModule | ISOLATE | do not delete until dependencies are verified; future finance requirements may be modeled separately |
-| RoutesModule | REMOVE/REPLACE | collection routes are lending-specific; DMC transport/operation routes must be a new domain |
+| HealthModule | KEEP | active platform infrastructure |
+| PrismaModule | KEEP | active persistence infrastructure |
+| AuthModule | KEEP + HARDEN | active; remaining auth hardening tracked below |
+| CompaniesModule | KEEP + ADAPT | active organization root |
+| BranchesModule | KEEP + ADAPT | active office/location concept |
+| UsersModule | KEEP + ADAPT | active; lending roles still need replacement |
+| AuditModule | KEEP | active platform audit trail |
+| ReportsModule | ADAPT | active temporarily; travel reports pending |
+| SyncModule | RECONVERT | active temporarily; future imports/reconciliation/jobs |
+| ClientsModule | RECONVERT | active temporarily; split into Contact/Customer/Traveler later |
+| LoansModule | REMOVE | QUARANTINED from root runtime registration |
+| PaymentsModule | REMOVE/REPLACE | QUARANTINED from root runtime registration |
+| CashModule | ISOLATE | QUARANTINED from root runtime registration pending finance review |
+| RoutesModule | REMOVE/REPLACE | QUARANTINED from root runtime registration |
+
+Quarantined source is intentionally retained until Prisma, frontend, tests, fixtures and shared dependencies are removed. See `docs/LENDING_DEPENDENCY_INVENTORY.md`.
 
 ## Prisma domain
 
@@ -72,7 +74,7 @@ Known inherited lending concepts:
 - delinquency / mora fields and calculations
 - collector role/workflow
 
-Deletion must wait until frontend/API/test references have been mapped.
+Prisma dependency edges from Company / Branch / User have now been inventoried at a high level. Physical schema removal remains gated on frontend/test/seed inventory and replacement CRM identity modeling.
 
 ## Authentication/security cleanup
 
@@ -82,7 +84,7 @@ Deletion must wait until frontend/API/test references have been mapped.
 | Refresh JWT secret | development fallback exists | mandatory in production; fail fast | PENDING |
 | Refresh sessions | signed refresh JWT | persistent revocable session model | PENDING |
 | Password hashes | bcrypt + legacy SHA-256 migration | bcrypt-only after migration verification | PENDING |
-| CORS | globally open | environment allowlist | PENDING |
+| CORS | formerly globally open | environment allowlist | DONE — bootstrap now defaults to Quisqueya production origins and local development origins |
 | Roles | SUPER_ADMIN / ADMINISTRADOR / SUPERVISOR / COBRADOR | travel/CRM permission matrix | PENDING |
 | Demo seed safety | inherited production guard exists | revalidate after domain cleanup | PENDING |
 
@@ -166,5 +168,5 @@ Phase 0 is complete when:
 - protected baseline exists;
 - migration plan and this manifest exist;
 - dependency inventory for lending modules is complete;
-- no destructive domain deletion has happened before that inventory;
+- lending modules are removed from active runtime before physical deletion;
 - the first local quality-gate run establishes a clean migration baseline.
