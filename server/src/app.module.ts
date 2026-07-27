@@ -12,6 +12,7 @@ import { ReportsModule } from './modules/reports/reports.module.js';
 import { SyncModule } from './modules/sync/sync.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
+import { ContentModule } from './modules/content/content.module.js';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuditModule } from './modules/audit/audit.module.js';
     ReportsModule,
     AuditModule,
     SyncModule,
+    ContentModule,
   ],
 })
 export class AppModule {}
