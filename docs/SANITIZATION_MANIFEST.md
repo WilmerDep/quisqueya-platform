@@ -85,29 +85,38 @@ Prisma dependency edges from Company / Branch / User have now been inventoried a
 | Refresh sessions | signed refresh JWT | persistent revocable session model | PENDING |
 | Password hashes | bcrypt + legacy SHA-256 migration | bcrypt-only after migration verification | PENDING |
 | CORS | formerly globally open | environment allowlist | DONE — bootstrap now defaults to Quisqueya production origins and local development origins |
+| Frontend auth fallback | local demo users + local password verification | API-backed authentication only | DONE — local auth fallback removed from active AuthContext |
+| Cross-user switching | local simulated profile switch | audited server-side impersonation only | QUARANTINED — frontend switch is intentionally disabled |
 | Roles | SUPER_ADMIN / ADMINISTRADOR / SUPERVISOR / COBRADOR | travel/CRM permission matrix | PENDING |
-| Demo seed safety | inherited production guard exists | revalidate after domain cleanup | PENDING |
+| Demo seed safety | inherited demo seed remains in legacy data adapter | remove when dataService is split | ACTIVE |
 
 ## Frontend cleanup
 
-Do not delete frontend pages in bulk. Execute in this order:
+Detailed inventory: `docs/FRONTEND_DEPENDENCY_INVENTORY.md`.
 
-1. map route/navigation references;
-2. identify shared components used by retained admin infrastructure;
-3. remove lending-only pages;
-4. replace dashboards/labels with neutral Quisqueya shell;
-5. then introduce travel CRM/content screens.
+### Active route quarantine
 
-Known concepts to remove from active UI:
+The following lending-only routes have been removed from active `App.tsx` routing while their source files remain for dependency analysis:
 
-- loans/préstamos
-- installments/cuotas
-- collections/cobros
-- mora
-- collection routes/rutas de cobro
-- loan payment promises
-- lender-specific KPIs
-- collector/cobrador role UI
+- `/collect-today`
+- `/loans`
+- `/loans/new`
+- `/routes`
+- `/cash`
+
+Retained routes currently form the temporary platform shell: dashboard, activity, clients, users, reports, settings and super-admin.
+
+### Shared shell still pending adaptation
+
+`components/Layout.tsx` remains a shared component and still contains:
+
+- lending navigation labels/actions;
+- `getLoans` search integration;
+- `Role.COBRADOR` filters;
+- lending notification event semantics;
+- inherited storage and branding strings.
+
+It must be adapted in place rather than deleted.
 
 ## New modules — creation order
 
@@ -168,5 +177,6 @@ Phase 0 is complete when:
 - protected baseline exists;
 - migration plan and this manifest exist;
 - dependency inventory for lending modules is complete;
-- lending modules are removed from active runtime before physical deletion;
+- lending modules and routes are removed from active runtime before physical deletion;
+- API-backed authentication no longer depends on local demo fallback;
 - the first local quality-gate run establishes a clean migration baseline.
