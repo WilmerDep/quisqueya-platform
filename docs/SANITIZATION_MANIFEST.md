@@ -1,6 +1,6 @@
 # Quisqueya Platform — Sanitization Manifest
 
-Status: **Phase 0.2 / active**
+Status: **Phase 0.3 / active**
 
 This manifest controls the removal/adaptation of inherited PrestaFacil domain code. It is intentionally conservative: infrastructure is preserved until dependency edges are verified.
 
@@ -8,6 +8,7 @@ This manifest controls the removal/adaptation of inherited PrestaFacil domain co
 
 - Archive branch: `archive/pre-quisqueya-sanitization`
 - Baseline commit: `db373b62f93d685c4d2518bf63ac98005f2c0da4`
+- First validated Quisqueya migration baseline: `ca2fd44`
 
 ## Repository-level identity
 
@@ -15,7 +16,7 @@ This manifest controls the removal/adaptation of inherited PrestaFacil domain co
 |---|---|---|
 | README | Replace PrestaFacil identity with Quisqueya Platform | DONE |
 | package.json name | `prestafácil-rd` → `quisqueya-platform` | DONE |
-| package-lock identity | Regenerate during first validated local install | PENDING |
+| package-lock identity | Regenerate during first validated local install | DONE — refreshed and pushed in `ca2fd44` |
 | demo credentials in README | Remove from primary documentation | DONE |
 | inherited product strings in UI/code | Remove during domain cleanup | ACTIVE |
 
@@ -118,6 +119,24 @@ Retained routes currently form the temporary platform shell: dashboard, activity
 
 It must be adapted in place rather than deleted.
 
+## Validated quality-gate baseline
+
+The first clean local migration baseline has been completed on Windows after a fresh dependency install and Prisma client generation.
+
+Validated commands:
+
+- `npm run verify:sanitization` — PASS
+- `npm run typecheck` — PASS
+- `npm run test` — PASS (`29/29` tests)
+- `npm run build` — PASS (Vite production build + NestJS TypeScript build)
+
+The current Vite warnings are non-blocking and tracked as cleanup signals:
+
+- `services/dataService.ts` is both statically and dynamically imported and should be split during Phase 0.3;
+- the main frontend chunk is larger than 500 kB and should be reassessed after lending-domain removal and service separation.
+
+See `docs/PHASE_0_BASELINE_VALIDATION.md`.
+
 ## New modules — creation order
 
 Do not create all modules at once.
@@ -180,4 +199,6 @@ Phase 0 is complete when:
 - lending modules and routes are removed from active runtime before physical deletion;
 - API-backed authentication no longer depends on local demo fallback;
 - production auth configuration no longer accepts inherited generic secrets;
-- the first local quality-gate run establishes a clean migration baseline.
+- the first local quality-gate run establishes a clean migration baseline — **DONE**;
+- shared shell no longer exposes lending-only navigation/search/role semantics;
+- legacy `dataService.ts` is decomposed enough that retained platform code no longer depends on lending storage/seeds.
