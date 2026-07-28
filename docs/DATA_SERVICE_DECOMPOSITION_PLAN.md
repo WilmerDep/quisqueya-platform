@@ -19,8 +19,9 @@ The legacy module remains temporary compatibility code only for inherited screen
 ### Identity / organization
 
 - `services/authService.ts` — session/token lifecycle only.
+- `services/teamService.ts` — API-only users/branch read boundary for the active users surface.
 - future organization client — company/office metadata from Nest API.
-- future users client — users/roles/permissions from Nest API.
+- future role/permission service — explicit Quisqueya role matrix once the replacement model is finalized.
 
 ### CRM
 
@@ -78,15 +79,19 @@ Status: **DONE FOR ACTIVE RUNTIME**
 
 ### Wave 3 — migrate retained platform screens
 
-Status: **NEXT**
+Status: **ACTIVE**
 
-Move retained screens away from direct `dataService.ts` imports in this order:
-
-1. Users / organization settings;
-2. Activity / audit;
-3. Reports shell;
-4. Clients, once the Contact/Customer model is defined;
-5. Super-admin surfaces if retained.
+1. Users / organization settings — **USERS ACTIVE SURFACE MIGRATED**
+   - `App.tsx` no longer mounts the inherited `UsersManagement` routes;
+   - `/users` now renders `PlatformUsersPage`;
+   - `PlatformUsersPage` loads users/branches through `services/teamService.ts`;
+   - no localStorage or `dataService.ts` fallback is allowed on the active users route;
+   - inherited create/invite/roles subroutes redirect to `/users` until the Quisqueya permission model is defined.
+2. Organization settings — **NEXT**
+3. Activity / audit
+4. Reports shell
+5. Clients, once the Contact/Customer model is defined
+6. Super-admin surfaces if retained
 
 Each screen should consume an API-backed or domain-specific service rather than a generic global adapter.
 
