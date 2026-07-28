@@ -92,31 +92,36 @@ Status: **DONE FOR ACTIVE RUNTIME**
 
 Status: **ACTIVE**
 
-1. Users — **ACTIVE SURFACE MIGRATED**
+1. Dashboard — **ACTIVE SURFACE MIGRATED**
+   - `App.tsx` no longer mounts the inherited lending `Dashboard`;
+   - `/` now renders `PlatformDashboardPage`;
+   - the active dashboard reads Contacts, team/branches and audit activity through domain-specific API services;
+   - no loan, mora, cash, collection-route or localStorage calculation is allowed in the active dashboard.
+2. Users — **ACTIVE SURFACE MIGRATED**
    - `App.tsx` no longer mounts the inherited `UsersManagement` routes;
    - `/users` now renders `PlatformUsersPage`;
    - `PlatformUsersPage` loads users/branches through `services/teamService.ts`;
    - no localStorage or `dataService.ts` fallback is allowed on the active users route;
    - inherited create/invite/roles subroutes redirect to `/users` until the Quisqueya permission model is defined.
-2. Organization settings — **ACTIVE SURFACE MIGRATED**
+3. Organization settings — **ACTIVE SURFACE MIGRATED**
    - `App.tsx` no longer mounts `ConfigurationPage`;
    - `/settings` now renders `PlatformSettingsPage`;
    - company and branch reads/writes go through `services/organizationService.ts` → Nest API;
    - the active settings route has no localStorage or lending-specific configuration fallback;
    - inherited settings subroutes redirect to `/settings` until their Quisqueya replacements are explicitly designed.
-3. Activity / audit — **ACTIVE SURFACE MIGRATED**
+4. Activity / audit — **ACTIVE SURFACE MIGRATED**
    - `App.tsx` no longer mounts the inherited `ActivityPage`;
    - `/activity` now renders `PlatformActivityPage`;
    - audit reads go through `services/auditService.ts` → Nest `/audit-logs`;
    - the active activity route has no localStorage, report-template fallback or lending-specific event taxonomy;
    - inherited PDF/report behavior remains quarantined with the old screen.
-4. Reports shell — **ACTIVE SURFACE MIGRATED**
+5. Reports shell — **ACTIVE SURFACE MIGRATED**
    - `App.tsx` no longer mounts the inherited `Reports` screen;
    - `/reports` now renders `PlatformReportsPage`;
    - report exports, schedules and templates are read through `services/reportingService.ts` → Nest API;
    - the active reports route no longer computes loan/payment/mora analytics or relies on localStorage;
    - inherited PDF builders, financial drill-downs and report workspaces remain quarantined with the old screen.
-5. Clients — **ACTIVE SURFACE MIGRATED TO CONTACT**
+6. Clients — **ACTIVE SURFACE MIGRATED TO CONTACT**
    - `docs/CRM_CORE_DOMAIN_CONTRACT.md` defines Contact, Customer and Traveler as separate concepts;
    - `prisma/models/contact.prisma` introduces `Contact` and `ContactStatus` without lending relations;
    - Prisma loads the `prisma/` schema directory so new domain models remain separated from the inherited monolithic schema;
@@ -126,7 +131,7 @@ Status: **ACTIVE**
    - `/clients` now renders `PlatformContactsPage` and `/clients/:id` renders `PlatformContactDetailPage`;
    - inherited `Clients.tsx`, `ClientProfile.tsx`, Prisma `Client` and `/clients` backend compatibility remain physically present but are no longer used by the active frontend routes;
    - next CRM work is creation/edit UX plus Customer/TravelRequest relations, not reactivation of lending semantics.
-6. Super-admin surfaces if retained
+7. Super-admin surfaces if retained
 
 Each screen should consume an API-backed or domain-specific service rather than a generic global adapter.
 
