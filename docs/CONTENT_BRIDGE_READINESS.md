@@ -4,28 +4,9 @@
 
 Prepare `quisqueya-platform` to ingest the current WordPress content and expose a stable public read API so `quisqueya-web` can stop depending on hardcoded placeholders and return quickly to commercial-site implementation.
 
-## Current state
+## Current architecture
 
-The active application shell is now isolated from the inherited lending runtime. Content persistence can therefore move into its own Prisma domain without depending on legacy `Client`, `Loan`, collections, cash or localStorage behavior.
-
-The persistent Content Core is defined in:
-
-- `prisma/models/content.prisma`
-- `prisma/migrations/20260728023000_add_content_core/migration.sql`
-
-Core persistence includes:
-
-- `MediaAsset`
-- `Destination`
-- `Experience`
-- `ExperienceDestination`
-- `TaxonomyTerm`
-- `ExperienceTaxonomyTerm`
-- `ContentPage`
-
-Every imported record can retain source provider, source id/url and `provenanceJson` so WordPress remains traceable without becoming a runtime dependency.
-
-## Target flow
+The temporary JSON bridge has now been superseded as the public runtime source of truth.
 
 ```text
 Current WordPress
@@ -33,15 +14,20 @@ Current WordPress
       v
 scripts/import-wordpress-content.mjs
       |
-      +--> data/wordpress/raw/*.json      (source evidence / replay)
+      +--> data/wordpress/raw/*.json      (traceability / source evidence)
       |
       v
-Normalizer + validation
+Normalization / persistence pass
       |
       v
-Prisma / MySQL Content Core
+Prisma + MySQL (`quisqueya_core`)
       |
-      +--> persistent media storage
+      +--> experiences
+      +--> destinations
+      +--> content_pages
+      +--> media_assets
+      +--> taxonomy_terms
+      +--> relationship tables
       |
       v
 NestJS ContentModule
@@ -53,9 +39,43 @@ NestJS ContentModule
 quisqueya-web
 ```
 
-The existing `data/content/snapshot.json` remains only as a temporary compatibility bridge until the Content service is switched to Prisma-backed reads.
+`data/content/snapshot.json` may remain as migration evidence/compatibility material, but `ContentService` no longer reads it for public API responses.
 
-## Public endpoints already reserved
+## Persistent content core
+
+The Prisma content domain contains:
+
+- `Experience`
+- `Destination`
+- `ContentPage`
+- `MediaAsset`
+- `TaxonomyTerm`
+- `ExperienceDestination`
+- `ExperienceTaxonomyTerm`
+
+Source traceability is preserved through fields such as:
+
+- `sourceProvider`
+- `sourceId`
+- `sourceUrl`
+- `sourceModifiedAt`
+- `provenanceJson`
+
+Media persistence additionally records:
+
+- `storageKey`
+- `publicUrl`
+- `mimeType`
+- `width`
+- `height`
+- `sizeBytes`
+- `checksum`
+
+Media files themselves must live in persistent storage outside the repository/build output. The database stores stable location and traceability metadata.
+
+## Public endpoints
+
+The public contract remains unchanged:
 
 - `GET /api/v1/public/content`
 - `GET /api/v1/public/experiences`
@@ -66,53 +86,51 @@ The existing `data/content/snapshot.json` remains only as a temporary compatibil
 - `GET /api/v1/public/pages/:slug`
 - `GET /api/v1/public/media`
 
-These contracts should remain stable while their backing store changes from snapshot to Prisma.
+The endpoints now read from Prisma/MySQL and return published content only where a publish status applies.
 
-## Media storage policy
+## Migration status
 
-Media bytes must not live inside the Git repository or build output.
+Completed:
 
-Logical storage keys use stable prefixes such as:
+- active frontend routes isolated from the inherited lending data service;
+- Contact persistence and API introduced;
+- Content persistence schema introduced;
+- content migration applied to local `quisqueya_core`;
+- runtime Prisma default database renamed to `quisqueya_core`;
+- public Content API switched from JSON snapshot reads to Prisma/MySQL reads;
+- API response contracts preserved.
 
-```text
-media/experiences/<id-or-slug>/<filename>
-media/destinations/<id-or-slug>/<filename>
-media/pages/<id-or-slug>/<filename>
-media/shared/<filename>
-```
+## Before the first real WordPress run
 
-`MediaAsset.storageKey` stores the persistent object/file key. `MediaAsset.publicUrl` stores the URL exposed to consumers. The same model can support local VPS volume storage first and object storage later without changing public content contracts.
+The remaining pre-import checks are now focused on the source, not on platform architecture:
 
-For WordPress imports, source URLs are evidence only. Imported media must preserve `sourceProvider=WORDPRESS`, `sourceId`, `sourceUrl`, checksum/metadata when available, and provenance details.
+1. confirm the live REST base for `tf_tours`;
+2. confirm the destination taxonomy REST endpoint (`tour_destination` unless the live site differs);
+3. inspect the tour meta/custom fields used for duration, itinerary, includes/excludes and individual detail content;
+4. define the first media-copy pass so `MediaAsset.storageKey` and `publicUrl` point to platform-owned persistent storage;
+5. persist normalized records into the new content tables while preserving the raw REST payloads;
+6. validate counts, slugs, media and relationships against the existing migration evidence.
 
-## First real WordPress run prerequisites
+## WordPress import gate
 
-1. Apply the Content Core migration to `quisqueya_core` and confirm Prisma generation/typecheck.
-2. Switch the Content service to Prisma reads while retaining a controlled empty/fallback state.
-3. Confirm the live REST base for `tf_tours`.
-4. Confirm the destination taxonomy REST endpoint (`tour_destination` from the migration audit, unless the live site differs).
-5. Confirm tour meta/custom fields for duration, itinerary, includes/excludes and detail-page data.
-6. Execute extraction preserving RAW before normalization.
-7. Validate six featured experiences, their destinations, taxonomies, slugs and media relationships before connecting the commercial web.
-
-## Import command
-
-When the persistence/read path above is validated, the controlled extraction command remains:
+The architectural gate is considered open once the Prisma-backed ContentService passes:
 
 ```bash
-WP_BASE_URL=https://quisqueyatravel.com.do npm run import:wordpress
+npm run verify:sanitization
+npm run typecheck
+npm run test
+npm run build
 ```
 
-WordPress is an import source only. `quisqueya-web` must never read WordPress directly.
+After that validation, the next product step is the real WordPress extraction/persistence pass.
 
-## Exit condition
+## Exit condition for returning to the commercial web
 
-We return focus to `quisqueya-web` when:
+Return focus to `quisqueya-web` when:
 
-- the Content Core migration is applied and stable;
-- the first real WordPress extraction/import is validated;
-- six featured experiences resolve with real titles/slugs/media;
+- the first real WordPress import is persisted in MySQL;
+- six featured experiences resolve with real titles, slugs and media;
 - destinations required by Home resolve;
-- public API responses are Prisma-backed and stable;
-- media references are usable by Next.js;
-- no commercial-web component needs to read WordPress directly.
+- public API responses are stable;
+- media URLs are usable by Next.js;
+- no commercial-web component reads WordPress directly.
