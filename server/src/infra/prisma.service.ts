@@ -11,7 +11,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       port: Number(config.get<string>('MYSQL_PORT', '3306')),
       user: config.get<string>('MYSQL_USER', 'root'),
       password: config.get<string>('MYSQL_PASSWORD', ''),
-      database: config.get<string>('MYSQL_DATABASE', 'prestafacil_rd'),
+      database: config.get<string>('MYSQL_DATABASE', 'quisqueya_core'),
       connectionLimit: Number(config.get<string>('MYSQL_POOL_LIMIT', '10')),
     });
 
