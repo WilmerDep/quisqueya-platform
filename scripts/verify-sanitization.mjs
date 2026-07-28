@@ -151,6 +151,18 @@ const checks = [
     reason: 'the content core must be persistent, source-traceable and isolated from the inherited lending domain',
   },
   {
+    file: 'server/src/modules/content/content.service.ts',
+    forbidden: ['readFile(', 'snapshot.json', 'data/content'],
+    required: ['PrismaService', 'this.prisma.experience.findMany', 'this.prisma.destination.findMany', 'this.prisma.contentPage.findMany', 'this.prisma.mediaAsset.findMany'],
+    reason: 'the public content API must read from Prisma/MySQL rather than the temporary JSON snapshot bridge',
+  },
+  {
+    file: 'server/src/infra/prisma.service.ts',
+    forbidden: ["'prestafacil_rd'"],
+    required: ["'quisqueya_core'"],
+    reason: 'the runtime Prisma default database must use the Quisqueya core identity',
+  },
+  {
     file: 'server/src/modules/contacts/contacts.controller.ts',
     forbidden: ['ClientCreditRating', 'ClientStatus', 'Loan', 'mora', 'collector', 'route'],
     required: ["@Controller('contacts')", 'this.prisma.contact.findMany', 'tx.contact.create', 'tx.contact.update'],
@@ -221,6 +233,7 @@ const requiredFiles = [
   'server/src/modules/contacts/contacts.module.ts',
   'server/src/modules/contacts/contacts.controller.ts',
   'server/src/modules/content/content.module.ts',
+  'server/src/modules/content/content.service.ts',
   'scripts/import-wordpress-content.mjs',
 ];
 
