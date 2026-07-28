@@ -5,7 +5,7 @@ import { PlatformShell } from './components/PlatformShell';
 import { Dashboard } from './pages/Dashboard';
 import { Clients } from './pages/Clients';
 import { ClientProfile } from './pages/ClientProfile';
-import { Reports } from './pages/Reports';
+import { PlatformReportsPage } from './pages/PlatformReportsPage';
 import { PlatformActivityPage } from './pages/PlatformActivityPage';
 import { PlatformUsersPage } from './pages/PlatformUsersPage';
 import { PlatformSettingsPage } from './pages/PlatformSettingsPage';
@@ -44,7 +44,8 @@ const AppRoutes: React.FC = () => {
                 <Route path="/clients/:id" element={<ClientProfile />} />
                 <Route path="/users" element={<PlatformUsersPage />} />
                 <Route path="/users/*" element={<Navigate to="/users" replace />} />
-                <Route path="/reports/*" element={<Reports />} />
+                <Route path="/reports" element={<PlatformReportsPage />} />
+                <Route path="/reports/*" element={<Navigate to="/reports" replace />} />
                 <Route path="/settings" element={<PlatformSettingsPage />} />
                 <Route path="/settings/*" element={<Navigate to="/settings" replace />} />
                 <Route path="/master" element={<SuperAdminPage />} />
