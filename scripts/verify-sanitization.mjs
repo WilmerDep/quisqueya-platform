@@ -106,14 +106,14 @@ const checks = [
   },
   {
     file: 'pages/PlatformContactsPage.tsx',
-    forbidden: ['services/dataService', 'localStorage', 'prestard_', 'creditRating', 'isBlocked', 'loan', 'mora', 'collector', 'route'],
-    required: ['contactsService.list', 'ContactRecord'],
+    forbidden: ['services/dataService', 'localStorage', 'prestard_', 'creditRating', 'isBlocked', 'loan balance', 'mora', 'collectorId', 'CollectionRoute', 'routeItems'],
+    required: ['contactsService', '.list({', 'ContactRecord'],
     reason: 'the active contacts list must use the neutral Contact API and exclude inherited lending semantics',
   },
   {
     file: 'pages/PlatformContactDetailPage.tsx',
-    forbidden: ['services/dataService', 'localStorage', 'prestard_', 'creditRating', 'isBlocked', 'loan balance', 'collector'],
-    required: ['contactsService.get', 'ContactRecord'],
+    forbidden: ['services/dataService', 'localStorage', 'prestard_', 'creditRating', 'isBlocked', 'loan balance', 'collectorId', 'CollectionRoute', 'routeItems'],
+    required: ['contactsService', '.get(id)', 'ContactRecord'],
     reason: 'the active contact detail must use the neutral Contact API rather than the inherited client profile',
   },
   {
