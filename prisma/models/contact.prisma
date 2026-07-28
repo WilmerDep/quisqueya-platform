@@ -1,0 +1,30 @@
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+model Contact {
+  id                String        @id @db.VarChar(64)
+  companyId         String        @map("company_id") @db.VarChar(64)
+  ownerUserId       String?       @map("owner_user_id") @db.VarChar(64)
+  firstName         String        @map("first_name") @db.VarChar(120)
+  lastName          String        @map("last_name") @db.VarChar(120)
+  email             String?       @db.VarChar(180)
+  phone             String?       @db.VarChar(40)
+  whatsapp          String?       @db.VarChar(40)
+  countryCode       String?       @map("country_code") @db.VarChar(8)
+  preferredLanguage String?       @map("preferred_language") @db.VarChar(16)
+  source            String?       @db.VarChar(120)
+  notes             String?       @db.Text
+  status            ContactStatus @default(ACTIVE)
+  provenanceJson    Json?         @map("provenance_json")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@index([companyId, status], map: "idx_contacts_company_status")
+  @@index([companyId, ownerUserId], map: "idx_contacts_company_owner")
+  @@index([companyId, email], map: "idx_contacts_company_email")
+  @@index([companyId, phone], map: "idx_contacts_company_phone")
+  @@map("contacts")
+}
