@@ -1,7 +1,7 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Layout } from './components/Layout';
+import { PlatformShell } from './components/PlatformShell';
 import { Dashboard } from './pages/Dashboard';
 import { Clients } from './pages/Clients';
 import { ClientProfile } from './pages/ClientProfile';
@@ -37,7 +37,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/*"
           element={
-            <Layout>
+            <PlatformShell>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/activity" element={<ActivityPage />} />
@@ -59,7 +59,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/super-admin/usuarios/sesiones" element={<SuperAdminPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </Layout>
+            </PlatformShell>
           }
         />
       )}
