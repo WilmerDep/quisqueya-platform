@@ -14,6 +14,7 @@ const checks = [
   {
     file: 'App.tsx',
     forbidden: [
+      "./components/Layout",
       "./pages/LoanCreate",
       "./pages/LoansPage",
       "./pages/RoutesPage",
@@ -24,7 +25,13 @@ const checks = [
       'path="/cash"',
       'path="/collect-today"',
     ],
-    reason: 'lending-only frontend routes must remain outside the active router',
+    required: ['./components/PlatformShell'],
+    reason: 'the active router must use the neutral Quisqueya shell and keep lending routes quarantined',
+  },
+  {
+    file: 'components/PlatformShell.tsx',
+    forbidden: ['Prestamo', 'Préstamo', 'Cobrar Hoy', 'Cobrador', 'loanops_shell_scope', 'ABUNDRA', 'getLoans'],
+    reason: 'the active platform shell must stay domain-neutral until the travel/CRM contracts are finalized',
   },
   {
     file: 'server/src/modules/auth/auth.service.ts',
@@ -43,11 +50,13 @@ let failed = false;
 for (const check of checks) {
   const source = await read(check.file);
   const matches = check.forbidden.filter(value => source.includes(value));
+  const missingRequired = (check.required || []).filter(value => !source.includes(value));
 
-  if (matches.length) {
+  if (matches.length || missingRequired.length) {
     failed = true;
     console.error(`FAIL ${check.file}: ${check.reason}`);
     for (const match of matches) console.error(`  forbidden: ${match}`);
+    for (const value of missingRequired) console.error(`  required: ${value}`);
   } else {
     console.log(`PASS ${check.file}`);
   }
@@ -59,6 +68,7 @@ const requiredFiles = [
   'docs/LENDING_DEPENDENCY_INVENTORY.md',
   'docs/FRONTEND_DEPENDENCY_INVENTORY.md',
   'docs/CONTENT_BRIDGE_READINESS.md',
+  'components/PlatformShell.tsx',
   'server/src/modules/content/content.module.ts',
   'scripts/import-wordpress-content.mjs',
 ];
