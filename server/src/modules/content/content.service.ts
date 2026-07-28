@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { ContentRecordStatus, ContentSourceProvider } from '@prisma/client';
+import { ContentRecordStatus, ContentSourceProvider, type Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
 import type {
   PublicContentSnapshot,
   PublicDestination,
   PublicExperience,
+  PublicExperienceEditorialFlag,
   PublicMedia,
   PublicPageContent,
 } from './content.types.js';
+
+type ExperienceRow = Prisma.ExperienceGetPayload<Record<string, never>>;
 
 @Injectable()
 export class ContentService {
@@ -24,6 +27,15 @@ export class ContentService {
     if (unique.size === 1 && unique.has(ContentSourceProvider.WORDPRESS)) return 'wordpress';
     if (unique.size === 1 && unique.has(ContentSourceProvider.MANUAL)) return 'manual';
     return 'unknown';
+  }
+
+  private jsonArray<T>(value: Prisma.JsonValue | null): T[] {
+    return Array.isArray(value) ? (value as T[]) : [];
+  }
+
+  private jsonObject(value: Prisma.JsonValue | null): Record<string, unknown> | undefined {
+    if (!value || Array.isArray(value) || typeof value !== 'object') return undefined;
+    return value as Record<string, unknown>;
   }
 
   private mapMedia(row: {
@@ -69,34 +81,51 @@ export class ContentService {
     return new Map(rows.map(row => [row.id, this.mapMedia(row)]));
   }
 
-  async getExperiences(): Promise<PublicExperience[]> {
-    const rows = await this.prisma.experience.findMany({
-      where: { status: ContentRecordStatus.PUBLISHED },
-      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
-    });
-    const media = await this.mediaMap(rows.map(row => row.featuredMediaId));
+  private async mediaBySourceIdMap(sourceIds: number[]): Promise<Map<number, PublicMedia>> {
+    const normalized = [...new Set(sourceIds.filter(Number.isFinite))];
+    if (!normalized.length) return new Map();
 
-    return rows.map(row => ({
-      id: row.id,
-      sourceId: this.toNumericSourceId(row.sourceId),
-      slug: row.slug,
-      title: row.title,
-      excerpt: row.excerpt ?? undefined,
-      description: row.description ?? undefined,
-      duration: row.duration ?? undefined,
-      category: row.categoryLabel ?? undefined,
-      featuredMedia: row.featuredMediaId ? media.get(row.featuredMediaId) ?? null : null,
-      sourceUrl: row.sourceUrl ?? undefined,
-      status: row.status.toLowerCase(),
-    }));
+    const rows = await this.prisma.mediaAsset.findMany({
+      where: {
+        sourceProvider: ContentSourceProvider.WORDPRESS,
+        sourceId: { in: normalized.map(String) },
+      },
+      select: {
+        id: true,
+        sourceId: true,
+        sourceUrl: true,
+        publicUrl: true,
+        altText: true,
+        width: true,
+        height: true,
+        mimeType: true,
+      },
+    });
+
+    return new Map(
+      rows.flatMap(row => {
+        const sourceId = this.toNumericSourceId(row.sourceId);
+        return sourceId === undefined ? [] : [[sourceId, this.mapMedia(row)] as const];
+      }),
+    );
   }
 
-  async getExperience(slug: string): Promise<PublicExperience | null> {
-    const row = await this.prisma.experience.findFirst({
-      where: { slug, status: ContentRecordStatus.PUBLISHED },
-    });
-    if (!row) return null;
-    const media = await this.mediaMap([row.featuredMediaId]);
+  private mapExperience(
+    row: ExperienceRow,
+    featuredMedia: PublicMedia | null,
+    galleryBySourceId: Map<number, PublicMedia>,
+  ): PublicExperience {
+    const galleryMediaSourceIds = this.jsonArray<number>(row.galleryMediaSourceIds)
+      .map(Number)
+      .filter(Number.isFinite);
+    const latitude = row.latitude === null ? undefined : Number(row.latitude);
+    const longitude = row.longitude === null ? undefined : Number(row.longitude);
+    const hasLocation = Boolean(
+      row.locationAddress ||
+      Number.isFinite(latitude) ||
+      Number.isFinite(longitude) ||
+      row.mapZoom !== null,
+    );
 
     return {
       id: row.id,
@@ -105,12 +134,73 @@ export class ContentService {
       title: row.title,
       excerpt: row.excerpt ?? undefined,
       description: row.description ?? undefined,
+      featuredText: row.featuredText ?? undefined,
+      videoUrl: row.videoUrl ?? undefined,
       duration: row.duration ?? undefined,
+      durationValue: row.durationValue ?? undefined,
+      durationUnit: row.durationUnit ?? undefined,
+      languages: this.jsonArray<string>(row.languagesJson),
+      location: hasLocation
+        ? {
+            address: row.locationAddress ?? undefined,
+            latitude: Number.isFinite(latitude) ? latitude : undefined,
+            longitude: Number.isFinite(longitude) ? longitude : undefined,
+            zoom: row.mapZoom ?? undefined,
+          }
+        : undefined,
       category: row.categoryLabel ?? undefined,
-      featuredMedia: row.featuredMediaId ? media.get(row.featuredMediaId) ?? null : null,
+      featuredMedia,
+      gallery: galleryMediaSourceIds
+        .map(sourceId => galleryBySourceId.get(sourceId))
+        .filter((media): media is PublicMedia => Boolean(media)),
+      galleryMediaSourceIds,
+      pricingMode: row.pricingMode === 'FIXED' ? 'fixed' : 'on_request',
+      pricing: this.jsonObject(row.pricingJson),
+      booking: this.jsonObject(row.bookingJson),
+      availability: this.jsonObject(row.availabilityJson),
+      contact: this.jsonObject(row.contactJson),
+      included: this.jsonArray<string>(row.includedItemsJson),
+      excluded: this.jsonArray<string>(row.excludedItemsJson),
+      itinerary: this.jsonArray<Record<string, unknown>>(row.itineraryJson),
+      faqs: this.jsonArray<Record<string, unknown>>(row.faqsJson),
+      display: this.jsonObject(row.displayJson),
+      editorialFlags: this.jsonArray<PublicExperienceEditorialFlag>(row.editorialFlagsJson),
       sourceUrl: row.sourceUrl ?? undefined,
       status: row.status.toLowerCase(),
     };
+  }
+
+  async getExperiences(): Promise<PublicExperience[]> {
+    const rows = await this.prisma.experience.findMany({
+      where: { status: ContentRecordStatus.PUBLISHED },
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+    });
+    const featuredMedia = await this.mediaMap(rows.map(row => row.featuredMediaId));
+    const gallerySourceIds = rows.flatMap(row => this.jsonArray<number>(row.galleryMediaSourceIds));
+    const galleryMedia = await this.mediaBySourceIdMap(gallerySourceIds);
+
+    return rows.map(row => this.mapExperience(
+      row,
+      row.featuredMediaId ? featuredMedia.get(row.featuredMediaId) ?? null : null,
+      galleryMedia,
+    ));
+  }
+
+  async getExperience(slug: string): Promise<PublicExperience | null> {
+    const row = await this.prisma.experience.findFirst({
+      where: { slug, status: ContentRecordStatus.PUBLISHED },
+    });
+    if (!row) return null;
+
+    const featuredMedia = await this.mediaMap([row.featuredMediaId]);
+    const gallerySourceIds = this.jsonArray<number>(row.galleryMediaSourceIds);
+    const galleryMedia = await this.mediaBySourceIdMap(gallerySourceIds);
+
+    return this.mapExperience(
+      row,
+      row.featuredMediaId ? featuredMedia.get(row.featuredMediaId) ?? null : null,
+      galleryMedia,
+    );
   }
 
   async getDestinations(): Promise<PublicDestination[]> {
