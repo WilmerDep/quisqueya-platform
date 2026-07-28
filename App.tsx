@@ -9,7 +9,7 @@ import { PlatformReportsPage } from './pages/PlatformReportsPage';
 import { PlatformActivityPage } from './pages/PlatformActivityPage';
 import { PlatformUsersPage } from './pages/PlatformUsersPage';
 import { PlatformSettingsPage } from './pages/PlatformSettingsPage';
-import { SuperAdminPage } from './pages/SuperAdminPage';
+import { PlatformAdminPage } from './pages/PlatformAdminPage';
 import { PlatformAccessPage } from './pages/PlatformAccessPage';
 
 const AppRoutes: React.FC = () => {
@@ -48,13 +48,8 @@ const AppRoutes: React.FC = () => {
                 <Route path="/reports/*" element={<Navigate to="/reports" replace />} />
                 <Route path="/settings" element={<PlatformSettingsPage />} />
                 <Route path="/settings/*" element={<Navigate to="/settings" replace />} />
-                <Route path="/master" element={<SuperAdminPage />} />
-                <Route path="/super-admin/usuarios" element={<SuperAdminPage />} />
-                <Route path="/super-admin/usuarios/equipo-saas" element={<SuperAdminPage />} />
-                <Route path="/super-admin/usuarios/empresas" element={<SuperAdminPage />} />
-                <Route path="/super-admin/usuarios/invitaciones" element={<SuperAdminPage />} />
-                <Route path="/super-admin/usuarios/roles-permisos" element={<SuperAdminPage />} />
-                <Route path="/super-admin/usuarios/sesiones" element={<SuperAdminPage />} />
+                <Route path="/master" element={<PlatformAdminPage />} />
+                <Route path="/super-admin/*" element={<PlatformAdminPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </PlatformShell>
