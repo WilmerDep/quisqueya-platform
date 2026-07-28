@@ -90,7 +90,7 @@ Status: **DONE FOR ACTIVE RUNTIME**
 
 ### Wave 3 — migrate retained platform screens
 
-Status: **ACTIVE**
+Status: **DONE FOR ACTIVE ROUTES**
 
 1. Dashboard — **ACTIVE SURFACE MIGRATED**
    - `App.tsx` no longer mounts the inherited lending `Dashboard`;
@@ -131,18 +131,23 @@ Status: **ACTIVE**
    - `/clients` now renders `PlatformContactsPage` and `/clients/:id` renders `PlatformContactDetailPage`;
    - inherited `Clients.tsx`, `ClientProfile.tsx`, Prisma `Client` and `/clients` backend compatibility remain physically present but are no longer used by the active frontend routes;
    - next CRM work is creation/edit UX plus Customer/TravelRequest relations, not reactivation of lending semantics.
-7. Super-admin surfaces if retained
+7. Administration — **ACTIVE SURFACE MIGRATED**
+   - `App.tsx` no longer mounts inherited `SuperAdminPage`;
+   - `/master` and `/super-admin/*` now render `PlatformAdminPage`;
+   - the active administration surface reads organization, team and audit data only through API-backed services;
+   - inherited SaaS billing/plans/telemetry/local bootstrap behavior remains quarantined and is not part of the active Quisqueya runtime.
 
-Each screen should consume an API-backed or domain-specific service rather than a generic global adapter.
+All retained active routes now consume API-backed or domain-specific services rather than `services/dataService.ts`.
 
 ### Wave 4 — delete lending compatibility
 
 Only after the retained frontend has no lending storage dependency:
 
-- delete lending-only pages/components;
+- identify legacy-only components still pulled into the production bundle;
+- delete lending-only pages/components after dependency verification;
 - delete lending-only `dataService` functions and localStorage keys;
 - remove lending tests/fixtures;
-- remove lending Prisma models and relations;
+- remove lending Prisma models and relations only after no active server consumers remain;
 - regenerate Prisma and rerun all quality gates.
 
 ## Content-readiness gate
