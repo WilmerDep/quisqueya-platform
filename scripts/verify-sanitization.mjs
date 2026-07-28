@@ -134,6 +134,7 @@ const requiredFiles = [
   'docs/LENDING_DEPENDENCY_INVENTORY.md',
   'docs/FRONTEND_DEPENDENCY_INVENTORY.md',
   'docs/DATA_SERVICE_DECOMPOSITION_PLAN.md',
+  'docs/CRM_CORE_DOMAIN_CONTRACT.md',
   'docs/CONTENT_BRIDGE_READINESS.md',
   'components/PlatformShell.tsx',
   'pages/PlatformAccessPage.tsx',
