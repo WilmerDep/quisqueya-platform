@@ -4,11 +4,28 @@
 
 Prepare `quisqueya-platform` to ingest the current WordPress content and expose a stable public read API so `quisqueya-web` can stop depending on hardcoded placeholders and return quickly to commercial-site implementation.
 
-## Current bridge
+## Current state
 
-The platform now contains a lightweight normalized content layer that is intentionally independent from the inherited lending schema while the Prisma sanitization continues.
+The active application shell is now isolated from the inherited lending runtime. Content persistence can therefore move into its own Prisma domain without depending on legacy `Client`, `Loan`, collections, cash or localStorage behavior.
 
-Flow:
+The persistent Content Core is defined in:
+
+- `prisma/models/content.prisma`
+- `prisma/migrations/20260728023000_add_content_core/migration.sql`
+
+Core persistence includes:
+
+- `MediaAsset`
+- `Destination`
+- `Experience`
+- `ExperienceDestination`
+- `TaxonomyTerm`
+- `ExperienceTaxonomyTerm`
+- `ContentPage`
+
+Every imported record can retain source provider, source id/url and `provenanceJson` so WordPress remains traceable without becoming a runtime dependency.
+
+## Target flow
 
 ```text
 Current WordPress
@@ -16,21 +33,29 @@ Current WordPress
       v
 scripts/import-wordpress-content.mjs
       |
-      +--> data/wordpress/raw/*.json      (traceability / source evidence)
+      +--> data/wordpress/raw/*.json      (source evidence / replay)
       |
-      +--> data/content/snapshot.json     (normalized bridge)
-                    |
-                    v
-          NestJS ContentModule
-                    |
-                    v
-             /api/v1/public/*
-                    |
-                    v
-             quisqueya-web
+      v
+Normalizer + validation
+      |
+      v
+Prisma / MySQL Content Core
+      |
+      +--> persistent media storage
+      |
+      v
+NestJS ContentModule
+      |
+      v
+/api/v1/public/*
+      |
+      v
+quisqueya-web
 ```
 
-## Public endpoints available
+The existing `data/content/snapshot.json` remains only as a temporary compatibility bridge until the Content service is switched to Prisma-backed reads.
+
+## Public endpoints already reserved
 
 - `GET /api/v1/public/content`
 - `GET /api/v1/public/experiences`
@@ -41,43 +66,53 @@ scripts/import-wordpress-content.mjs
 - `GET /api/v1/public/pages/:slug`
 - `GET /api/v1/public/media`
 
-The API returns empty arrays until a normalized snapshot is imported. This lets frontend integration be developed without coupling the web application to WordPress.
+These contracts should remain stable while their backing store changes from snapshot to Prisma.
+
+## Media storage policy
+
+Media bytes must not live inside the Git repository or build output.
+
+Logical storage keys use stable prefixes such as:
+
+```text
+media/experiences/<id-or-slug>/<filename>
+media/destinations/<id-or-slug>/<filename>
+media/pages/<id-or-slug>/<filename>
+media/shared/<filename>
+```
+
+`MediaAsset.storageKey` stores the persistent object/file key. `MediaAsset.publicUrl` stores the URL exposed to consumers. The same model can support local VPS volume storage first and object storage later without changing public content contracts.
+
+For WordPress imports, source URLs are evidence only. Imported media must preserve `sourceProvider=WORDPRESS`, `sourceId`, `sourceUrl`, checksum/metadata when available, and provenance details.
+
+## First real WordPress run prerequisites
+
+1. Apply the Content Core migration to `quisqueya_core` and confirm Prisma generation/typecheck.
+2. Switch the Content service to Prisma reads while retaining a controlled empty/fallback state.
+3. Confirm the live REST base for `tf_tours`.
+4. Confirm the destination taxonomy REST endpoint (`tour_destination` from the migration audit, unless the live site differs).
+5. Confirm tour meta/custom fields for duration, itinerary, includes/excludes and detail-page data.
+6. Execute extraction preserving RAW before normalization.
+7. Validate six featured experiences, their destinations, taxonomies, slugs and media relationships before connecting the commercial web.
 
 ## Import command
+
+When the persistence/read path above is validated, the controlled extraction command remains:
 
 ```bash
 WP_BASE_URL=https://quisqueyatravel.com.do npm run import:wordpress
 ```
 
-The first pass intentionally extracts only confirmed public REST resources:
-
-- pages
-- media
-- `tf_tours`
-
-The importer preserves the full raw responses before normalization.
-
-## Still required before the first real WordPress run
-
-1. Confirm the live REST base for `tf_tours` on the current WordPress instance.
-2. Confirm the destination taxonomy REST endpoint (`tour_destination` from the migration audit, unless the live site differs).
-3. Confirm which tour meta/custom fields represent duration, itinerary, includes/excludes and other detail-page data.
-4. Decide whether WordPress media is copied to platform storage during the first pass or initially referenced by source URL and copied during the media pass.
-5. Run the importer and review counts/relationships against the existing migration v0.2 evidence.
-
-## Why the bridge is file-backed first
-
-This is a temporary migration boundary, not the final persistence model. It allows the commercial web to consume stable Quisqueya API contracts immediately while the inherited lending Prisma domain is still being removed safely.
-
-After extraction is validated, the normalized models move into the cleaned Prisma content schema without changing the public API contract used by `quisqueya-web`.
+WordPress is an import source only. `quisqueya-web` must never read WordPress directly.
 
 ## Exit condition
 
 We return focus to `quisqueya-web` when:
 
-- the first real WordPress snapshot is extracted;
+- the Content Core migration is applied and stable;
+- the first real WordPress extraction/import is validated;
 - six featured experiences resolve with real titles/slugs/media;
 - destinations required by Home resolve;
-- public API responses are stable;
+- public API responses are Prisma-backed and stable;
 - media references are usable by Next.js;
 - no commercial-web component needs to read WordPress directly.
