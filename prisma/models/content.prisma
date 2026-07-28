@@ -10,6 +10,11 @@ enum ContentSourceProvider {
   SYSTEM
 }
 
+enum ExperiencePricingMode {
+  FIXED
+  ON_REQUEST
+}
+
 model MediaAsset {
   id             String                @id @db.VarChar(64)
   sourceProvider ContentSourceProvider @default(MANUAL) @map("source_provider")
@@ -55,26 +60,48 @@ model Destination {
 }
 
 model Experience {
-  id               String                @id @db.VarChar(64)
-  slug             String                @unique @db.VarChar(180)
-  title            String                @db.VarChar(255)
-  excerpt          String?               @db.Text
-  description      String?               @db.LongText
-  duration         String?               @db.VarChar(120)
-  categoryLabel    String?               @map("category_label") @db.VarChar(180)
-  featuredMediaId  String?               @map("featured_media_id") @db.VarChar(64)
-  status           ContentRecordStatus   @default(PUBLISHED)
-  sortOrder        Int                   @default(0) @map("sort_order")
-  sourceProvider   ContentSourceProvider @default(MANUAL) @map("source_provider")
-  sourceId         String?               @map("source_id") @db.VarChar(120)
-  sourceUrl        String?               @map("source_url") @db.Text
-  sourceModifiedAt DateTime?             @map("source_modified_at") @db.Timestamp(0)
-  provenanceJson   Json?                 @map("provenance_json")
-  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+  id                    String                @id @db.VarChar(64)
+  slug                  String                @unique @db.VarChar(180)
+  title                 String                @db.VarChar(255)
+  excerpt               String?               @db.Text
+  description           String?               @db.LongText
+  featuredText          String?               @map("featured_text") @db.Text
+  videoUrl              String?               @map("video_url") @db.Text
+  duration              String?               @db.VarChar(120)
+  durationValue         Int?                  @map("duration_value")
+  durationUnit          String?               @map("duration_unit") @db.VarChar(40)
+  languagesJson         Json?                 @map("languages_json")
+  locationAddress       String?               @map("location_address") @db.Text
+  latitude              Decimal?              @db.Decimal(10, 7)
+  longitude             Decimal?              @db.Decimal(10, 7)
+  mapZoom               Int?                  @map("map_zoom")
+  categoryLabel         String?               @map("category_label") @db.VarChar(180)
+  featuredMediaId       String?               @map("featured_media_id") @db.VarChar(64)
+  galleryMediaSourceIds Json?                  @map("gallery_media_source_ids")
+  pricingMode           ExperiencePricingMode @default(ON_REQUEST) @map("pricing_mode")
+  pricingJson           Json?                 @map("pricing_json")
+  bookingJson           Json?                 @map("booking_json")
+  availabilityJson      Json?                 @map("availability_json")
+  contactJson           Json?                 @map("contact_json")
+  includedItemsJson     Json?                 @map("included_items_json")
+  excludedItemsJson     Json?                 @map("excluded_items_json")
+  itineraryJson         Json?                 @map("itinerary_json")
+  faqsJson              Json?                 @map("faqs_json")
+  displayJson           Json?                 @map("display_json")
+  editorialFlagsJson    Json?                 @map("editorial_flags_json")
+  status                ContentRecordStatus   @default(PUBLISHED)
+  sortOrder             Int                   @default(0) @map("sort_order")
+  sourceProvider        ContentSourceProvider @default(MANUAL) @map("source_provider")
+  sourceId              String?               @map("source_id") @db.VarChar(120)
+  sourceUrl             String?               @map("source_url") @db.Text
+  sourceModifiedAt      DateTime?             @map("source_modified_at") @db.Timestamp(0)
+  provenanceJson        Json?                 @map("provenance_json")
+  createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
 
   @@unique([sourceProvider, sourceId], map: "uniq_experience_source")
   @@index([status, sortOrder], map: "idx_experiences_status_order")
+  @@index([pricingMode], map: "idx_experiences_pricing_mode")
   @@map("experiences")
 }
 
