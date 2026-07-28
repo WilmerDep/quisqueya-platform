@@ -107,17 +107,23 @@ The following lending-only routes have been removed from active `App.tsx` routin
 
 Retained routes currently form the temporary platform shell: dashboard, activity, clients, users, reports, settings and super-admin.
 
-### Shared shell still pending adaptation
+### Shared shell isolation
 
-`components/Layout.tsx` remains a shared component and still contains:
+`components/Layout.tsx` is no longer imported by the active router. It remains in the repository only as quarantined inherited UI pending later deletion or selective extraction.
 
-- lending navigation labels/actions;
-- `getLoans` search integration;
-- `Role.COBRADOR` filters;
-- lending notification event semantics;
-- inherited storage and branding strings.
+The active authenticated shell is now `components/PlatformShell.tsx`, which intentionally exposes only neutral platform navigation:
 
-It must be adapted in place rather than deleted.
+- Escritorio
+- Clientes
+- Actividad
+- Reportes
+- Usuarios
+- Configuración
+- Administración for Super Admin
+
+The active shell no longer exposes lending-only navigation, loan search, collection-route actions, `loanops_shell_scope`, or ABUNDRA branding.
+
+Role cleanup is still pending at the identity-contract level; `PlatformShell` avoids introducing new role semantics until the final travel/CRM permission matrix is defined.
 
 ## Validated quality-gate baseline
 
@@ -200,5 +206,5 @@ Phase 0 is complete when:
 - API-backed authentication no longer depends on local demo fallback;
 - production auth configuration no longer accepts inherited generic secrets;
 - the first local quality-gate run establishes a clean migration baseline — **DONE**;
-- shared shell no longer exposes lending-only navigation/search/role semantics;
+- shared shell no longer exposes lending-only navigation/search/role semantics — **DONE at active-router level**;
 - legacy `dataService.ts` is decomposed enough that retained platform code no longer depends on lending storage/seeds.
