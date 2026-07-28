@@ -8,7 +8,8 @@ const checks = [
   {
     file: 'server/src/app.module.ts',
     forbidden: ['LoansModule', 'PaymentsModule', 'CashModule', 'RoutesModule'],
-    reason: 'lending-only backend modules must remain quarantined from the root runtime',
+    required: ['ContactsModule'],
+    reason: 'lending-only backend modules must remain quarantined while the neutral contacts module stays active',
   },
   {
     file: 'App.tsx',
@@ -100,6 +101,24 @@ const checks = [
     reason: 'the reporting service must remain an API-only neutral reporting boundary',
   },
   {
+    file: 'prisma/models/contact.prisma',
+    forbidden: ['creditRating', 'isBlocked', 'Loan', 'loan', 'mora', 'collector', 'route'],
+    required: ['model Contact', 'enum ContactStatus', 'companyId', 'ownerUserId', 'provenanceJson'],
+    reason: 'the new CRM Contact model must remain neutral and separate from inherited lending semantics',
+  },
+  {
+    file: 'server/src/modules/contacts/contacts.controller.ts',
+    forbidden: ['ClientCreditRating', 'ClientStatus', 'Loan', 'mora', 'collector', 'route'],
+    required: ["@Controller('contacts')", 'this.prisma.contact.findMany', 'this.prisma.contact.create', 'this.prisma.contact.update'],
+    reason: 'the contacts API must use the new Contact aggregate rather than the inherited lending Client model',
+  },
+  {
+    file: 'prisma.config.ts',
+    forbidden: ['schema: "prisma/schema.prisma"'],
+    required: ['schema: "prisma/"'],
+    reason: 'Prisma must load the schema directory so CRM domain files remain isolated from the inherited monolithic schema',
+  },
+  {
     file: 'server/src/modules/auth/auth.service.ts',
     forbidden: ['prestafacil-', 'createHash(\'sha256\')', 'isLegacySha256Format'],
     reason: 'active API authentication must not retain the PrestaFacil SHA-256 compatibility path',
@@ -146,6 +165,10 @@ const requiredFiles = [
   'services/organizationService.ts',
   'services/auditService.ts',
   'services/reportingService.ts',
+  'prisma/models/contact.prisma',
+  'prisma/migrations/20260728013000_add_contact_core/migration.sql',
+  'server/src/modules/contacts/contacts.module.ts',
+  'server/src/modules/contacts/contacts.controller.ts',
   'server/src/modules/content/content.module.ts',
   'scripts/import-wordpress-content.mjs',
 ];
