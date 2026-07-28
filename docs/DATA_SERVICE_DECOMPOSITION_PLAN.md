@@ -33,7 +33,8 @@ The legacy module remains temporary compatibility code only for inherited screen
 
 ### CRM
 
-- contacts/customer API client.
+- `docs/CRM_CORE_DOMAIN_CONTRACT.md` freezes the Contact / Customer / Traveler boundary before the legacy Client migration.
+- future `services/contactsService.ts` — API-only Contact boundary.
 - leads/travel requests/opportunities API client.
 - quotes/tasks/notes API clients as those modules are introduced.
 
@@ -113,7 +114,11 @@ Status: **ACTIVE**
    - report exports, schedules and templates are read through `services/reportingService.ts` → Nest API;
    - the active reports route no longer computes loan/payment/mora analytics or relies on localStorage;
    - inherited PDF builders, financial drill-downs and report workspaces remain quarantined with the old screen.
-5. Clients — **NEXT, AFTER CONTACT/CUSTOMER MODEL DEFINITION**
+5. Clients — **DOMAIN CONTRACT FROZEN; IMPLEMENTATION NEXT**
+   - `docs/CRM_CORE_DOMAIN_CONTRACT.md` defines Contact, Customer and Traveler as separate concepts;
+   - inherited Prisma `Client` is explicitly legacy lending compatibility and must not be renamed blindly;
+   - no credit rating, mora, collector assignment, loan or collection-route semantics may enter the new Contact model;
+   - required implementation order is Prisma Contact → Nest contacts API → frontend contacts service → active route migration.
 6. Super-admin surfaces if retained
 
 Each screen should consume an API-backed or domain-specific service rather than a generic global adapter.
