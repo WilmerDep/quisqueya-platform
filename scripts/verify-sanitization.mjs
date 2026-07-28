@@ -21,6 +21,7 @@ const checks = [
       "./pages/ConfigurationPage",
       "./pages/Activity",
       "./pages/Reports",
+      "./pages/Dashboard",
       "./pages/Clients",
       "./pages/ClientProfile",
       "./pages/LoanCreate",
@@ -36,6 +37,7 @@ const checks = [
     required: [
       './components/PlatformShell',
       './pages/PlatformAccessPage',
+      './pages/PlatformDashboardPage',
       './pages/PlatformUsersPage',
       './pages/PlatformSettingsPage',
       './pages/PlatformActivityPage',
@@ -55,6 +57,12 @@ const checks = [
     forbidden: ['services/dataService', 'admin123', 'master123', 'PrestaFacil', 'PrestaFácil', 'handleQuickDemo', 'createCompany(', 'getAllUsers(', 'updateUser('],
     required: ['useAuth', 'login(username.trim(), password)'],
     reason: 'active access must authenticate through the API only and must not retain local demo/bootstrap authority',
+  },
+  {
+    file: 'pages/PlatformDashboardPage.tsx',
+    forbidden: ['services/dataService', 'localStorage', 'prestard_', 'LoanStatus', 'CashMovement', 'CollectionRoute', 'creditRating', 'isBlocked', 'mora', 'collectorId'],
+    required: ['contactsService.list()', 'teamService.list()', 'auditService.list()'],
+    reason: 'the active dashboard must use neutral API-backed CRM and organization boundaries only',
   },
   {
     file: 'pages/PlatformUsersPage.tsx',
@@ -179,6 +187,7 @@ const requiredFiles = [
   'docs/CONTENT_BRIDGE_READINESS.md',
   'components/PlatformShell.tsx',
   'pages/PlatformAccessPage.tsx',
+  'pages/PlatformDashboardPage.tsx',
   'pages/PlatformUsersPage.tsx',
   'pages/PlatformSettingsPage.tsx',
   'pages/PlatformActivityPage.tsx',
