@@ -36,7 +36,7 @@ The legacy module remains temporary compatibility code only for inherited screen
 - `docs/CRM_CORE_DOMAIN_CONTRACT.md` freezes the Contact / Customer / Traveler boundary before the legacy Client migration.
 - `prisma/models/contact.prisma` defines the neutral Contact persistence model.
 - `server/src/modules/contacts` exposes the authenticated `/api/v1/contacts` boundary.
-- future `services/contactsService.ts` — API-only Contact frontend boundary.
+- `services/contactsService.ts` is the API-only Contact frontend boundary.
 - leads/travel requests/opportunities API client.
 - quotes/tasks/notes API clients as those modules are introduced.
 
@@ -116,14 +116,16 @@ Status: **ACTIVE**
    - report exports, schedules and templates are read through `services/reportingService.ts` → Nest API;
    - the active reports route no longer computes loan/payment/mora analytics or relies on localStorage;
    - inherited PDF builders, financial drill-downs and report workspaces remain quarantined with the old screen.
-5. Clients — **CONTACT PERSISTENCE + API FOUNDATION ADDED**
+5. Clients — **ACTIVE SURFACE MIGRATED TO CONTACT**
    - `docs/CRM_CORE_DOMAIN_CONTRACT.md` defines Contact, Customer and Traveler as separate concepts;
    - `prisma/models/contact.prisma` introduces `Contact` and `ContactStatus` without lending relations;
-   - Prisma now loads the `prisma/` schema directory so new domain models can remain separated from the inherited monolithic schema;
-   - migration `20260728013000_add_contact_core` creates the neutral `contacts` table;
-   - Nest `ContactsModule` exposes GET/POST/PATCH contact endpoints and writes neutral audit events;
-   - inherited Prisma `Client` and `/clients` remain untouched until frontend contacts migration is validated;
-   - **NEXT:** add `services/contactsService.ts`, then replace the active `/clients` and `/clients/:id` surfaces with Contact-backed screens.
+   - Prisma loads the `prisma/` schema directory so new domain models remain separated from the inherited monolithic schema;
+   - migration `20260728013000_add_contact_core` has been applied successfully to local `quisqueya_core`;
+   - Nest `ContactsModule` exposes GET/POST/PATCH contact endpoints and neutral audit events;
+   - `services/contactsService.ts` targets `/contacts` only;
+   - `/clients` now renders `PlatformContactsPage` and `/clients/:id` renders `PlatformContactDetailPage`;
+   - inherited `Clients.tsx`, `ClientProfile.tsx`, Prisma `Client` and `/clients` backend compatibility remain physically present but are no longer used by the active frontend routes;
+   - next CRM work is creation/edit UX plus Customer/TravelRequest relations, not reactivation of lending semantics.
 6. Super-admin surfaces if retained
 
 Each screen should consume an API-backed or domain-specific service rather than a generic global adapter.
