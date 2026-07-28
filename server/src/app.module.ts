@@ -13,6 +13,7 @@ import { SyncModule } from './modules/sync/sync.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { ContentModule } from './modules/content/content.module.js';
+import { ContactsModule } from './modules/contacts/contacts.module.js';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ContentModule } from './modules/content/content.module.js';
     AuditModule,
     SyncModule,
     ContentModule,
+    ContactsModule,
   ],
 })
 export class AppModule {}
