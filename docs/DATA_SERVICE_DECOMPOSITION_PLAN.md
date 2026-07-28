@@ -27,6 +27,10 @@ The legacy module remains temporary compatibility code only for inherited screen
 
 - `services/auditService.ts` — API-only read boundary for platform audit history.
 
+### Reporting
+
+- `services/reportingService.ts` — API-only neutral boundary for report exports, schedules and templates.
+
 ### CRM
 
 - contacts/customer API client.
@@ -103,8 +107,13 @@ Status: **ACTIVE**
    - audit reads go through `services/auditService.ts` → Nest `/audit-logs`;
    - the active activity route has no localStorage, report-template fallback or lending-specific event taxonomy;
    - inherited PDF/report behavior remains quarantined with the old screen.
-4. Reports shell — **NEXT**
-5. Clients, once the Contact/Customer model is defined
+4. Reports shell — **ACTIVE SURFACE MIGRATED**
+   - `App.tsx` no longer mounts the inherited `Reports` screen;
+   - `/reports` now renders `PlatformReportsPage`;
+   - report exports, schedules and templates are read through `services/reportingService.ts` → Nest API;
+   - the active reports route no longer computes loan/payment/mora analytics or relies on localStorage;
+   - inherited PDF builders, financial drill-downs and report workspaces remain quarantined with the old screen.
+5. Clients — **NEXT, AFTER CONTACT/CUSTOMER MODEL DEFINITION**
 6. Super-admin surfaces if retained
 
 Each screen should consume an API-backed or domain-specific service rather than a generic global adapter.
