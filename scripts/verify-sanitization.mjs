@@ -109,7 +109,7 @@ const checks = [
   {
     file: 'server/src/modules/contacts/contacts.controller.ts',
     forbidden: ['ClientCreditRating', 'ClientStatus', 'Loan', 'mora', 'collector', 'route'],
-    required: ["@Controller('contacts')", 'this.prisma.contact.findMany', 'this.prisma.contact.create', 'this.prisma.contact.update'],
+    required: ["@Controller('contacts')", 'this.prisma.contact.findMany', 'tx.contact.create', 'tx.contact.update'],
     reason: 'the contacts API must use the new Contact aggregate rather than the inherited lending Client model',
   },
   {
