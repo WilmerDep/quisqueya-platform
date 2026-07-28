@@ -20,7 +20,7 @@ The legacy module remains temporary compatibility code only for inherited screen
 
 - `services/authService.ts` — session/token lifecycle only.
 - `services/teamService.ts` — API-only users/branch read boundary for the active users surface.
-- future organization client — company/office metadata from Nest API.
+- `services/organizationService.ts` — API-only company/branch boundary for the active settings surface.
 - future role/permission service — explicit Quisqueya role matrix once the replacement model is finalized.
 
 ### CRM
@@ -81,14 +81,19 @@ Status: **DONE FOR ACTIVE RUNTIME**
 
 Status: **ACTIVE**
 
-1. Users / organization settings — **USERS ACTIVE SURFACE MIGRATED**
+1. Users — **ACTIVE SURFACE MIGRATED**
    - `App.tsx` no longer mounts the inherited `UsersManagement` routes;
    - `/users` now renders `PlatformUsersPage`;
    - `PlatformUsersPage` loads users/branches through `services/teamService.ts`;
    - no localStorage or `dataService.ts` fallback is allowed on the active users route;
    - inherited create/invite/roles subroutes redirect to `/users` until the Quisqueya permission model is defined.
-2. Organization settings — **NEXT**
-3. Activity / audit
+2. Organization settings — **ACTIVE SURFACE MIGRATED**
+   - `App.tsx` no longer mounts `ConfigurationPage`;
+   - `/settings` now renders `PlatformSettingsPage`;
+   - company and branch reads/writes go through `services/organizationService.ts` → Nest API;
+   - the active settings route has no localStorage or lending-specific configuration fallback;
+   - inherited settings subroutes redirect to `/settings` until their Quisqueya replacements are explicitly designed.
+3. Activity / audit — **NEXT**
 4. Reports shell
 5. Clients, once the Contact/Customer model is defined
 6. Super-admin surfaces if retained
