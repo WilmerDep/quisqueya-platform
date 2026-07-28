@@ -67,11 +67,18 @@ Status: **DONE**
 
 ### Wave 2 — remove demo/bootstrap authority
 
-- do not call `seedInitialData` from active startup/auth paths;
-- remove inherited PrestaFacil credentials/hashes from any active execution path;
-- keep legacy seed code quarantined until physical deletion is safe.
+Status: **DONE FOR ACTIVE RUNTIME**
+
+- `App.tsx` no longer mounts the inherited `LandingPage` or `AuthPage`;
+- active unauthenticated access uses `PlatformAccessPage`;
+- `PlatformAccessPage` authenticates exclusively through `useAuth` → API;
+- active access has no demo credentials, quick-login buttons, local company registration or invite activation backed by `dataService.ts`;
+- `seedInitialData` and inherited PrestaFacil hashes may still exist inside legacy compatibility code, but they have no authority in the active startup/auth path;
+- physical deletion of the legacy seed code remains gated on retained-screen migration.
 
 ### Wave 3 — migrate retained platform screens
+
+Status: **NEXT**
 
 Move retained screens away from direct `dataService.ts` imports in this order:
 
@@ -99,6 +106,7 @@ WordPress extraction remains blocked until all of the following are true:
 
 - Phase 0 baseline remains green;
 - active shell is lending-neutral;
+- active unauthenticated/auth flows are API-only and demo-neutral;
 - Content API contracts are source-agnostic;
 - Content/Media persistence model is defined before import;
 - WordPress is treated strictly as an import source, not runtime dependency;
