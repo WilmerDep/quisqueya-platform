@@ -34,7 +34,9 @@ The legacy module remains temporary compatibility code only for inherited screen
 ### CRM
 
 - `docs/CRM_CORE_DOMAIN_CONTRACT.md` freezes the Contact / Customer / Traveler boundary before the legacy Client migration.
-- future `services/contactsService.ts` — API-only Contact boundary.
+- `prisma/models/contact.prisma` defines the neutral Contact persistence model.
+- `server/src/modules/contacts` exposes the authenticated `/api/v1/contacts` boundary.
+- future `services/contactsService.ts` — API-only Contact frontend boundary.
 - leads/travel requests/opportunities API client.
 - quotes/tasks/notes API clients as those modules are introduced.
 
@@ -114,11 +116,14 @@ Status: **ACTIVE**
    - report exports, schedules and templates are read through `services/reportingService.ts` → Nest API;
    - the active reports route no longer computes loan/payment/mora analytics or relies on localStorage;
    - inherited PDF builders, financial drill-downs and report workspaces remain quarantined with the old screen.
-5. Clients — **DOMAIN CONTRACT FROZEN; IMPLEMENTATION NEXT**
+5. Clients — **CONTACT PERSISTENCE + API FOUNDATION ADDED**
    - `docs/CRM_CORE_DOMAIN_CONTRACT.md` defines Contact, Customer and Traveler as separate concepts;
-   - inherited Prisma `Client` is explicitly legacy lending compatibility and must not be renamed blindly;
-   - no credit rating, mora, collector assignment, loan or collection-route semantics may enter the new Contact model;
-   - required implementation order is Prisma Contact → Nest contacts API → frontend contacts service → active route migration.
+   - `prisma/models/contact.prisma` introduces `Contact` and `ContactStatus` without lending relations;
+   - Prisma now loads the `prisma/` schema directory so new domain models can remain separated from the inherited monolithic schema;
+   - migration `20260728013000_add_contact_core` creates the neutral `contacts` table;
+   - Nest `ContactsModule` exposes GET/POST/PATCH contact endpoints and writes neutral audit events;
+   - inherited Prisma `Client` and `/clients` remain untouched until frontend contacts migration is validated;
+   - **NEXT:** add `services/contactsService.ts`, then replace the active `/clients` and `/clients/:id` surfaces with Contact-backed screens.
 6. Super-admin surfaces if retained
 
 Each screen should consume an API-backed or domain-specific service rather than a generic global adapter.
