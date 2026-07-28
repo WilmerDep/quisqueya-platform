@@ -10,8 +10,7 @@ import { ActivityPage } from './pages/Activity';
 import { UserCreateView, UserInviteView, UserPermissionsView, UserProfileView, UsersManagement } from './pages/UsersManagement';
 import { ConfigurationPage } from './pages/ConfigurationPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
-import { LandingPage } from './pages/LandingPage';
-import { AuthPage } from './pages/AuthPage';
+import { PlatformAccessPage } from './pages/PlatformAccessPage';
 
 const AppRoutes: React.FC = () => {
   const { currentUser, isLoading } = useAuth();
@@ -29,9 +28,9 @@ const AppRoutes: React.FC = () => {
     <Routes>
       {!currentUser ? (
         <>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/" element={<PlatformAccessPage />} />
+          <Route path="/auth" element={<PlatformAccessPage />} />
+          <Route path="*" element={<Navigate to="/auth" replace />} />
         </>
       ) : (
         <Route
