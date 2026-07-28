@@ -30,8 +30,17 @@ const checks = [
   },
   {
     file: 'components/PlatformShell.tsx',
-    forbidden: ['Prestamo', 'Préstamo', 'Cobrar Hoy', 'Cobrador', 'loanops_shell_scope', 'ABUNDRA', 'getLoans'],
-    reason: 'the active platform shell must stay domain-neutral until the travel/CRM contracts are finalized',
+    forbidden: [
+      'services/dataService',
+      'Prestamo',
+      'Préstamo',
+      'Cobrar Hoy',
+      'Cobrador',
+      'loanops_shell_scope',
+      'ABUNDRA',
+      'getLoans',
+    ],
+    reason: 'the active platform shell must stay domain-neutral and independent from the inherited lending adapter',
   },
   {
     file: 'server/src/modules/auth/auth.service.ts',
@@ -67,6 +76,7 @@ const requiredFiles = [
   'docs/SANITIZATION_MANIFEST.md',
   'docs/LENDING_DEPENDENCY_INVENTORY.md',
   'docs/FRONTEND_DEPENDENCY_INVENTORY.md',
+  'docs/DATA_SERVICE_DECOMPOSITION_PLAN.md',
   'docs/CONTENT_BRIDGE_READINESS.md',
   'components/PlatformShell.tsx',
   'server/src/modules/content/content.module.ts',
