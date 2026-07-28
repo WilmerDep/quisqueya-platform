@@ -7,7 +7,7 @@ import { Clients } from './pages/Clients';
 import { ClientProfile } from './pages/ClientProfile';
 import { Reports } from './pages/Reports';
 import { ActivityPage } from './pages/Activity';
-import { UserCreateView, UserInviteView, UserPermissionsView, UserProfileView, UsersManagement } from './pages/UsersManagement';
+import { PlatformUsersPage } from './pages/PlatformUsersPage';
 import { ConfigurationPage } from './pages/ConfigurationPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
 import { PlatformAccessPage } from './pages/PlatformAccessPage';
@@ -42,11 +42,8 @@ const AppRoutes: React.FC = () => {
                 <Route path="/activity" element={<ActivityPage />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/:id" element={<ClientProfile />} />
-                <Route path="/users" element={<UsersManagement />} />
-                <Route path="/users/new" element={<UserCreateView />} />
-                <Route path="/users/invite" element={<UserInviteView />} />
-                <Route path="/users/roles" element={<UserPermissionsView />} />
-                <Route path="/users/:id" element={<UserProfileView />} />
+                <Route path="/users" element={<PlatformUsersPage />} />
+                <Route path="/users/*" element={<Navigate to="/users" replace />} />
                 <Route path="/reports/*" element={<Reports />} />
                 <Route path="/settings/*" element={<ConfigurationPage />} />
                 <Route path="/master" element={<SuperAdminPage />} />
