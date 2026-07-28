@@ -18,7 +18,7 @@
     "postinstall": "prisma generate",
     "start": "node server-dist/main.js",
     "preview": "vite preview",
-    "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs"
+    "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs && node scripts/canonicalize-wordpress-experience-slugs.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.19",
