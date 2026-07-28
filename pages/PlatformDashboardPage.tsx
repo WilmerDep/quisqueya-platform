@@ -53,7 +53,7 @@ export const PlatformDashboardPage: React.FC = () => {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Quisqueya Platform</p>
         <h1 className="mt-2 text-3xl font-bold text-slate-950">Escritorio</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          Resumen operativo neutral del CRM y la organización. No se calculan préstamos, mora, caja ni rutas de cobranza heredadas.
+          Resumen operativo del CRM, el equipo, las sucursales y la actividad reciente de la organización.
         </p>
       </div>
 
