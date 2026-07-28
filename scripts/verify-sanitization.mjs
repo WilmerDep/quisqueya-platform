@@ -15,6 +15,8 @@ const checks = [
     file: 'App.tsx',
     forbidden: [
       "./components/Layout",
+      "./pages/LandingPage",
+      "./pages/AuthPage",
       "./pages/LoanCreate",
       "./pages/LoansPage",
       "./pages/RoutesPage",
@@ -25,8 +27,8 @@ const checks = [
       'path="/cash"',
       'path="/collect-today"',
     ],
-    required: ['./components/PlatformShell'],
-    reason: 'the active router must use the neutral Quisqueya shell and keep lending routes quarantined',
+    required: ['./components/PlatformShell', './pages/PlatformAccessPage'],
+    reason: 'the active router must use neutral Quisqueya shell/access surfaces and keep inherited lending/demo routes quarantined',
   },
   {
     file: 'components/PlatformShell.tsx',
@@ -41,6 +43,22 @@ const checks = [
       'getLoans',
     ],
     reason: 'the active platform shell must stay domain-neutral and independent from the inherited lending adapter',
+  },
+  {
+    file: 'pages/PlatformAccessPage.tsx',
+    forbidden: [
+      'services/dataService',
+      'admin123',
+      'master123',
+      'PrestaFacil',
+      'PrestaFácil',
+      'handleQuickDemo',
+      'createCompany(',
+      'getAllUsers(',
+      'updateUser(',
+    ],
+    required: ['useAuth', 'login(username.trim(), password)'],
+    reason: 'active access must authenticate through the API only and must not retain local demo/bootstrap authority',
   },
   {
     file: 'server/src/modules/auth/auth.service.ts',
@@ -79,6 +97,7 @@ const requiredFiles = [
   'docs/DATA_SERVICE_DECOMPOSITION_PLAN.md',
   'docs/CONTENT_BRIDGE_READINESS.md',
   'components/PlatformShell.tsx',
+  'pages/PlatformAccessPage.tsx',
   'server/src/modules/content/content.module.ts',
   'scripts/import-wordpress-content.mjs',
 ];
