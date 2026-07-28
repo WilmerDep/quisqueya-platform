@@ -1,0 +1,139 @@
+enum ContentRecordStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContentSourceProvider {
+  WORDPRESS
+  MANUAL
+  SYSTEM
+}
+
+model MediaAsset {
+  id             String                @id @db.VarChar(64)
+  sourceProvider ContentSourceProvider @default(MANUAL) @map("source_provider")
+  sourceId       String?               @map("source_id") @db.VarChar(120)
+  sourceUrl      String?               @map("source_url") @db.Text
+  storageKey     String                @unique @map("storage_key") @db.VarChar(500)
+  publicUrl      String                @map("public_url") @db.Text
+  fileName       String?               @map("file_name") @db.VarChar(255)
+  mimeType       String?               @map("mime_type") @db.VarChar(120)
+  altText        String?               @map("alt_text") @db.Text
+  caption        String?               @db.Text
+  width          Int?
+  height         Int?
+  sizeBytes      BigInt?               @map("size_bytes")
+  checksum       String?               @db.VarChar(128)
+  provenanceJson Json?                 @map("provenance_json")
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@unique([sourceProvider, sourceId], map: "uniq_media_source")
+  @@index([sourceProvider], map: "idx_media_source_provider")
+  @@map("media_assets")
+}
+
+model Destination {
+  id               String                @id @db.VarChar(64)
+  slug             String                @unique @db.VarChar(180)
+  name             String                @db.VarChar(220)
+  description      String?               @db.LongText
+  featuredMediaId  String?               @map("featured_media_id") @db.VarChar(64)
+  status           ContentRecordStatus   @default(PUBLISHED)
+  sourceProvider   ContentSourceProvider @default(MANUAL) @map("source_provider")
+  sourceId         String?               @map("source_id") @db.VarChar(120)
+  sourceUrl        String?               @map("source_url") @db.Text
+  sourceModifiedAt DateTime?             @map("source_modified_at") @db.Timestamp(0)
+  provenanceJson   Json?                 @map("provenance_json")
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@unique([sourceProvider, sourceId], map: "uniq_destination_source")
+  @@index([status], map: "idx_destinations_status")
+  @@map("destinations")
+}
+
+model Experience {
+  id               String                @id @db.VarChar(64)
+  slug             String                @unique @db.VarChar(180)
+  title            String                @db.VarChar(255)
+  excerpt          String?               @db.Text
+  description      String?               @db.LongText
+  duration         String?               @db.VarChar(120)
+  categoryLabel    String?               @map("category_label") @db.VarChar(180)
+  featuredMediaId  String?               @map("featured_media_id") @db.VarChar(64)
+  status           ContentRecordStatus   @default(PUBLISHED)
+  sortOrder        Int                   @default(0) @map("sort_order")
+  sourceProvider   ContentSourceProvider @default(MANUAL) @map("source_provider")
+  sourceId         String?               @map("source_id") @db.VarChar(120)
+  sourceUrl        String?               @map("source_url") @db.Text
+  sourceModifiedAt DateTime?             @map("source_modified_at") @db.Timestamp(0)
+  provenanceJson   Json?                 @map("provenance_json")
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@unique([sourceProvider, sourceId], map: "uniq_experience_source")
+  @@index([status, sortOrder], map: "idx_experiences_status_order")
+  @@map("experiences")
+}
+
+model ExperienceDestination {
+  experienceId  String   @map("experience_id") @db.VarChar(64)
+  destinationId String   @map("destination_id") @db.VarChar(64)
+  isPrimary     Boolean  @default(false) @map("is_primary")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+
+  @@id([experienceId, destinationId])
+  @@index([destinationId], map: "idx_experience_destinations_destination")
+  @@map("experience_destinations")
+}
+
+model TaxonomyTerm {
+  id             String                @id @db.VarChar(64)
+  taxonomy       String                @db.VarChar(120)
+  slug           String                @db.VarChar(180)
+  name           String                @db.VarChar(220)
+  description    String?               @db.Text
+  sourceProvider ContentSourceProvider @default(MANUAL) @map("source_provider")
+  sourceId       String?               @map("source_id") @db.VarChar(120)
+  provenanceJson Json?                 @map("provenance_json")
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@unique([taxonomy, slug], map: "uniq_taxonomy_slug")
+  @@unique([sourceProvider, taxonomy, sourceId], map: "uniq_taxonomy_source")
+  @@index([taxonomy], map: "idx_taxonomy_terms_taxonomy")
+  @@map("taxonomy_terms")
+}
+
+model ExperienceTaxonomyTerm {
+  experienceId String   @map("experience_id") @db.VarChar(64)
+  termId       String   @map("term_id") @db.VarChar(64)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+
+  @@id([experienceId, termId])
+  @@index([termId], map: "idx_experience_taxonomy_term")
+  @@map("experience_taxonomy_terms")
+}
+
+model ContentPage {
+  id               String                @id @db.VarChar(64)
+  slug             String                @unique @db.VarChar(180)
+  title            String                @db.VarChar(255)
+  excerpt          String?               @db.Text
+  content          String?               @db.LongText
+  featuredMediaId  String?               @map("featured_media_id") @db.VarChar(64)
+  status           ContentRecordStatus   @default(PUBLISHED)
+  sourceProvider   ContentSourceProvider @default(MANUAL) @map("source_provider")
+  sourceId         String?               @map("source_id") @db.VarChar(120)
+  sourceUrl        String?               @map("source_url") @db.Text
+  sourceModifiedAt DateTime?             @map("source_modified_at") @db.Timestamp(0)
+  provenanceJson   Json?                 @map("provenance_json")
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@unique([sourceProvider, sourceId], map: "uniq_content_page_source")
+  @@index([status], map: "idx_content_pages_status")
+  @@map("content_pages")
+}
