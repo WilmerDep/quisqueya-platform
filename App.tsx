@@ -3,8 +3,8 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PlatformShell } from './components/PlatformShell';
 import { Dashboard } from './pages/Dashboard';
-import { Clients } from './pages/Clients';
-import { ClientProfile } from './pages/ClientProfile';
+import { PlatformContactsPage } from './pages/PlatformContactsPage';
+import { PlatformContactDetailPage } from './pages/PlatformContactDetailPage';
 import { PlatformReportsPage } from './pages/PlatformReportsPage';
 import { PlatformActivityPage } from './pages/PlatformActivityPage';
 import { PlatformUsersPage } from './pages/PlatformUsersPage';
@@ -40,8 +40,8 @@ const AppRoutes: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/activity" element={<PlatformActivityPage />} />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/clients/:id" element={<ClientProfile />} />
+                <Route path="/clients" element={<PlatformContactsPage />} />
+                <Route path="/clients/:id" element={<PlatformContactDetailPage />} />
                 <Route path="/users" element={<PlatformUsersPage />} />
                 <Route path="/users/*" element={<Navigate to="/users" replace />} />
                 <Route path="/reports" element={<PlatformReportsPage />} />
