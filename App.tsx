@@ -2,7 +2,7 @@ import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PlatformShell } from './components/PlatformShell';
-import { Dashboard } from './pages/Dashboard';
+import { PlatformDashboardPage } from './pages/PlatformDashboardPage';
 import { PlatformContactsPage } from './pages/PlatformContactsPage';
 import { PlatformContactDetailPage } from './pages/PlatformContactDetailPage';
 import { PlatformReportsPage } from './pages/PlatformReportsPage';
@@ -38,7 +38,7 @@ const AppRoutes: React.FC = () => {
           element={
             <PlatformShell>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<PlatformDashboardPage />} />
                 <Route path="/activity" element={<PlatformActivityPage />} />
                 <Route path="/clients" element={<PlatformContactsPage />} />
                 <Route path="/clients/:id" element={<PlatformContactDetailPage />} />
