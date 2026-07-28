@@ -2,7 +2,6 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
-
 const read = async path => readFile(resolve(root, path), 'utf8');
 
 const checks = [
@@ -20,6 +19,7 @@ const checks = [
       "./pages/UsersManagement",
       "./pages/ConfigurationPage",
       "./pages/Activity",
+      "./pages/Reports",
       "./pages/LoanCreate",
       "./pages/LoansPage",
       "./pages/RoutesPage",
@@ -36,8 +36,9 @@ const checks = [
       './pages/PlatformUsersPage',
       './pages/PlatformSettingsPage',
       './pages/PlatformActivityPage',
+      './pages/PlatformReportsPage',
     ],
-    reason: 'the active router must use neutral Quisqueya shell/access/users/settings/activity surfaces and keep inherited lending/demo routes quarantined',
+    reason: 'the active router must use neutral Quisqueya surfaces and keep inherited lending/demo routes quarantined',
   },
   {
     file: 'components/PlatformShell.tsx',
@@ -76,20 +77,7 @@ const checks = [
   },
   {
     file: 'pages/PlatformActivityPage.tsx',
-    forbidden: [
-      'services/dataService',
-      'localStorage',
-      'prestard_',
-      'PrestaFacil',
-      'PrestaFácil',
-      'PAGO',
-      'PROMESA',
-      'PRESTAMO',
-      'ROUTE_CLOSE',
-      'CASH_MOVE',
-      'getGlobalActivity',
-      'getReportTemplates',
-    ],
+    forbidden: ['services/dataService', 'localStorage', 'prestard_', 'PrestaFacil', 'PrestaFácil', 'PAGO', 'PROMESA', 'PRESTAMO', 'ROUTE_CLOSE', 'CASH_MOVE', 'getGlobalActivity', 'getReportTemplates'],
     required: ['auditService.list()'],
     reason: 'the active activity surface must use the API audit boundary and must not expose inherited lending event semantics',
   },
@@ -98,6 +86,18 @@ const checks = [
     forbidden: ['services/dataService', 'localStorage', 'prestard_'],
     required: ['apiClient.listAuditLogs'],
     reason: 'the audit service must remain an API-only audit boundary',
+  },
+  {
+    file: 'pages/PlatformReportsPage.tsx',
+    forbidden: ['services/dataService', 'localStorage', 'prestard_', 'PrestaFacil', 'PrestaFácil', 'Loan', 'LoanStatus', 'PaymentReceipt', 'PaymentPromise', 'mora', 'prestamo', 'préstamo'],
+    required: ['reportingService.load()'],
+    reason: 'the active reports surface must use the neutral API reporting boundary and exclude inherited lending analytics',
+  },
+  {
+    file: 'services/reportingService.ts',
+    forbidden: ['services/dataService', 'localStorage', 'prestard_', 'listLoans', 'listPayments', 'getReportSummary'],
+    required: ['apiClient.listReportExports()', 'apiClient.listReportSchedules()', 'apiClient.listReportTemplates()'],
+    reason: 'the reporting service must remain an API-only neutral reporting boundary',
   },
   {
     file: 'server/src/modules/auth/auth.service.ts',
@@ -140,9 +140,11 @@ const requiredFiles = [
   'pages/PlatformUsersPage.tsx',
   'pages/PlatformSettingsPage.tsx',
   'pages/PlatformActivityPage.tsx',
+  'pages/PlatformReportsPage.tsx',
   'services/teamService.ts',
   'services/organizationService.ts',
   'services/auditService.ts',
+  'services/reportingService.ts',
   'server/src/modules/content/content.module.ts',
   'scripts/import-wordpress-content.mjs',
 ];
