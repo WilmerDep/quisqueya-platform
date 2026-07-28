@@ -23,6 +23,10 @@ The legacy module remains temporary compatibility code only for inherited screen
 - `services/organizationService.ts` — API-only company/branch boundary for the active settings surface.
 - future role/permission service — explicit Quisqueya role matrix once the replacement model is finalized.
 
+### Audit
+
+- `services/auditService.ts` — API-only read boundary for platform audit history.
+
 ### CRM
 
 - contacts/customer API client.
@@ -93,8 +97,13 @@ Status: **ACTIVE**
    - company and branch reads/writes go through `services/organizationService.ts` → Nest API;
    - the active settings route has no localStorage or lending-specific configuration fallback;
    - inherited settings subroutes redirect to `/settings` until their Quisqueya replacements are explicitly designed.
-3. Activity / audit — **NEXT**
-4. Reports shell
+3. Activity / audit — **ACTIVE SURFACE MIGRATED**
+   - `App.tsx` no longer mounts the inherited `ActivityPage`;
+   - `/activity` now renders `PlatformActivityPage`;
+   - audit reads go through `services/auditService.ts` → Nest `/audit-logs`;
+   - the active activity route has no localStorage, report-template fallback or lending-specific event taxonomy;
+   - inherited PDF/report behavior remains quarantined with the old screen.
+4. Reports shell — **NEXT**
 5. Clients, once the Contact/Customer model is defined
 6. Super-admin surfaces if retained
 
