@@ -8,7 +8,7 @@ import { ClientProfile } from './pages/ClientProfile';
 import { Reports } from './pages/Reports';
 import { ActivityPage } from './pages/Activity';
 import { PlatformUsersPage } from './pages/PlatformUsersPage';
-import { ConfigurationPage } from './pages/ConfigurationPage';
+import { PlatformSettingsPage } from './pages/PlatformSettingsPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
 import { PlatformAccessPage } from './pages/PlatformAccessPage';
 
@@ -45,7 +45,8 @@ const AppRoutes: React.FC = () => {
                 <Route path="/users" element={<PlatformUsersPage />} />
                 <Route path="/users/*" element={<Navigate to="/users" replace />} />
                 <Route path="/reports/*" element={<Reports />} />
-                <Route path="/settings/*" element={<ConfigurationPage />} />
+                <Route path="/settings" element={<PlatformSettingsPage />} />
+                <Route path="/settings/*" element={<Navigate to="/settings" replace />} />
                 <Route path="/master" element={<SuperAdminPage />} />
                 <Route path="/super-admin/usuarios" element={<SuperAdminPage />} />
                 <Route path="/super-admin/usuarios/equipo-saas" element={<SuperAdminPage />} />
