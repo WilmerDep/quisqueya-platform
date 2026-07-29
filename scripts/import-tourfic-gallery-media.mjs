@@ -13,6 +13,10 @@ const metadataPath = resolve(
   process.cwd(),
   process.env.TOURFIC_METADATA_PATH || 'data/content/wordpress-tourfic-authenticated-metadata.json',
 );
+const evidencePath = resolve(
+  process.cwd(),
+  process.env.TOURFIC_GALLERY_EVIDENCE_PATH || 'data/wordpress/authenticated/tour-gallery-media.json',
+);
 
 const adapter = new PrismaMariaDb({
   host: process.env.MYSQL_HOST || '127.0.0.1',
@@ -34,6 +38,17 @@ const decodeHtml = value => String(value || '')
   .replace(/&nbsp;/g, ' ')
   .replace(/<[^>]+>/g, '')
   .trim();
+
+async function readEvidence() {
+  try {
+    const payload = JSON.parse(await readFile(evidencePath, 'utf8'));
+    const rows = Array.isArray(payload?.media) ? payload.media.filter(item => item?.ok) : [];
+    return new Map(rows.map(item => [Number(item.id), item]));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return new Map();
+    throw error;
+  }
+}
 
 async function fetchMedia(mediaId) {
   const url = `${baseUrl}/wp-json/wp/v2/media/${mediaId}?context=view`;
@@ -63,10 +78,30 @@ async function fetchMedia(mediaId) {
     };
   }
 
-  return { ok: true, row, endpoint: url };
+  return { ok: true, row, endpoint: url, recovery: 'tourfic-gallery-wordpress-api' };
 }
 
-async function upsertMedia(row, evidenceEndpoint) {
+function normalizeEvidenceRow(item) {
+  const raw = item?.raw && typeof item.raw === 'object' ? item.raw : {};
+  return {
+    ...raw,
+    id: Number(item.id),
+    link: item.link || raw.link || null,
+    source_url: item.source_url || raw.source_url || null,
+    mime_type: item.mime_type || raw.mime_type || null,
+    alt_text: item.alt_text ?? raw.alt_text ?? '',
+    caption: raw.caption || { raw: item.caption || '', rendered: item.caption || '' },
+    media_details: {
+      ...(raw.media_details || {}),
+      file: item.file || raw.media_details?.file || null,
+      width: item.width || raw.media_details?.width || null,
+      height: item.height || raw.media_details?.height || null,
+      filesize: item.filesize || raw.media_details?.filesize || null,
+    },
+  };
+}
+
+async function upsertMedia(row, provenance) {
   const mediaId = Number(row.id);
   return prisma.mediaAsset.upsert({
     where: {
@@ -85,15 +120,11 @@ async function upsertMedia(row, evidenceEndpoint) {
       fileName: row.media_details?.file?.split('/').pop() || null,
       mimeType: row.mime_type || null,
       altText: row.alt_text || null,
-      caption: decodeHtml(row.caption?.rendered) || null,
+      caption: decodeHtml(row.caption?.raw || row.caption?.rendered) || null,
       width: row.media_details?.width || null,
       height: row.media_details?.height || null,
       sizeBytes: row.media_details?.filesize ? BigInt(row.media_details.filesize) : null,
-      provenanceJson: {
-        recovery: 'tourfic-gallery-wordpress-api',
-        evidenceEndpoint,
-        raw: row,
-      },
+      provenanceJson: provenance,
     },
     update: {
       sourceUrl: row.link || row.source_url,
@@ -101,15 +132,11 @@ async function upsertMedia(row, evidenceEndpoint) {
       fileName: row.media_details?.file?.split('/').pop() || null,
       mimeType: row.mime_type || null,
       altText: row.alt_text || null,
-      caption: decodeHtml(row.caption?.rendered) || null,
+      caption: decodeHtml(row.caption?.raw || row.caption?.rendered) || null,
       width: row.media_details?.width || null,
       height: row.media_details?.height || null,
       sizeBytes: row.media_details?.filesize ? BigInt(row.media_details.filesize) : null,
-      provenanceJson: {
-        recovery: 'tourfic-gallery-wordpress-api',
-        evidenceEndpoint,
-        raw: row,
-      },
+      provenanceJson: provenance,
     },
     select: { id: true, sourceId: true },
   });
@@ -120,6 +147,7 @@ async function main() {
   const tours = Array.isArray(payload?.tours) ? payload.tours.filter(item => item?.ok) : [];
   if (!tours.length) throw new Error(`No successful tours found in ${metadataPath}`);
 
+  const evidenceById = await readEvidence();
   const referencedIds = [...new Set(
     tours.flatMap(tour => Array.isArray(tour.galleryMediaIds) ? tour.galleryMediaIds : [])
       .map(Number)
@@ -136,22 +164,43 @@ async function main() {
   const existingIds = new Set(existing.map(row => Number(row.sourceId)).filter(Number.isFinite));
   const missingIds = referencedIds.filter(mediaId => !existingIds.has(mediaId));
 
-  let imported = 0;
+  let importedFromEvidence = 0;
+  let importedFromPublicApi = 0;
   const unresolved = [];
 
   for (const [index, mediaId] of missingIds.entries()) {
-    console.log(`[${index + 1}/${missingIds.length}] Fetching WordPress media ${mediaId}...`);
+    console.log(`[${index + 1}/${missingIds.length}] Resolving WordPress media ${mediaId}...`);
+
+    const evidence = evidenceById.get(mediaId);
+    if (evidence) {
+      const row = normalizeEvidenceRow(evidence);
+      if (!row.source_url) {
+        unresolved.push({ mediaId, reason: 'Authenticated evidence did not contain source_url.' });
+        continue;
+      }
+      await upsertMedia(row, {
+        recovery: 'tourfic-gallery-authenticated-evidence',
+        evidenceFile: 'data/wordpress/authenticated/tour-gallery-media.json',
+        raw: row,
+      });
+      importedFromEvidence += 1;
+      continue;
+    }
+
     try {
       const result = await fetchMedia(mediaId);
       if (!result.ok) {
         unresolved.push(result);
         continue;
       }
-      await upsertMedia(result.row, result.endpoint);
-      imported += 1;
+      await upsertMedia(result.row, {
+        recovery: result.recovery,
+        evidenceEndpoint: result.endpoint,
+        raw: result.row,
+      });
+      importedFromPublicApi += 1;
     } catch (error) {
       unresolved.push({
-        ok: false,
         mediaId,
         reason: error instanceof Error ? error.message : String(error),
       });
@@ -160,14 +209,14 @@ async function main() {
 
   const resolvedCount = referencedIds.length - unresolved.length;
   console.log(`Tourfic galleries reference ${referencedIds.length} unique WordPress media records.`);
-  console.log(`${existingIds.size} were already present; ${imported} new records were imported.`);
+  console.log(`${existingIds.size} were already present.`);
+  console.log(`${importedFromEvidence} were imported from authenticated evidence.`);
+  console.log(`${importedFromPublicApi} were imported from the public WordPress API.`);
   console.log(`${resolvedCount}/${referencedIds.length} gallery media references are now resolvable.`);
 
   if (unresolved.length) {
-    console.warn('Unresolved gallery media require authenticated evidence:');
-    for (const item of unresolved) {
-      console.warn(`- ${item.mediaId}: ${item.reason}`);
-    }
+    console.warn('Unresolved gallery media:');
+    for (const item of unresolved) console.warn(`- ${item.mediaId}: ${item.reason}`);
     process.exitCode = 2;
   }
 }
