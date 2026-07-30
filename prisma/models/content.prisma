@@ -87,6 +87,7 @@ model Experience {
   excludedItemsJson     Json?                 @map("excluded_items_json")
   itineraryJson         Json?                 @map("itinerary_json")
   faqsJson              Json?                 @map("faqs_json")
+  practicalInfoJson     Json?                 @map("practical_info_json")
   displayJson           Json?                 @map("display_json")
   editorialFlagsJson    Json?                 @map("editorial_flags_json")
   status                ContentRecordStatus   @default(PUBLISHED)
