@@ -31,10 +31,118 @@ const asDecimalString = value => {
   return Number.isFinite(parsed) ? String(value) : null;
 };
 
+const asText = value => {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  return normalized || null;
+};
+
+const asTextList = value => {
+  if (Array.isArray(value)) {
+    return value
+      .map(item => asText(item))
+      .filter(Boolean);
+  }
+
+  if (typeof value !== 'string') return [];
+  return value
+    .split(/\r?\n|;|\u2022/)
+    .map(item => item.replace(/^[-*]\s*/, '').trim())
+    .filter(Boolean);
+};
+
+const asObject = value => (
+  value && typeof value === 'object' && !Array.isArray(value) ? value : null
+);
+
 const normalizeLanguages = value => String(value || '')
   .split(/\s+y\s+|,|\//i)
   .map(item => item.trim())
   .filter(Boolean);
+
+const normalizePhysicalLevel = value => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return null;
+  if (['low', 'bajo', 'baja', 'easy', 'fácil', 'facil'].includes(normalized)) return 'low';
+  if (['moderate', 'moderado', 'moderada', 'medium', 'medio', 'media'].includes(normalized)) return 'moderate';
+  if (['high', 'alto', 'alta', 'hard', 'difícil', 'dificil'].includes(normalized)) return 'high';
+  if (['not_specified', 'not specified', 'no especificado', 'no especificada'].includes(normalized)) return 'not_specified';
+  return null;
+};
+
+function normalizePracticalInfo(tour) {
+  const source = asObject(tour.practicalInfo)
+    || asObject(tour.practical)
+    || asObject(tour.beforeYouGo)
+    || {};
+
+  const accessibilitySource = asObject(source.accessibility) || {};
+  const meetingPointSource = asObject(source.meetingPoint) || {};
+  const pickupSource = asObject(source.pickupInformation)
+    || asObject(source.pickup)
+    || {};
+
+  const accessibilityDetails = asText(accessibilitySource.details)
+    || asText(source.accessibilityDetails);
+  const accessibilityAvailable = typeof accessibilitySource.available === 'boolean'
+    ? accessibilitySource.available
+    : typeof source.accessible === 'boolean'
+      ? source.accessible
+      : undefined;
+
+  const meetingPoint = {
+    label: asText(meetingPointSource.label) || asText(source.meetingPointLabel),
+    address: asText(meetingPointSource.address) || asText(source.meetingPointAddress),
+    instructions: asText(meetingPointSource.instructions) || asText(source.meetingInstructions),
+    latitude: Number.isFinite(Number(meetingPointSource.latitude)) ? Number(meetingPointSource.latitude) : undefined,
+    longitude: Number.isFinite(Number(meetingPointSource.longitude)) ? Number(meetingPointSource.longitude) : undefined,
+  };
+
+  const pickupInformation = {
+    available: typeof pickupSource.available === 'boolean'
+      ? pickupSource.available
+      : typeof source.pickupAvailable === 'boolean'
+        ? source.pickupAvailable
+        : undefined,
+    details: asText(pickupSource.details) || asText(source.pickupDetails),
+    zones: asTextList(pickupSource.zones || source.pickupZones),
+  };
+
+  const practicalInfo = {
+    whatToBring: asTextList(source.whatToBring || tour.whatToBring),
+    restrictions: asTextList(source.restrictions || tour.restrictions),
+    accessibility: accessibilityAvailable !== undefined || accessibilityDetails
+      ? {
+          available: accessibilityAvailable,
+          details: accessibilityDetails || undefined,
+        }
+      : undefined,
+    minimumAge: asInteger(source.minimumAge ?? tour.minimumAge) ?? undefined,
+    physicalLevel: normalizePhysicalLevel(source.physicalLevel || tour.physicalLevel) || undefined,
+    meetingPoint: Object.values(meetingPoint).some(value => value !== undefined) ? meetingPoint : undefined,
+    pickupInformation: pickupInformation.available !== undefined
+      || pickupInformation.details
+      || pickupInformation.zones.length
+      ? pickupInformation
+      : undefined,
+    cancellationPolicy: asText(source.cancellationPolicy || tour.cancellationPolicy) || undefined,
+    bookingNotice: asText(source.bookingNotice || tour.bookingNotice) || undefined,
+    requiredDocuments: asTextList(source.requiredDocuments || tour.requiredDocuments),
+  };
+
+  const hasContent = practicalInfo.whatToBring.length
+    || practicalInfo.restrictions.length
+    || practicalInfo.accessibility
+    || practicalInfo.minimumAge !== undefined
+    || practicalInfo.physicalLevel
+    || practicalInfo.meetingPoint
+    || practicalInfo.pickupInformation
+    || practicalInfo.cancellationPolicy
+    || practicalInfo.bookingNotice
+    || practicalInfo.requiredDocuments.length;
+
+  return hasContent ? practicalInfo : null;
+}
 
 const signature = value => JSON.stringify(value || []);
 
@@ -97,6 +205,7 @@ async function main() {
   }
 
   let updated = 0;
+  let practicalInfoImported = 0;
   const missing = [];
 
   for (const tour of tours) {
@@ -124,6 +233,7 @@ async function main() {
 
     const durationValue = asInteger(tour.duration?.value);
     const durationUnit = tour.duration?.unit || null;
+    const practicalInfo = normalizePracticalInfo(tour);
 
     await prisma.experience.update({
       where: { id: existing.id },
@@ -148,16 +258,19 @@ async function main() {
         excludedItemsJson: Array.isArray(tour.excluded) ? tour.excluded : [],
         itineraryJson: Array.isArray(tour.itinerary) ? tour.itinerary : [],
         faqsJson: Array.isArray(tour.faqs) ? tour.faqs : [],
+        practicalInfoJson: practicalInfo,
         displayJson: tour.display || null,
         editorialFlagsJson: flags,
       },
     });
 
+    if (practicalInfo) practicalInfoImported += 1;
     updated += 1;
   }
 
   console.log(`Imported authenticated Tourfic metadata for ${updated}/${tours.length} experiences.`);
-  console.log(`Editorial review flags were generated without modifying source copy.`);
+  console.log(`Imported explicit practical information for ${practicalInfoImported}/${tours.length} experiences.`);
+  console.log('Editorial review flags were generated without modifying source copy.');
 
   if (missing.length) {
     throw new Error(`Missing WordPress experiences in Prisma for source IDs: ${missing.join(', ')}`);
