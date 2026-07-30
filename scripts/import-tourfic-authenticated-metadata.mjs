@@ -25,6 +25,12 @@ const asInteger = value => {
   return Number.isInteger(parsed) ? parsed : null;
 };
 
+const asFiniteNumber = value => {
+  if (value === null || value === undefined || value === '') return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 const asDecimalString = value => {
   if (value === null || value === undefined || value === '') return null;
   const parsed = Number(value);
@@ -55,6 +61,10 @@ const asObject = value => (
   value && typeof value === 'object' && !Array.isArray(value) ? value : null
 );
 
+const compactObject = value => Object.fromEntries(
+  Object.entries(value).filter(([, item]) => item !== undefined && item !== null),
+);
+
 const normalizeLanguages = value => String(value || '')
   .split(/\s+y\s+|,|\//i)
   .map(item => item.trim())
@@ -83,51 +93,52 @@ function normalizePracticalInfo(tour) {
     || {};
 
   const accessibilityDetails = asText(accessibilitySource.details)
-    || asText(source.accessibilityDetails);
+    ?? asText(source.accessibilityDetails)
+    ?? undefined;
   const accessibilityAvailable = typeof accessibilitySource.available === 'boolean'
     ? accessibilitySource.available
     : typeof source.accessible === 'boolean'
       ? source.accessible
       : undefined;
 
-  const meetingPoint = {
-    label: asText(meetingPointSource.label) || asText(source.meetingPointLabel),
-    address: asText(meetingPointSource.address) || asText(source.meetingPointAddress),
-    instructions: asText(meetingPointSource.instructions) || asText(source.meetingInstructions),
-    latitude: Number.isFinite(Number(meetingPointSource.latitude)) ? Number(meetingPointSource.latitude) : undefined,
-    longitude: Number.isFinite(Number(meetingPointSource.longitude)) ? Number(meetingPointSource.longitude) : undefined,
-  };
+  const meetingPoint = compactObject({
+    label: asText(meetingPointSource.label) ?? asText(source.meetingPointLabel) ?? undefined,
+    address: asText(meetingPointSource.address) ?? asText(source.meetingPointAddress) ?? undefined,
+    instructions: asText(meetingPointSource.instructions) ?? asText(source.meetingInstructions) ?? undefined,
+    latitude: asFiniteNumber(meetingPointSource.latitude),
+    longitude: asFiniteNumber(meetingPointSource.longitude),
+  });
 
-  const pickupInformation = {
+  const pickupInformation = compactObject({
     available: typeof pickupSource.available === 'boolean'
       ? pickupSource.available
       : typeof source.pickupAvailable === 'boolean'
         ? source.pickupAvailable
         : undefined,
-    details: asText(pickupSource.details) || asText(source.pickupDetails),
-    zones: asTextList(pickupSource.zones || source.pickupZones),
-  };
+    details: asText(pickupSource.details) ?? asText(source.pickupDetails) ?? undefined,
+    zones: asTextList(pickupSource.zones ?? source.pickupZones),
+  });
+
+  const accessibility = compactObject({
+    available: accessibilityAvailable,
+    details: accessibilityDetails,
+  });
 
   const practicalInfo = {
-    whatToBring: asTextList(source.whatToBring || tour.whatToBring),
-    restrictions: asTextList(source.restrictions || tour.restrictions),
-    accessibility: accessibilityAvailable !== undefined || accessibilityDetails
-      ? {
-          available: accessibilityAvailable,
-          details: accessibilityDetails || undefined,
-        }
-      : undefined,
+    whatToBring: asTextList(source.whatToBring ?? tour.whatToBring),
+    restrictions: asTextList(source.restrictions ?? tour.restrictions),
+    accessibility: Object.keys(accessibility).length ? accessibility : undefined,
     minimumAge: asInteger(source.minimumAge ?? tour.minimumAge) ?? undefined,
-    physicalLevel: normalizePhysicalLevel(source.physicalLevel || tour.physicalLevel) || undefined,
-    meetingPoint: Object.values(meetingPoint).some(value => value !== undefined) ? meetingPoint : undefined,
+    physicalLevel: normalizePhysicalLevel(source.physicalLevel ?? tour.physicalLevel) || undefined,
+    meetingPoint: Object.keys(meetingPoint).length ? meetingPoint : undefined,
     pickupInformation: pickupInformation.available !== undefined
       || pickupInformation.details
-      || pickupInformation.zones.length
+      || pickupInformation.zones?.length
       ? pickupInformation
       : undefined,
-    cancellationPolicy: asText(source.cancellationPolicy || tour.cancellationPolicy) || undefined,
-    bookingNotice: asText(source.bookingNotice || tour.bookingNotice) || undefined,
-    requiredDocuments: asTextList(source.requiredDocuments || tour.requiredDocuments),
+    cancellationPolicy: asText(source.cancellationPolicy ?? tour.cancellationPolicy) ?? undefined,
+    bookingNotice: asText(source.bookingNotice ?? tour.bookingNotice) ?? undefined,
+    requiredDocuments: asTextList(source.requiredDocuments ?? tour.requiredDocuments),
   };
 
   const hasContent = practicalInfo.whatToBring.length
