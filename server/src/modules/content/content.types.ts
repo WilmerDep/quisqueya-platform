@@ -16,6 +16,38 @@ export type PublicExperienceLocation = {
   zoom?: number;
 };
 
+export type PublicExperienceAccessibility = {
+  available?: boolean;
+  details?: string;
+};
+
+export type PublicExperienceMeetingPoint = {
+  label?: string;
+  address?: string;
+  instructions?: string;
+  latitude?: number;
+  longitude?: number;
+};
+
+export type PublicExperiencePickupInformation = {
+  available?: boolean;
+  details?: string;
+  zones: string[];
+};
+
+export type PublicExperiencePracticalInfo = {
+  whatToBring: string[];
+  restrictions: string[];
+  accessibility?: PublicExperienceAccessibility;
+  minimumAge?: number;
+  physicalLevel?: 'low' | 'moderate' | 'high' | 'not_specified';
+  meetingPoint?: PublicExperienceMeetingPoint;
+  pickupInformation?: PublicExperiencePickupInformation;
+  cancellationPolicy?: string;
+  bookingNotice?: string;
+  requiredDocuments: string[];
+};
+
 export type PublicExperienceEditorialFlag = {
   code: string;
   severity: 'info' | 'warning' | 'error';
@@ -49,6 +81,7 @@ export type PublicExperience = {
   excluded: string[];
   itinerary: Array<Record<string, unknown>>;
   faqs: Array<Record<string, unknown>>;
+  practicalInfo?: PublicExperiencePracticalInfo;
   display?: Record<string, unknown>;
   editorialFlags: PublicExperienceEditorialFlag[];
   sourceUrl?: string;
