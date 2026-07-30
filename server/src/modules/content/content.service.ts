@@ -6,6 +6,7 @@ import type {
   PublicDestination,
   PublicExperience,
   PublicExperienceEditorialFlag,
+  PublicExperiencePracticalInfo,
   PublicMedia,
   PublicPageContent,
 } from './content.types.js';
@@ -36,6 +37,80 @@ export class ContentService {
   private jsonObject(value: Prisma.JsonValue | null): Record<string, unknown> | undefined {
     if (!value || Array.isArray(value) || typeof value !== 'object') return undefined;
     return value as Record<string, unknown>;
+  }
+
+  private practicalInfo(value: Prisma.JsonValue | null): PublicExperiencePracticalInfo | undefined {
+    const raw = this.jsonObject(value);
+    if (!raw) return undefined;
+
+    const strings = (candidate: unknown): string[] =>
+      Array.isArray(candidate)
+        ? candidate.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        : [];
+    const text = (candidate: unknown): string | undefined =>
+      typeof candidate === 'string' && candidate.trim().length > 0 ? candidate.trim() : undefined;
+    const finiteNumber = (candidate: unknown): number | undefined => {
+      const parsed = Number(candidate);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+    const object = (candidate: unknown): Record<string, unknown> | undefined =>
+      candidate && !Array.isArray(candidate) && typeof candidate === 'object'
+        ? candidate as Record<string, unknown>
+        : undefined;
+
+    const accessibilityRaw = object(raw.accessibility);
+    const meetingPointRaw = object(raw.meetingPoint);
+    const pickupRaw = object(raw.pickupInformation);
+    const physicalLevel = ['low', 'moderate', 'high', 'not_specified'].includes(String(raw.physicalLevel))
+      ? raw.physicalLevel as PublicExperiencePracticalInfo['physicalLevel']
+      : undefined;
+
+    const practicalInfo: PublicExperiencePracticalInfo = {
+      whatToBring: strings(raw.whatToBring),
+      restrictions: strings(raw.restrictions),
+      requiredDocuments: strings(raw.requiredDocuments),
+      accessibility: accessibilityRaw
+        ? {
+            available: typeof accessibilityRaw.available === 'boolean' ? accessibilityRaw.available : undefined,
+            details: text(accessibilityRaw.details),
+          }
+        : undefined,
+      minimumAge: finiteNumber(raw.minimumAge),
+      physicalLevel,
+      meetingPoint: meetingPointRaw
+        ? {
+            label: text(meetingPointRaw.label),
+            address: text(meetingPointRaw.address),
+            instructions: text(meetingPointRaw.instructions),
+            latitude: finiteNumber(meetingPointRaw.latitude),
+            longitude: finiteNumber(meetingPointRaw.longitude),
+          }
+        : undefined,
+      pickupInformation: pickupRaw
+        ? {
+            available: typeof pickupRaw.available === 'boolean' ? pickupRaw.available : undefined,
+            details: text(pickupRaw.details),
+            zones: strings(pickupRaw.zones),
+          }
+        : undefined,
+      cancellationPolicy: text(raw.cancellationPolicy),
+      bookingNotice: text(raw.bookingNotice),
+    };
+
+    const hasContent = Boolean(
+      practicalInfo.whatToBring.length ||
+      practicalInfo.restrictions.length ||
+      practicalInfo.requiredDocuments.length ||
+      practicalInfo.accessibility ||
+      practicalInfo.minimumAge !== undefined ||
+      practicalInfo.physicalLevel ||
+      practicalInfo.meetingPoint ||
+      practicalInfo.pickupInformation ||
+      practicalInfo.cancellationPolicy ||
+      practicalInfo.bookingNotice,
+    );
+
+    return hasContent ? practicalInfo : undefined;
   }
 
   private mapMedia(row: {
@@ -163,6 +238,7 @@ export class ContentService {
       excluded: this.jsonArray<string>(row.excludedItemsJson),
       itinerary: this.jsonArray<Record<string, unknown>>(row.itineraryJson),
       faqs: this.jsonArray<Record<string, unknown>>(row.faqsJson),
+      practicalInfo: this.practicalInfo(row.practicalInfoJson),
       display: this.jsonObject(row.displayJson),
       editorialFlags: this.jsonArray<PublicExperienceEditorialFlag>(row.editorialFlagsJson),
       sourceUrl: row.sourceUrl ?? undefined,
