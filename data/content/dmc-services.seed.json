@@ -1,6 +1,152 @@
 {
   "services": [
     {
+      "id": "dmc-transport",
+      "slug": "transporte",
+      "title": "Transporte",
+      "shortDescription": "Unidades modernas y confortables para recorrer República Dominicana con seguridad y comodidad.",
+      "order": 10,
+      "accessibility": "Disponibilidad de unidades para requerimientos de movilidad especial, sujeta a coordinación previa.",
+      "sourceUrl": "https://quisqueyatravel.com.do/traslados/",
+      "fleet": [
+        {
+          "id": "fleet-hyundai-h1",
+          "model": "Hyundai H1",
+          "capacity": 10,
+          "use": "Traslados privados, ejecutivos y grupos pequeños.",
+          "image": "https://quisqueyatravel.com.do/wp-content/uploads/2025/06/Hyundai-H1-300x300.png",
+          "imageAlt": "Hyundai H1 de Quisqueya Travel",
+          "featured": true,
+          "order": 10
+        },
+        {
+          "id": "fleet-toyota-hiace",
+          "model": "Toyota Hiace",
+          "capacity": 12,
+          "use": "Operación flexible para familias y grupos medianos.",
+          "image": "https://quisqueyatravel.com.do/wp-content/uploads/2025/06/Toyota-Hiace-300x300.png",
+          "imageAlt": "Toyota Hiace de Quisqueya Travel",
+          "featured": true,
+          "order": 20
+        },
+        {
+          "id": "fleet-toyota-coaster",
+          "model": "Toyota Coaster",
+          "capacity": 22,
+          "use": "Recorridos coordinados para grupos y circuitos turísticos.",
+          "image": "https://quisqueyatravel.com.do/wp-content/uploads/2025/06/toyota-coaster-300x300.png",
+          "imageAlt": "Toyota Coaster de Quisqueya Travel",
+          "featured": true,
+          "order": 30
+        },
+        {
+          "id": "fleet-hyundai-universe",
+          "model": "Hyundai Universe",
+          "capacity": 45,
+          "featured": false,
+          "order": 40
+        },
+        {
+          "id": "fleet-chevrolet-suburban",
+          "model": "Chevrolet Suburban High Country",
+          "capacity": 5,
+          "featured": false,
+          "order": 50
+        },
+        {
+          "id": "fleet-mercedes-sprinter",
+          "model": "Mercedes-Benz Sprinter",
+          "capacity": 14,
+          "featured": false,
+          "order": 60
+        },
+        {
+          "id": "fleet-mercedes-marcopolo-g8",
+          "model": "Mercedes-Benz Marcopolo G8",
+          "capacity": 60,
+          "featured": false,
+          "order": 70
+        }
+      ]
+    },
+    {
+      "id": "dmc-incentives",
+      "slug": "incentivos",
+      "title": "Incentivos",
+      "shortDescription": "Programas creados para motivar, premiar y conectar equipos mediante experiencias memorables en destino.",
+      "order": 20,
+      "showcase": {
+        "title": "Programas de incentivo diseñados en destino",
+        "description": "Cada programa se adapta al objetivo, número de participantes, presupuesto y nivel de personalización del grupo.",
+        "secondaryCta": {
+          "label": "Solicitar propuesta",
+          "href": "/#solicitud"
+        },
+        "items": [
+          {
+            "id": "incentive-travel",
+            "slug": "viajes-de-incentivo",
+            "label": "Viajes de incentivo",
+            "eyebrow": "Recompensa que inspira",
+            "title": "Experiencias que reconocen el esfuerzo y fortalecen al equipo.",
+            "description": "Diseñamos programas de incentivo que combinan hospitalidad, experiencias memorables y una operación cuidada de principio a fin.",
+            "fallbackImage": "/media/dmc/incentives/viaje-incentivo.jpg",
+            "imageAlt": "Grupo corporativo disfrutando una experiencia de incentivo en República Dominicana",
+            "badge": "Programa a medida",
+            "facts": [],
+            "benefits": ["Programas creados a medida", "Alojamiento y experiencias premium", "Traslados y coordinación integral", "Acompañamiento local"],
+            "cta": { "label": "Diseñar incentivo", "href": "/dmc#incentivos" },
+            "order": 10
+          },
+          {
+            "id": "incentive-team-building",
+            "slug": "team-building",
+            "label": "Team building",
+            "eyebrow": "Equipos más conectados",
+            "title": "Actividades que convierten la colaboración en una experiencia compartida.",
+            "description": "Integramos dinámicas de equipo, naturaleza y cultura local en programas con propósito, energía y una ejecución fluida.",
+            "fallbackImage": "/media/dmc/incentives/team-building.jpg",
+            "imageAlt": "Equipo corporativo participando en una actividad de integración",
+            "badge": "Programa a medida",
+            "facts": [],
+            "benefits": ["Dinámicas adaptadas al grupo", "Actividades en playa y naturaleza", "Facilitación y soporte operativo", "Opciones de branding corporativo"],
+            "cta": { "label": "Diseñar incentivo", "href": "/dmc#incentivos" },
+            "order": 20
+          },
+          {
+            "id": "incentive-vip",
+            "slug": "reconocimiento-vip",
+            "label": "Reconocimiento VIP",
+            "eyebrow": "Hospitalidad con intención",
+            "title": "Momentos exclusivos para celebrar resultados extraordinarios.",
+            "description": "Creamos cenas privadas, experiencias especiales y atenciones personalizadas que convierten el reconocimiento en un recuerdo duradero.",
+            "fallbackImage": "/media/dmc/incentives/reconocimiento-vip.jpg",
+            "imageAlt": "Cena privada de reconocimiento VIP frente al mar",
+            "badge": "Programa a medida",
+            "facts": [],
+            "benefits": ["Cenas y celebraciones privadas", "Hospitalidad y atención personalizada", "Experiencias premium en destino", "Coordinación de invitados y detalles"],
+            "cta": { "label": "Diseñar incentivo", "href": "/dmc#incentivos" },
+            "order": 30
+          },
+          {
+            "id": "incentive-corporate",
+            "slug": "experiencias-corporativas",
+            "label": "Experiencias corporativas",
+            "eyebrow": "Negocio y destino",
+            "title": "Encuentros profesionales que también se sienten como una recompensa.",
+            "description": "Combinamos sesiones de trabajo, hospitalidad y experiencias de destino para crear agendas productivas, humanas y memorables.",
+            "fallbackImage": "/media/dmc/incentives/experiencia-corporativa.jpg",
+            "imageAlt": "Profesionales reunidos en un entorno tropical",
+            "badge": "Programa a medida",
+            "facts": [],
+            "benefits": ["Reuniones en espacios singulares", "Agenda de trabajo y experiencias", "Producción y coordinación local", "Traslados, alimentos y hospitalidad"],
+            "cta": { "label": "Diseñar incentivo", "href": "/dmc#incentivos" },
+            "order": 40
+          }
+        ]
+      }
+    },
+    {
       "id": "dmc-events",
       "slug": "eventos",
       "title": "Eventos",
@@ -9,10 +155,7 @@
       "showcase": {
         "title": "Eventos diseñados y operados en destino",
         "description": "Coordinamos la experiencia completa según el tipo de encuentro, número de participantes, destino y alcance aprobado.",
-        "secondaryCta": {
-          "label": "Solicitar propuesta",
-          "href": "/#solicitud"
-        },
+        "secondaryCta": { "label": "Solicitar propuesta", "href": "/#solicitud" },
         "items": [
           {
             "id": "event-corporate",
@@ -25,16 +168,8 @@
             "imageAlt": "Profesionales reunidos durante un evento corporativo en República Dominicana",
             "badge": "Operación personalizada",
             "facts": ["Formato a medida", "Operación en destino", "Grupos corporativos"],
-            "benefits": [
-              "Planificación personalizada del programa",
-              "Transporte coordinado para participantes",
-              "Integración de alojamiento y experiencias",
-              "Asistencia operativa local"
-            ],
-            "cta": {
-              "label": "Solicitar propuesta corporativa",
-              "href": "/#solicitud"
-            },
+            "benefits": ["Planificación personalizada del programa", "Transporte coordinado para participantes", "Integración de alojamiento y experiencias", "Asistencia operativa local"],
+            "cta": { "label": "Solicitar propuesta corporativa", "href": "/#solicitud" },
             "order": 10
           },
           {
@@ -48,16 +183,8 @@
             "imageAlt": "Participantes reunidos durante una convención coordinada en destino",
             "badge": "Agenda y logística",
             "facts": ["Agenda coordinada", "Movilidad de grupos", "Asistencia local"],
-            "benefits": [
-              "Coordinación de llegadas y salidas",
-              "Movilidad entre hoteles y locaciones",
-              "Programación de actividades complementarias",
-              "Punto de contacto operativo en destino"
-            ],
-            "cta": {
-              "label": "Coordinar una convención",
-              "href": "/#solicitud"
-            },
+            "benefits": ["Coordinación de llegadas y salidas", "Movilidad entre hoteles y locaciones", "Programación de actividades complementarias", "Punto de contacto operativo en destino"],
+            "cta": { "label": "Coordinar una convención", "href": "/#solicitud" },
             "order": 20
           },
           {
@@ -71,16 +198,8 @@
             "imageAlt": "Actividad corporativa de marca desarrollada en un entorno tropical",
             "badge": "Concepto en destino",
             "facts": ["Alcance por propuesta", "Coordinación local", "Experiencia de marca"],
-            "benefits": [
-              "Experiencia adaptada al objetivo de marca",
-              "Selección de actividades y entorno",
-              "Movilidad y atención de participantes",
-              "Coordinación operativa según alcance"
-            ],
-            "cta": {
-              "label": "Diseñar una activación",
-              "href": "/#solicitud"
-            },
+            "benefits": ["Experiencia adaptada al objetivo de marca", "Selección de actividades y entorno", "Movilidad y atención de participantes", "Coordinación operativa según alcance"],
+            "cta": { "label": "Diseñar una activación", "href": "/#solicitud" },
             "order": 30
           },
           {
@@ -94,16 +213,8 @@
             "imageAlt": "Celebración privada organizada frente al mar en República Dominicana",
             "badge": "Experiencia privada",
             "facts": ["Itinerario personalizado", "Atención de invitados", "Destino a elección"],
-            "benefits": [
-              "Itinerarios personalizados para invitados",
-              "Traslados y movilidad del grupo",
-              "Actividades privadas o complementarias",
-              "Coordinación centralizada de la experiencia"
-            ],
-            "cta": {
-              "label": "Planificar una celebración",
-              "href": "/#solicitud"
-            },
+            "benefits": ["Itinerarios personalizados para invitados", "Traslados y movilidad del grupo", "Actividades privadas o complementarias", "Coordinación centralizada de la experiencia"],
+            "cta": { "label": "Planificar una celebración", "href": "/#solicitud" },
             "order": 40
           }
         ]
