@@ -109,6 +109,45 @@ export type PublicPageContent = {
   sourceUrl?: string;
 };
 
+export type PublicDmcShowcaseItem = {
+  id: string;
+  slug: string;
+  label: string;
+  eyebrow?: string;
+  title: string;
+  description: string;
+  media?: PublicMedia | null;
+  fallbackImage?: string;
+  imageAlt?: string;
+  badge?: string;
+  facts: string[];
+  benefits: string[];
+  cta?: {
+    label: string;
+    href: string;
+  };
+  order: number;
+};
+
+export type PublicDmcService = {
+  id: string;
+  slug: string;
+  title: string;
+  shortDescription: string;
+  order: number;
+  showcase?: {
+    title?: string;
+    description?: string;
+    items: PublicDmcShowcaseItem[];
+    secondaryCta?: {
+      label: string;
+      href: string;
+    };
+  };
+  sourceUrl?: string;
+  status: 'published';
+};
+
 export type PublicContentSnapshot = {
   generatedAt: string | null;
   source: 'wordpress' | 'manual' | 'unknown';
