@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ContentRecordStatus } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
-import type { PublicDmcService, PublicDmcShowcaseItem } from './content.types.js';
+import type {
+  PublicDmcFleetItem,
+  PublicDmcService,
+  PublicDmcShowcaseItem,
+} from './content.types.js';
 
 const DMC_CONTENT_SLUG = 'dmc-services';
 
@@ -33,6 +37,27 @@ export class DmcContentService {
       ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
         .map(item => item.trim())
       : [];
+  }
+
+  private parseFleetItem(value: unknown, index: number): PublicDmcFleetItem | null {
+    const item = this.object(value);
+    if (!item) return null;
+
+    const id = this.text(item.id);
+    const model = this.text(item.model);
+    const capacity = this.integer(item.capacity, -1);
+    if (!id || !model || capacity < 1) return null;
+
+    return {
+      id,
+      model,
+      capacity,
+      use: this.text(item.use),
+      image: this.text(item.image),
+      imageAlt: this.text(item.imageAlt),
+      featured: item.featured === true,
+      order: this.integer(item.order, index),
+    };
   }
 
   private parseShowcaseItem(value: unknown, index: number): PublicDmcShowcaseItem | null {
@@ -89,6 +114,12 @@ export class DmcContentService {
         .filter((item): item is PublicDmcShowcaseItem => Boolean(item))
         .sort((a, b) => a.order - b.order)
       : [];
+    const fleet = Array.isArray(service.fleet)
+      ? service.fleet
+        .map((item, itemIndex) => this.parseFleetItem(item, itemIndex))
+        .filter((item): item is PublicDmcFleetItem => Boolean(item))
+        .sort((a, b) => a.order - b.order)
+      : [];
 
     return {
       id,
@@ -96,6 +127,8 @@ export class DmcContentService {
       title,
       shortDescription,
       order: this.integer(service.order, index),
+      accessibility: this.text(service.accessibility),
+      fleet,
       showcase: showcaseRaw
         ? {
             title: this.text(showcaseRaw.title),
