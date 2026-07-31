@@ -1,0 +1,113 @@
+{
+  "services": [
+    {
+      "id": "dmc-groups",
+      "slug": "grupos",
+      "title": "Grupos",
+      "shortDescription": "Bodas, familias, asociaciones y viajes privados con itinerarios coordinados y un único punto de contacto.",
+      "order": 40,
+      "showcase": {
+        "title": "Cada grupo tiene su propio ritmo. La operación debe seguirlo.",
+        "description": "Diseñamos itinerarios y coordinamos movilidad, alojamiento, actividades y asistencia para que todo el grupo avance como una sola experiencia.",
+        "secondaryCta": {
+          "label": "Organizar un grupo",
+          "href": "/#solicitud"
+        },
+        "items": [
+          {
+            "id": "group-weddings",
+            "slug": "bodas-y-celebraciones",
+            "label": "Bodas y celebraciones",
+            "eyebrow": "Momentos compartidos",
+            "title": "Una celebración en destino con cada invitado bien acompañado.",
+            "description": "Coordinamos llegadas, estadías, traslados y actividades complementarias para bodas y celebraciones con invitados que viajan desde distintos puntos.",
+            "fallbackImage": "/media/dmc/incentives/reconocimiento-vip.jpg",
+            "imageAlt": "Grupo de invitados durante una celebración privada en República Dominicana",
+            "badge": "Coordinación de invitados",
+            "facts": ["Itinerario compartido", "Atención de invitados", "Operación en destino"],
+            "benefits": [
+              "Coordinación de llegadas y salidas",
+              "Traslados para invitados y familiares",
+              "Actividades antes y después de la celebración",
+              "Punto de contacto local para el grupo"
+            ],
+            "cta": {
+              "label": "Coordinar una celebración",
+              "href": "/#solicitud"
+            },
+            "order": 10
+          },
+          {
+            "id": "group-families",
+            "slug": "familias-y-amigos",
+            "label": "Familias y amigos",
+            "eyebrow": "Viajar juntos, sin complicaciones",
+            "title": "Experiencias para distintas edades dentro de un mismo viaje.",
+            "description": "Organizamos programas flexibles para familias y grupos de amigos, equilibrando descanso, excursiones y tiempos compartidos según el ritmo de cada viajero.",
+            "fallbackImage": "/media/dmc/incentives/viaje-incentivo.jpg",
+            "imageAlt": "Familia y amigos disfrutando una experiencia de grupo en República Dominicana",
+            "badge": "Programa flexible",
+            "facts": ["Distintas edades", "Ritmo flexible", "Actividades compartidas"],
+            "benefits": [
+              "Itinerarios adaptados a distintas edades",
+              "Traslados privados o coordinados",
+              "Selección de experiencias para el grupo",
+              "Asistencia durante la estadía"
+            ],
+            "cta": {
+              "label": "Diseñar un viaje familiar",
+              "href": "/#solicitud"
+            },
+            "order": 20
+          },
+          {
+            "id": "group-associations",
+            "slug": "asociaciones-y-comunidades",
+            "label": "Asociaciones y comunidades",
+            "eyebrow": "Logística para grupos organizados",
+            "title": "Una agenda clara para grupos que comparten un propósito.",
+            "description": "Apoyamos asociaciones, clubes, comunidades y organizaciones con programas que integran movilidad, alojamiento y actividades bajo una coordinación centralizada.",
+            "fallbackImage": "/media/dmc/incentives/team-building.jpg",
+            "imageAlt": "Asociación participando en una actividad coordinada de grupo",
+            "badge": "Agenda coordinada",
+            "facts": ["Grupos organizados", "Agenda común", "Soporte local"],
+            "benefits": [
+              "Plan operativo para todos los participantes",
+              "Movilidad entre hoteles y actividades",
+              "Excursiones y encuentros programados",
+              "Canal central de coordinación"
+            ],
+            "cta": {
+              "label": "Coordinar una asociación",
+              "href": "/#solicitud"
+            },
+            "order": 30
+          },
+          {
+            "id": "group-private",
+            "slug": "grupos-privados-y-especiales",
+            "label": "Grupos privados y especiales",
+            "eyebrow": "Atención a medida",
+            "title": "Operaciones privadas creadas alrededor de necesidades específicas.",
+            "description": "Preparamos programas para delegaciones, grupos educativos, viajes temáticos y operaciones privadas que requieren atención, privacidad o coordinación especial.",
+            "fallbackImage": "/media/dmc/incentives/experiencia-corporativa.jpg",
+            "imageAlt": "Grupo privado recibiendo atención personalizada en destino",
+            "badge": "Operación personalizada",
+            "facts": ["Alcance a medida", "Atención especial", "Privacidad operativa"],
+            "benefits": [
+              "Programa desarrollado según objetivos",
+              "Coordinación de requerimientos especiales",
+              "Movilidad y asistencia dedicadas",
+              "Seguimiento centralizado de la operación"
+            ],
+            "cta": {
+              "label": "Solicitar operación privada",
+              "href": "/#solicitud"
+            },
+            "order": 40
+          }
+        ]
+      }
+    }
+  ]
+}
