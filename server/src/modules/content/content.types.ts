@@ -109,6 +109,17 @@ export type PublicPageContent = {
   sourceUrl?: string;
 };
 
+export type PublicDmcFleetItem = {
+  id: string;
+  model: string;
+  capacity: number;
+  use?: string;
+  image?: string;
+  imageAlt?: string;
+  featured: boolean;
+  order: number;
+};
+
 export type PublicDmcShowcaseItem = {
   id: string;
   slug: string;
@@ -135,6 +146,8 @@ export type PublicDmcService = {
   title: string;
   shortDescription: string;
   order: number;
+  accessibility?: string;
+  fleet: PublicDmcFleetItem[];
   showcase?: {
     title?: string;
     description?: string;
