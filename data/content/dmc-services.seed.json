@@ -1,0 +1,113 @@
+{
+  "services": [
+    {
+      "id": "dmc-events",
+      "slug": "eventos",
+      "title": "Eventos",
+      "shortDescription": "Convenciones, activaciones y encuentros coordinados de principio a fin con operación y proveedores locales.",
+      "order": 30,
+      "showcase": {
+        "title": "Eventos diseñados y operados en destino",
+        "description": "Coordinamos la experiencia completa según el tipo de encuentro, número de participantes, destino y alcance aprobado.",
+        "secondaryCta": {
+          "label": "Solicitar propuesta",
+          "href": "/#solicitud"
+        },
+        "items": [
+          {
+            "id": "event-corporate",
+            "slug": "eventos-corporativos",
+            "label": "Eventos corporativos",
+            "eyebrow": "Encuentros empresariales",
+            "title": "Eventos que conectan a las personas con el propósito de la empresa.",
+            "description": "Coordinamos experiencias corporativas en destino integrando movilidad, hospitalidad y actividades adaptadas a las necesidades de cada grupo.",
+            "fallbackImage": "/media/dmc/incentives/experiencia-corporativa.jpg",
+            "imageAlt": "Profesionales reunidos durante un evento corporativo en República Dominicana",
+            "badge": "Operación personalizada",
+            "facts": ["Formato a medida", "Operación en destino", "Grupos corporativos"],
+            "benefits": [
+              "Planificación personalizada del programa",
+              "Transporte coordinado para participantes",
+              "Integración de alojamiento y experiencias",
+              "Asistencia operativa local"
+            ],
+            "cta": {
+              "label": "Solicitar propuesta corporativa",
+              "href": "/#solicitud"
+            },
+            "order": 10
+          },
+          {
+            "id": "event-conventions",
+            "slug": "convenciones-y-congresos",
+            "label": "Convenciones y congresos",
+            "eyebrow": "Operación coordinada",
+            "title": "Cada llegada, traslado y actividad alineados con la agenda del encuentro.",
+            "description": "Apoyamos la logística de convenciones y congresos conectando participantes, hoteles, traslados y actividades complementarias dentro de una misma operación.",
+            "fallbackImage": "/media/dmc/incentives/viaje-incentivo.jpg",
+            "imageAlt": "Participantes reunidos durante una convención coordinada en destino",
+            "badge": "Agenda y logística",
+            "facts": ["Agenda coordinada", "Movilidad de grupos", "Asistencia local"],
+            "benefits": [
+              "Coordinación de llegadas y salidas",
+              "Movilidad entre hoteles y locaciones",
+              "Programación de actividades complementarias",
+              "Punto de contacto operativo en destino"
+            ],
+            "cta": {
+              "label": "Coordinar una convención",
+              "href": "/#solicitud"
+            },
+            "order": 20
+          },
+          {
+            "id": "event-brand-activations",
+            "slug": "activaciones-de-marca",
+            "label": "Activaciones de marca",
+            "eyebrow": "Experiencias de marca",
+            "title": "La marca entra en contacto con el destino de una forma memorable.",
+            "description": "Diseñamos la operación alrededor del concepto de la actividad y coordinamos los recursos locales necesarios según el alcance aprobado con el cliente.",
+            "fallbackImage": "/media/dmc/incentives/team-building.jpg",
+            "imageAlt": "Actividad corporativa de marca desarrollada en un entorno tropical",
+            "badge": "Concepto en destino",
+            "facts": ["Alcance por propuesta", "Coordinación local", "Experiencia de marca"],
+            "benefits": [
+              "Experiencia adaptada al objetivo de marca",
+              "Selección de actividades y entorno",
+              "Movilidad y atención de participantes",
+              "Coordinación operativa según alcance"
+            ],
+            "cta": {
+              "label": "Diseñar una activación",
+              "href": "/#solicitud"
+            },
+            "order": 30
+          },
+          {
+            "id": "event-private-celebrations",
+            "slug": "celebraciones-privadas",
+            "label": "Celebraciones privadas",
+            "eyebrow": "Momentos en destino",
+            "title": "Celebraciones privadas diseñadas alrededor de las personas y del lugar.",
+            "description": "Organizamos la experiencia de grupos que desean celebrar en República Dominicana, coordinando traslados, estadías y actividades personalizadas.",
+            "fallbackImage": "/media/dmc/incentives/reconocimiento-vip.jpg",
+            "imageAlt": "Celebración privada organizada frente al mar en República Dominicana",
+            "badge": "Experiencia privada",
+            "facts": ["Itinerario personalizado", "Atención de invitados", "Destino a elección"],
+            "benefits": [
+              "Itinerarios personalizados para invitados",
+              "Traslados y movilidad del grupo",
+              "Actividades privadas o complementarias",
+              "Coordinación centralizada de la experiencia"
+            ],
+            "cta": {
+              "label": "Planificar una celebración",
+              "href": "/#solicitud"
+            },
+            "order": 40
+          }
+        ]
+      }
+    }
+  ]
+}
