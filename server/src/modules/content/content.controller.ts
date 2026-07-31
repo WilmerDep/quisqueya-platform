@@ -1,10 +1,14 @@
 import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
 import { ContentService } from './content.service.js';
+import { DmcContentService } from './dmc-content.service.js';
 import { ok } from '../../shared/api-response.js';
 
 @Controller('public')
 export class ContentController {
-  constructor(private readonly content: ContentService) {}
+  constructor(
+    private readonly content: ContentService,
+    private readonly dmcContent: DmcContentService,
+  ) {}
 
   @Get('content')
   async snapshot() {
@@ -50,5 +54,10 @@ export class ContentController {
   @Get('media')
   async media() {
     return ok(await this.content.getMedia());
+  }
+
+  @Get('services')
+  async services() {
+    return ok(await this.dmcContent.getServices());
   }
 }
