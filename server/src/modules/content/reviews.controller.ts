@@ -3,7 +3,11 @@ import { ok } from '../../shared/api-response.js';
 import { AuthGuard } from '../../shared/auth.guard.js';
 import { Roles } from '../../shared/roles.decorator.js';
 import { RolesGuard } from '../../shared/roles.guard.js';
-import { ReviewsService, ReviewWriteInput } from './reviews.service.js';
+import {
+  PublicReviewSubmissionInput,
+  ReviewsService,
+  ReviewWriteInput,
+} from './reviews.service.js';
 
 @Controller('public/reviews')
 export class PublicReviewsController {
@@ -21,6 +25,11 @@ export class PublicReviewsController {
         featured === 'true',
       ),
     );
+  }
+
+  @Post('submissions')
+  async submit(@Body() body: PublicReviewSubmissionInput) {
+    return ok(await this.reviews.submitPublic(body));
   }
 }
 
