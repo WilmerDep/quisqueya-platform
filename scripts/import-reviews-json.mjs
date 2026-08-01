@@ -47,44 +47,76 @@ function sourceValue(value) {
 function stableExternalId(item) {
   const explicit = text(item.externalId || item.id || item.reviewId);
   if (explicit) return explicit;
-  const fingerprint = [item.authorName || item.author, item.reviewedAt || item.date, item.reviewText || item.text].map(text).join('|');
+  const fingerprint = [
+    item.authorName || item.author || item.name || item.user,
+    item.reviewedAt || item.date,
+    item.reviewText || item.text,
+  ]
+    .map(text)
+    .join('|');
   return `legacy-${createHash('sha256').update(fingerprint).digest('hex').slice(0, 32)}`;
 }
 
+function isHidden(value) {
+  return value === true || value === 1 || value === '1' || text(value).toLowerCase() === 'true';
+}
+
 function normalize(item, index) {
-  const authorName = text(item.authorName || item.author || item.name);
+  const authorName = text(item.authorName || item.author || item.name || item.user);
   const reviewText = text(item.reviewText || item.text || item.quote || item.review);
   if (!authorName || !reviewText) throw new Error(`Review ${index + 1} requires authorName and reviewText.`);
 
   const source = sourceValue(item.source);
+  const hidden = isHidden(item.hidden);
+
   return {
     source,
     externalId: stableExternalId(item),
     authorName,
-    authorAvatarUrl: nullableText(item.authorAvatarUrl || item.avatarUrl || item.avatar),
+    authorAvatarUrl: nullableText(
+      item.authorAvatarUrl || item.avatarUrl || item.avatar || item.user_photo,
+    ),
     rating: parseRating(item.rating || item.stars),
     reviewText,
     language: nullableText(item.language || item.locale),
     reviewUrl: nullableText(item.reviewUrl || item.url),
     reviewedAt: parseDate(item.reviewedAt || item.date || item.publishedAt),
-    status: publish ? ReviewStatus.PUBLISHED : ReviewStatus.PENDING,
-    featured: Boolean(item.featured),
+    status: hidden
+      ? ReviewStatus.HIDDEN
+      : publish
+        ? ReviewStatus.PUBLISHED
+        : ReviewStatus.PENDING,
+    featured: Boolean(item.featured || item.highlight),
     sortOrder: Number.isInteger(Number(item.sortOrder)) ? Number(item.sortOrder) : index,
     sourcePayload: item,
     syncedAt: new Date(),
   };
 }
 
+function extractItems(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.reviews)) return payload.reviews;
+  if (Array.isArray(payload?.data)) return payload.data;
+
+  if (Array.isArray(payload?.[0]?.data)) return payload[0].data;
+
+  return null;
+}
+
 async function main() {
   const raw = await readFile(inputPath, 'utf8');
   const payload = JSON.parse(raw);
-  const items = Array.isArray(payload) ? payload : payload?.reviews;
+  const items = extractItems(payload);
   if (!Array.isArray(items) || items.length === 0) {
-    throw new Error('The import file must be an array or an object with a non-empty reviews array.');
+    throw new Error(
+      'The import file must be an array, an object with reviews/data, or a phpMyAdmin JSON export with data rows.',
+    );
   }
 
   let created = 0;
   let updated = 0;
+  let hidden = 0;
+
   for (const [index, item] of items.entries()) {
     const data = normalize(item, index);
     const existing = await prisma.review.findUnique({
@@ -97,11 +129,14 @@ async function main() {
       create: { id: randomUUID(), ...data },
       update: data,
     });
+
+    if (data.status === ReviewStatus.HIDDEN) hidden++;
     existing ? updated++ : created++;
   }
 
   console.log(`Imported ${items.length} reviews from ${inputPath}.`);
-  console.log(`Created: ${created}. Updated: ${updated}. Status: ${publish ? 'PUBLISHED' : 'PENDING'}.`);
+  console.log(`Created: ${created}. Updated: ${updated}. Hidden: ${hidden}.`);
+  console.log(`Visible review status: ${publish ? 'PUBLISHED' : 'PENDING'}.`);
 }
 
 main()
