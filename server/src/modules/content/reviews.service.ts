@@ -19,6 +19,15 @@ export interface ReviewWriteInput {
   sourcePayload?: unknown;
 }
 
+export interface PublicReviewSubmissionInput {
+  authorName?: unknown;
+  email?: unknown;
+  rating?: unknown;
+  reviewText?: unknown;
+  language?: unknown;
+  website?: unknown;
+}
+
 @Injectable()
 export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -50,6 +59,60 @@ export class ReviewsService {
         source: 'google',
       },
       items: items.map(item => this.toPublicReview(item)),
+    };
+  }
+
+  async submitPublic(input: PublicReviewSubmissionInput) {
+    const honeypot = this.optionalText(input.website);
+    if (honeypot) {
+      return { received: true, status: ReviewStatus.PENDING };
+    }
+
+    const authorName = this.optionalText(input.authorName);
+    const reviewText = this.optionalText(input.reviewText);
+    const rating = this.optionalInteger(input.rating);
+    const email = this.optionalText(input.email);
+    const language = this.optionalText(input.language);
+
+    if (!authorName || !reviewText || rating === undefined) {
+      throw new BadRequestException('Nombre, puntuación y comentario son obligatorios.');
+    }
+    if (authorName.length > 120) {
+      throw new BadRequestException('El nombre es demasiado largo.');
+    }
+    if (reviewText.length < 10 || reviewText.length > 3000) {
+      throw new BadRequestException('La reseña debe tener entre 10 y 3000 caracteres.');
+    }
+    if (rating < 1 || rating > 5) {
+      throw new BadRequestException('La puntuación debe estar entre 1 y 5.');
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new BadRequestException('El correo electrónico no es válido.');
+    }
+
+    const created = await this.prisma.review.create({
+      data: {
+        id: randomUUID(),
+        source: ReviewSource.MANUAL,
+        authorName,
+        rating,
+        reviewText,
+        language,
+        reviewedAt: new Date(),
+        status: ReviewStatus.PENDING,
+        featured: false,
+        sortOrder: 0,
+        sourcePayload: {
+          channel: 'website',
+          ...(email ? { email } : {}),
+        },
+      },
+    });
+
+    return {
+      id: created.id,
+      received: true,
+      status: created.status,
     };
   }
 
