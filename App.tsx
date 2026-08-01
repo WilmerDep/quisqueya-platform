@@ -11,6 +11,7 @@ import { PlatformUsersPage } from './pages/PlatformUsersPage';
 import { PlatformSettingsPage } from './pages/PlatformSettingsPage';
 import { PlatformAdminPage } from './pages/PlatformAdminPage';
 import { PlatformAccessPage } from './pages/PlatformAccessPage';
+import { PlatformReviewsPage } from './pages/PlatformReviewsPage';
 
 const AppRoutes: React.FC = () => {
   const { currentUser, isLoading } = useAuth();
@@ -42,6 +43,7 @@ const AppRoutes: React.FC = () => {
                 <Route path="/activity" element={<PlatformActivityPage />} />
                 <Route path="/clients" element={<PlatformContactsPage />} />
                 <Route path="/clients/:id" element={<PlatformContactDetailPage />} />
+                <Route path="/reviews" element={<PlatformReviewsPage />} />
                 <Route path="/users" element={<PlatformUsersPage />} />
                 <Route path="/users/*" element={<Navigate to="/users" replace />} />
                 <Route path="/reports" element={<PlatformReportsPage />} />
