@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import bcrypt from 'bcryptjs';
@@ -7,92 +8,103 @@ const adapter = new PrismaMariaDb({
   port: Number(process.env.MYSQL_PORT || 3306),
   user: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || '',
-  database: process.env.MYSQL_DATABASE || 'prestafacil_rd',
+  database: process.env.MYSQL_DATABASE || 'quisqueya_core',
 });
 
 const prisma = new PrismaClient({ adapter });
 
 export async function main() {
   if (process.env.NODE_ENV === 'production') {
-    console.warn('⚠️ Seeding omitido en entorno de producción (NODE_ENV=production).');
+    console.warn('Identity seed skipped in production.');
     return;
   }
 
-  const masterHash = await bcrypt.hash('master123', 10);
-  const adminHash = await bcrypt.hash('admin123', 10);
+  const username = process.env.LOCAL_ADMIN_USERNAME || 'master';
+  const password = process.env.LOCAL_ADMIN_PASSWORD || 'master123';
+  const passwordHash = await bcrypt.hash(password, 10);
 
-  // Asegurar Empresa Sistema (SaaS Master)
-  await prisma.company.upsert({
-    where: { id: 'SYSTEM' },
-    update: {},
-    create: { id: 'SYSTEM', name: 'Nexus Core Admin', status: 'ACTIVE', planId: 'p3', billingCycle: 'YEARLY' },
-  });
-
-  // Asegurar Sucursal Principal del Sistema SaaS
-  await prisma.branch.upsert({
-    where: { id: 'SYS_MAIN' },
-    update: {},
-    create: { id: 'SYS_MAIN', companyId: 'SYSTEM', name: 'Sede Central Nexus', address: 'Santo Domingo, RD' },
-  });
-
-  // Asegurar Empresa Demo / Cliente
-  await prisma.company.upsert({
-    where: { id: 'C1' },
-    update: {},
-    create: { id: 'C1', name: 'PrestaFácil RD', status: 'ACTIVE', planId: 'p2', billingCycle: 'MONTHLY' },
-  });
-
-  // Asegurar Sucursal Principal Cliente C1
-  await prisma.branch.upsert({
-    where: { id: 'MAIN' },
-    update: {},
-    create: { id: 'MAIN', companyId: 'C1', name: 'Sede Principal', address: 'Santo Domingo, RD' },
-  });
-
-  // Idempotent Seed: Super Admin / Master (pertenece a SYSTEM / SYS_MAIN)
-  await prisma.user.upsert({
-    where: { username: 'master' },
-    update: {},
+  await prisma.plan.upsert({
+    where: { id: 'quisqueya-core' },
+    update: {
+      name: 'Quisqueya Core',
+      maxUsers: 25,
+      maxBranches: 10,
+      maxClients: 10000,
+      featuresJson: { content: true, crm: true, reviews: true, dmc: true },
+    },
     create: {
-      id: 'M1',
-      companyId: 'SYSTEM',
-      branchId: 'SYS_MAIN',
-      username: 'master',
-      name: 'Nexus Master',
+      id: 'quisqueya-core',
+      name: 'Quisqueya Core',
+      maxUsers: 25,
+      maxBranches: 10,
+      maxClients: 10000,
+      featuresJson: { content: true, crm: true, reviews: true, dmc: true },
+    },
+  });
+
+  await prisma.company.upsert({
+    where: { id: 'QUISQUEYA' },
+    update: {
+      name: 'Quisqueya Travel & DMC',
+      planId: 'quisqueya-core',
+      status: 'ACTIVE',
+    },
+    create: {
+      id: 'QUISQUEYA',
+      name: 'Quisqueya Travel & DMC',
+      status: 'ACTIVE',
+      planId: 'quisqueya-core',
+      billingCycle: 'YEARLY',
+    },
+  });
+
+  await prisma.branch.upsert({
+    where: { id: 'QUISQUEYA_MAIN' },
+    update: {
+      companyId: 'QUISQUEYA',
+      name: 'Operación principal',
+      address: 'Santo Domingo, República Dominicana',
+    },
+    create: {
+      id: 'QUISQUEYA_MAIN',
+      companyId: 'QUISQUEYA',
+      name: 'Operación principal',
+      address: 'Santo Domingo, República Dominicana',
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { username },
+    update: {
+      companyId: 'QUISQUEYA',
+      branchId: 'QUISQUEYA_MAIN',
+      name: 'Administrador Quisqueya',
       role: 'SUPER_ADMIN',
-      passwordHash: masterHash,
+      passwordHash,
       isActive: true,
-      email: 'master@prestafacil.local',
+      email: 'admin@quisqueyatravel.local',
     },
-  });
-
-  // Idempotent Seed: Admin Empresa (pertenece a C1 / MAIN)
-  await prisma.user.upsert({
-    where: { username: 'admin' },
-    update: {},
     create: {
-      id: 'U1',
-      companyId: 'C1',
-      branchId: 'MAIN',
-      username: 'admin',
-      name: 'Admin PrestaFácil',
-      role: 'ADMINISTRADOR',
-      passwordHash: adminHash,
+      id: 'QUISQUEYA_ADMIN',
+      companyId: 'QUISQUEYA',
+      branchId: 'QUISQUEYA_MAIN',
+      username,
+      name: 'Administrador Quisqueya',
+      role: 'SUPER_ADMIN',
+      passwordHash,
       isActive: true,
-      email: 'admin@prestafacil.local',
+      email: 'admin@quisqueyatravel.local',
     },
   });
 
-  console.log('✅ Seeding completado exitosamente con Bcrypt.');
+  console.log(`Quisqueya local identity ready for user: ${username}`);
 }
 
-if (process.argv[1]?.endsWith('seed.ts')) {
-  main()
-    .catch(e => {
-      console.error('❌ Error durante seeding:', e);
-      process.exit(1);
-    })
-    .finally(async () => {
-      await prisma.$disconnect();
-    });
-}
+main()
+  .catch(error => {
+    console.error('Identity seed failed:', error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
