@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, BarChart3, Building2, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react';
+import { Activity, BarChart3, Building2, LayoutDashboard, LogOut, MessageSquareQuote, Settings, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface PlatformShellProps {
@@ -10,6 +10,7 @@ interface PlatformShellProps {
 const navigation = [
   { name: 'Escritorio', href: '/', icon: LayoutDashboard },
   { name: 'Clientes', href: '/clients', icon: Users },
+  { name: 'Reseñas', href: '/reviews', icon: MessageSquareQuote },
   { name: 'Actividad', href: '/activity', icon: Activity },
   { name: 'Reportes', href: '/reports', icon: BarChart3 },
   { name: 'Usuarios', href: '/users', icon: Users },
