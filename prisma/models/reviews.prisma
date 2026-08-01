@@ -1,0 +1,36 @@
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  HIDDEN
+  ARCHIVED
+}
+
+enum ReviewSource {
+  GOOGLE
+  MANUAL
+}
+
+model Review {
+  id              String       @id @db.VarChar(64)
+  source          ReviewSource @default(GOOGLE)
+  externalId      String?      @map("external_id") @db.VarChar(191)
+  authorName      String       @map("author_name") @db.VarChar(220)
+  authorAvatarUrl String?      @map("author_avatar_url") @db.Text
+  rating          Int
+  reviewText      String       @map("review_text") @db.LongText
+  language        String?      @db.VarChar(20)
+  reviewUrl       String?      @map("review_url") @db.Text
+  reviewedAt      DateTime?    @map("reviewed_at") @db.Timestamp(0)
+  status          ReviewStatus @default(PENDING)
+  featured        Boolean      @default(false)
+  sortOrder       Int          @default(0) @map("sort_order")
+  sourcePayload   Json?        @map("source_payload")
+  syncedAt        DateTime?    @map("synced_at") @db.Timestamp(0)
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@unique([source, externalId], map: "uniq_review_source_external")
+  @@index([status, featured, sortOrder], map: "idx_reviews_publication")
+  @@index([source, reviewedAt], map: "idx_reviews_source_date")
+  @@map("reviews")
+}
