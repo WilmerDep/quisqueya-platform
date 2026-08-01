@@ -21,8 +21,22 @@ const publish = process.argv.includes('--publish');
 const text = (value) => (typeof value === 'string' ? value.trim() : '');
 const nullableText = (value) => text(value) || null;
 
+const firstValue = (item, keys) => {
+  for (const key of keys) {
+    if (item?.[key] !== undefined && item?.[key] !== null) return item[key];
+  }
+  return undefined;
+};
+
 function parseDate(value) {
   if (!value) return null;
+
+  if (typeof value === 'number' || /^\d{10,13}$/.test(String(value))) {
+    const numeric = Number(value);
+    const date = new Date(String(value).length === 10 ? numeric * 1000 : numeric);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) throw new Error(`Invalid review date: ${value}`);
   return date;
@@ -45,15 +59,17 @@ function sourceValue(value) {
 }
 
 function stableExternalId(item) {
-  const explicit = text(item.externalId || item.id || item.reviewId);
+  const explicit = text(firstValue(item, ['externalId', 'id', 'reviewId', 'review_id']));
   if (explicit) return explicit;
+
   const fingerprint = [
-    item.authorName || item.author || item.name || item.user,
-    item.reviewedAt || item.date,
-    item.reviewText || item.text,
+    firstValue(item, ['authorName', 'author', 'name', 'user', 'user_name']),
+    firstValue(item, ['reviewedAt', 'date', 'publishedAt', 'created_at']),
+    firstValue(item, ['reviewText', 'text', 'quote', 'review', 'review_text']),
   ]
     .map(text)
     .join('|');
+
   return `legacy-${createHash('sha256').update(fingerprint).digest('hex').slice(0, 32)}`;
 }
 
@@ -61,55 +77,92 @@ function isHidden(value) {
   return value === true || value === 1 || value === '1' || text(value).toLowerCase() === 'true';
 }
 
+function looksLikeReview(item) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+
+  const author = text(firstValue(item, ['authorName', 'author', 'name', 'user', 'user_name']));
+  const reviewText = text(firstValue(item, ['reviewText', 'text', 'quote', 'review', 'review_text']));
+  const rating = firstValue(item, ['rating', 'stars', 'star_rating']);
+
+  return Boolean(author && reviewText && rating !== undefined && rating !== null && rating !== '');
+}
+
+function collectReviewRows(value, rows, seen) {
+  if (!value || typeof value !== 'object') return;
+
+  if (Array.isArray(value)) {
+    for (const entry of value) collectReviewRows(entry, rows, seen);
+    return;
+  }
+
+  if (looksLikeReview(value)) {
+    const key = JSON.stringify(value);
+    if (!seen.has(key)) {
+      seen.add(key);
+      rows.push(value);
+    }
+    return;
+  }
+
+  for (const nested of Object.values(value)) {
+    collectReviewRows(nested, rows, seen);
+  }
+}
+
+function extractItems(payload) {
+  const rows = [];
+  collectReviewRows(payload, rows, new Set());
+  return rows;
+}
+
 function normalize(item, index) {
-  const authorName = text(item.authorName || item.author || item.name || item.user);
-  const reviewText = text(item.reviewText || item.text || item.quote || item.review);
-  if (!authorName || !reviewText) throw new Error(`Review ${index + 1} requires authorName and reviewText.`);
+  const authorName = text(firstValue(item, ['authorName', 'author', 'name', 'user', 'user_name']));
+  const reviewText = text(firstValue(item, ['reviewText', 'text', 'quote', 'review', 'review_text']));
+
+  if (!authorName || !reviewText) {
+    throw new Error(`Review ${index + 1} requires authorName and reviewText.`);
+  }
 
   const source = sourceValue(item.source);
-  const hidden = isHidden(item.hidden);
+  const hidden = isHidden(firstValue(item, ['hidden', 'is_hidden']));
 
   return {
     source,
     externalId: stableExternalId(item),
     authorName,
     authorAvatarUrl: nullableText(
-      item.authorAvatarUrl || item.avatarUrl || item.avatar || item.user_photo,
+      firstValue(item, ['authorAvatarUrl', 'avatarUrl', 'avatar', 'user_photo', 'profile_photo_url']),
     ),
-    rating: parseRating(item.rating || item.stars),
+    rating: parseRating(firstValue(item, ['rating', 'stars', 'star_rating'])),
     reviewText,
-    language: nullableText(item.language || item.locale),
-    reviewUrl: nullableText(item.reviewUrl || item.url),
-    reviewedAt: parseDate(item.reviewedAt || item.date || item.publishedAt),
+    language: nullableText(firstValue(item, ['language', 'locale', 'lang'])),
+    reviewUrl: nullableText(firstValue(item, ['reviewUrl', 'url', 'review_url'])),
+    reviewedAt: parseDate(firstValue(item, ['reviewedAt', 'date', 'publishedAt', 'created_at'])),
     status: hidden
       ? ReviewStatus.HIDDEN
       : publish
         ? ReviewStatus.PUBLISHED
         : ReviewStatus.PENDING,
-    featured: Boolean(item.featured || item.highlight),
-    sortOrder: Number.isInteger(Number(item.sortOrder)) ? Number(item.sortOrder) : index,
+    featured: Boolean(firstValue(item, ['featured', 'highlight', 'is_featured'])),
+    sortOrder: Number.isInteger(Number(firstValue(item, ['sortOrder', 'sort_order'])))
+      ? Number(firstValue(item, ['sortOrder', 'sort_order']))
+      : index,
     sourcePayload: item,
     syncedAt: new Date(),
   };
-}
-
-function extractItems(payload) {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.reviews)) return payload.reviews;
-  if (Array.isArray(payload?.data)) return payload.data;
-
-  if (Array.isArray(payload?.[0]?.data)) return payload[0].data;
-
-  return null;
 }
 
 async function main() {
   const raw = await readFile(inputPath, 'utf8');
   const payload = JSON.parse(raw);
   const items = extractItems(payload);
-  if (!Array.isArray(items) || items.length === 0) {
+
+  if (items.length === 0) {
+    const rootKeys = payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? Object.keys(payload).join(', ')
+      : 'array export';
     throw new Error(
-      'The import file must be an array, an object with reviews/data, or a phpMyAdmin JSON export with data rows.',
+      `No Trustindex review rows were found in the JSON export. Root structure: ${rootKeys}.`,
     );
   }
 
