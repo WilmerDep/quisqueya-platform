@@ -90,10 +90,10 @@ export class ReviewsService {
     const updated = await this.prisma.review.update({
       where: { id },
       data: {
-        ...(data.authorName !== undefined ? { authorName: data.authorName } : {}),
+        ...(typeof data.authorName === 'string' ? { authorName: data.authorName } : {}),
         ...(data.authorAvatarUrl !== undefined ? { authorAvatarUrl: data.authorAvatarUrl } : {}),
         ...(data.rating !== undefined ? { rating: data.rating } : {}),
-        ...(data.reviewText !== undefined ? { reviewText: data.reviewText } : {}),
+        ...(typeof data.reviewText === 'string' ? { reviewText: data.reviewText } : {}),
         ...(data.language !== undefined ? { language: data.language } : {}),
         ...(data.reviewUrl !== undefined ? { reviewUrl: data.reviewUrl } : {}),
         ...(data.reviewedAt !== undefined ? { reviewedAt: data.reviewedAt } : {}),
