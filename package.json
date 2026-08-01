@@ -19,6 +19,7 @@
     "start": "node server-dist/main.js",
     "preview": "vite preview",
     "seed:dmc-services": "node scripts/seed-dmc-services.mjs",
+    "import:reviews": "node scripts/import-reviews-json.mjs",
     "import:tourfic-metadata": "node scripts/import-tourfic-authenticated-metadata.mjs",
     "import:tourfic-gallery-media": "node scripts/import-tourfic-gallery-media.mjs",
     "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs && node scripts/canonicalize-wordpress-experience-slugs.mjs && node scripts/import-tourfic-authenticated-metadata.mjs && node scripts/import-tourfic-gallery-media.mjs"
