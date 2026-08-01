@@ -1,0 +1,17 @@
+{
+  "reviews": [
+    {
+      "externalId": "google-review-id",
+      "source": "GOOGLE",
+      "authorName": "Nombre completo",
+      "authorAvatarUrl": "https://example.com/avatar.jpg",
+      "rating": 5,
+      "reviewText": "Texto completo de la reseña.",
+      "language": "es",
+      "reviewUrl": "https://g.page/r/example/review",
+      "reviewedAt": "2026-06-12T00:00:00.000Z",
+      "featured": true,
+      "sortOrder": 0
+    }
+  ]
+}
