@@ -23,8 +23,9 @@
     "import:tourfic-metadata": "node scripts/import-tourfic-authenticated-metadata.mjs",
     "import:tourfic-gallery-media": "node scripts/import-tourfic-gallery-media.mjs",
     "canonicalize:destination-slugs": "node scripts/canonicalize-wordpress-destination-slugs.mjs",
-    "import:destination-editorials": "node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs",
-    "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs && node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs && node scripts/canonicalize-wordpress-experience-slugs.mjs && node scripts/import-tourfic-authenticated-metadata.mjs && node scripts/import-tourfic-gallery-media.mjs"
+    "repair:destination-editorials": "node scripts/repair-destination-editorial-preamble.mjs",
+    "import:destination-editorials": "node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs && node scripts/repair-destination-editorial-preamble.mjs",
+    "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs && node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs && node scripts/repair-destination-editorial-preamble.mjs && node scripts/canonicalize-wordpress-experience-slugs.mjs && node scripts/import-tourfic-authenticated-metadata.mjs && node scripts/import-tourfic-gallery-media.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.19",
@@ -60,12 +61,12 @@
     "@types/express": "^5.0.6",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^22.14.0",
-    "autoprefixer": "^10.5.0",
+    "autoprefixer": "^10.4.24",
     "eslint": "^10.3.0",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
     "leaflet": "^1.9.4",
-    "postcss": "^10.5.0",
+    "postcss": "^8.5.8",
     "tailwindcss": "^4.2.4",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.59.2",
