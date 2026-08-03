@@ -57,21 +57,99 @@ const paragraphHtml = value => decodeEntities(value)
 
 function mediaSourceIdFromTag(tag) {
   const classMatch = tag.match(/\bwp-image-(\d+)\b/i);
-  if (classMatch) return Number(classMatch[1]);
+  if (classMatch) return String(classMatch[1]);
 
   const dataIdMatch = tag.match(/\bdata-id=(?:"|')(\d+)(?:"|')/i);
-  if (dataIdMatch) return Number(dataIdMatch[1]);
+  if (dataIdMatch) return String(dataIdMatch[1]);
 
   return undefined;
 }
 
-function imageSourceIds(html) {
-  const ids = [];
-  for (const match of String(html || '').matchAll(/<img\b[^>]*>/gi)) {
-    const id = mediaSourceIdFromTag(match[0]);
-    if (Number.isFinite(id)) ids.push(id);
+function attributeValue(tag, attribute) {
+  const match = tag.match(new RegExp(`\\b${attribute}=(?:"([^"]*)"|'([^']*)')`, 'i'));
+  return decodeEntities(match?.[1] || match?.[2] || '').trim();
+}
+
+function normalizeMediaUrl(value) {
+  if (!value) return '';
+
+  try {
+    const url = new URL(decodeEntities(value), baseUrl);
+    url.hash = '';
+    url.search = '';
+    url.pathname = url.pathname
+      .replace(/-\d{2,5}x\d{2,5}(?=\.[a-z0-9]+$)/i, '')
+      .replace(/-scaled(?=\.[a-z0-9]+$)/i, '');
+    return url.toString().replace(/\/$/, '').toLowerCase();
+  } catch {
+    return decodeEntities(value)
+      .split(/[?#]/)[0]
+      .replace(/-\d{2,5}x\d{2,5}(?=\.[a-z0-9]+$)/i, '')
+      .replace(/-scaled(?=\.[a-z0-9]+$)/i, '')
+      .replace(/\/$/, '')
+      .toLowerCase();
   }
-  return [...new Set(ids)];
+}
+
+function imageReferences(html) {
+  const references = [];
+
+  for (const match of String(html || '').matchAll(/<img\b[^>]*>/gi)) {
+    const tag = match[0];
+    const sourceId = mediaSourceIdFromTag(tag);
+    const srcset = attributeValue(tag, 'srcset');
+    const srcsetUrls = srcset
+      ? srcset.split(',').map(item => item.trim().split(/\s+/)[0]).filter(Boolean)
+      : [];
+    const urls = [
+      attributeValue(tag, 'data-lazy-src'),
+      attributeValue(tag, 'data-src'),
+      attributeValue(tag, 'data-original'),
+      attributeValue(tag, 'src'),
+      ...srcsetUrls,
+    ].filter(Boolean);
+
+    references.push({ sourceId, urls });
+  }
+
+  return references;
+}
+
+function imageSourceIds(html) {
+  return [...new Set(
+    imageReferences(html)
+      .map(reference => reference.sourceId)
+      .filter(Boolean),
+  )];
+}
+
+function resolveImageSourceIds(html, mediaSourceIdByUrl) {
+  const resolved = [];
+  const unresolvedUrls = [];
+
+  for (const reference of imageReferences(html)) {
+    if (reference.sourceId) resolved.push(reference.sourceId);
+
+    let matched = false;
+    for (const rawUrl of reference.urls) {
+      const normalized = normalizeMediaUrl(rawUrl);
+      const sourceId = mediaSourceIdByUrl.get(normalized);
+      if (sourceId) {
+        resolved.push(sourceId);
+        matched = true;
+        break;
+      }
+    }
+
+    if (!reference.sourceId && !matched && reference.urls[0]) {
+      unresolvedUrls.push(reference.urls[0]);
+    }
+  }
+
+  return {
+    sourceIds: [...new Set(resolved)],
+    unresolvedUrls: [...new Set(unresolvedUrls)],
+  };
 }
 
 function extractListItems(html) {
@@ -88,7 +166,7 @@ function firstParagraphText(html) {
   return '';
 }
 
-function buildSections(html) {
+function buildSections(html, mediaSourceIdByUrl) {
   const source = String(html || '');
   const headingPattern = /<(h2|h3)\b[^>]*>([\s\S]*?)<\/\1>/gi;
   const headings = [...source.matchAll(headingPattern)];
@@ -103,7 +181,7 @@ function buildSections(html) {
     const end = index + 1 < headings.length ? headings[index + 1].index : source.length;
     const body = source.slice(start, end);
     const items = extractListItems(body);
-    const mediaSourceIds = imageSourceIds(body);
+    const { sourceIds: mediaSourceIds } = resolveImageSourceIds(body, mediaSourceIdByUrl);
     const content = paragraphHtml(
       body
         .replace(/<(?:ul|ol)\b[^>]*>[\s\S]*?<\/(?:ul|ol)>/gi, '')
@@ -160,7 +238,7 @@ async function fetchAllPosts() {
 function featuredMediaSourceId(post) {
   const embedded = post?._embedded?.['wp:featuredmedia']?.[0];
   const sourceId = Number(embedded?.id || post?.featured_media);
-  return Number.isFinite(sourceId) && sourceId > 0 ? sourceId : undefined;
+  return Number.isFinite(sourceId) && sourceId > 0 ? String(sourceId) : undefined;
 }
 
 async function main() {
@@ -172,12 +250,24 @@ async function main() {
     }),
     prisma.mediaAsset.findMany({
       where: { sourceProvider: 'WORDPRESS', sourceId: { not: null } },
-      select: { id: true, sourceId: true },
+      select: { id: true, sourceId: true, sourceUrl: true, publicUrl: true },
     }),
   ]);
 
   const destinationBySlug = new Map(destinations.map(destination => [destination.slug, destination]));
   const mediaBySourceId = new Map(media.map(item => [String(item.sourceId), item.id]));
+  const mediaSourceIdByUrl = new Map();
+
+  for (const item of media) {
+    const sourceId = String(item.sourceId || '');
+    if (!sourceId) continue;
+
+    for (const url of [item.sourceUrl, item.publicUrl]) {
+      const normalized = normalizeMediaUrl(url);
+      if (normalized) mediaSourceIdByUrl.set(normalized, sourceId);
+    }
+  }
+
   let imported = 0;
   const skipped = [];
 
@@ -186,15 +276,15 @@ async function main() {
     if (!destination) continue;
 
     const html = String(post.content?.rendered || '');
-    const sections = buildSections(html);
-    const contentMediaIds = imageSourceIds(html);
+    const sections = buildSections(html, mediaSourceIdByUrl);
+    const { sourceIds: contentMediaIds, unresolvedUrls } = resolveImageSourceIds(html, mediaSourceIdByUrl);
     const featuredSourceId = featuredMediaSourceId(post);
     const galleryMediaSourceIds = [...new Set([
       ...(featuredSourceId ? [featuredSourceId] : []),
       ...contentMediaIds,
     ])];
     const featuredMediaId = featuredSourceId
-      ? mediaBySourceId.get(String(featuredSourceId)) || null
+      ? mediaBySourceId.get(featuredSourceId) || null
       : null;
     const excerpt = stripTags(post.excerpt?.rendered) || firstParagraphText(html) || null;
     const featuredText = sections[0]?.title || null;
@@ -223,6 +313,8 @@ async function main() {
           editorialPostSlug: post.slug,
           editorialSourceUrl: post.link,
           editorialImportedAt: importedAt,
+          editorialMediaCount: galleryMediaSourceIds.length,
+          unresolvedEditorialMediaUrls: unresolvedUrls,
           chapterNavigation: true,
         },
         editorialFlagsJson: [],
@@ -238,7 +330,8 @@ async function main() {
     });
 
     imported += 1;
-    console.log(`Imported destination editorial: ${post.slug} (${sections.length} sections, ${galleryMediaSourceIds.length} media references)`);
+    const unresolvedSuffix = unresolvedUrls.length ? `, ${unresolvedUrls.length} unresolved media URLs` : '';
+    console.log(`Imported destination editorial: ${post.slug} (${sections.length} sections, ${galleryMediaSourceIds.length} media references${unresolvedSuffix})`);
   }
 
   console.log(`Destination editorial import completed: ${imported} imported from ${posts.length} WordPress posts.`);
