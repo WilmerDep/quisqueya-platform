@@ -88,14 +88,51 @@ export type PublicExperience = {
   status?: string;
 };
 
+export type PublicDestinationLocation = {
+  country?: string;
+  region?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  zoom?: number;
+};
+
+export type PublicDestinationSection = {
+  id: string;
+  eyebrow?: string;
+  title?: string;
+  content?: string;
+  items: string[];
+  media?: PublicMedia | null;
+  mediaSourceId?: number;
+  mediaPosition?: 'before' | 'after' | 'left' | 'right' | 'full';
+  anchor?: string;
+  order: number;
+};
+
+export type PublicDestinationEditorialFlag = {
+  code: string;
+  severity: 'info' | 'warning' | 'error';
+  message: string;
+};
+
 export type PublicDestination = {
   id: string;
   sourceId?: number;
   slug: string;
   name: string;
+  excerpt?: string;
   description?: string;
+  featuredText?: string;
   featuredMedia?: PublicMedia | null;
+  gallery: PublicMedia[];
+  galleryMediaSourceIds: number[];
+  contentSections: PublicDestinationSection[];
+  location?: PublicDestinationLocation;
+  display?: Record<string, unknown>;
+  editorialFlags: PublicDestinationEditorialFlag[];
   sourceUrl?: string;
+  status?: string;
 };
 
 export type PublicPageContent = {
