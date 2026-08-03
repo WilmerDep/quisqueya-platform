@@ -41,17 +41,33 @@ function cleanEditorialHtml(value) {
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<(?:figure|picture)\b[^>]*>[\s\S]*?<\/(?:figure|picture)>/gi, '')
     .replace(/<img\b[^>]*>/gi, '')
+    .replace(/<(?:ul|ol)\b[^>]*>[\s\S]*?<\/(?:ul|ol)>/gi, '')
     .replace(/\s(?:class|style|id|data-[\w-]+|aria-[\w-]+)=("[^"]*"|'[^']*')/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-function extractEditorialPreamble(html) {
+function normalizeText(value) {
+  return stripTags(value).toLocaleLowerCase('es').replace(/\s+/g, ' ').trim();
+}
+
+function extractLeadBlock(html) {
   const source = String(html || '');
-  const firstHeading = source.search(/<(?:h2|h3)\b/i);
-  const preambleSource = firstHeading >= 0 ? source.slice(0, firstHeading) : source;
-  const cleaned = cleanEditorialHtml(preambleSource);
-  return stripTags(cleaned) ? cleaned : undefined;
+  const headings = [...source.matchAll(/<(h2|h3)\b[^>]*>([\s\S]*?)<\/\1>/gi)];
+  if (!headings.length) return undefined;
+
+  const first = headings[0];
+  const title = stripTags(first[2]);
+  if (!title) return undefined;
+
+  const start = (first.index || 0) + first[0].length;
+  const end = headings[1]?.index ?? source.length;
+  const content = cleanEditorialHtml(source.slice(start, end));
+
+  return {
+    title,
+    content: stripTags(content) ? content : undefined,
+  };
 }
 
 function featuredMediaSourceId(post) {
@@ -67,7 +83,10 @@ async function main() {
       id: true,
       slug: true,
       excerpt: true,
+      featuredText: true,
+      description: true,
       galleryMediaSourceIds: true,
+      contentSectionsJson: true,
       provenanceJson: true,
       displayJson: true,
     },
@@ -83,7 +102,18 @@ async function main() {
     if (!post || Array.isArray(post) || typeof post !== 'object') continue;
 
     const html = String(post.content?.rendered || '');
-    const preamble = extractEditorialPreamble(html);
+    const lead = extractLeadBlock(html);
+    const currentSections = Array.isArray(destination.contentSectionsJson)
+      ? destination.contentSectionsJson.filter(section => section && !Array.isArray(section) && typeof section === 'object')
+      : [];
+    const leadTitleNormalized = normalizeText(lead?.title);
+    const normalizedSections = currentSections
+      .filter((section, index) => {
+        if (!leadTitleNormalized || index !== 0) return true;
+        return normalizeText(section.title) !== leadTitleNormalized;
+      })
+      .map((section, index) => ({ ...section, order: index }));
+
     const currentGallery = Array.isArray(destination.galleryMediaSourceIds)
       ? destination.galleryMediaSourceIds.map(Number).filter(Number.isFinite)
       : [];
@@ -93,29 +123,45 @@ async function main() {
       ...currentGallery,
     ])];
 
-    if (!preamble && galleryMediaSourceIds.length === currentGallery.length) continue;
+    const nextFeaturedText = lead?.title || destination.featuredText;
+    const nextDescription = lead?.content || destination.description || destination.excerpt;
+    const changed = Boolean(
+      normalizeText(nextFeaturedText) !== normalizeText(destination.featuredText) ||
+      normalizeText(nextDescription) !== normalizeText(destination.description) ||
+      normalizedSections.length !== currentSections.length ||
+      galleryMediaSourceIds.length !== currentGallery.length,
+    );
+
+    if (!changed) continue;
 
     await prisma.destination.update({
       where: { id: destination.id },
       data: {
-        description: preamble || destination.excerpt,
+        featuredText: nextFeaturedText,
+        description: nextDescription,
+        contentSectionsJson: normalizedSections,
         galleryMediaSourceIds,
         displayJson: {
           ...(destination.displayJson && !Array.isArray(destination.displayJson) && typeof destination.displayJson === 'object'
             ? destination.displayJson
             : {}),
-          editorialPreamblePreserved: Boolean(preamble),
-          editorialPreambleLength: preamble ? stripTags(preamble).length : 0,
+          editorialLeadNormalized: Boolean(lead),
+          editorialLeadLength: lead?.content ? stripTags(lead.content).length : 0,
+          editorialLeadRemovedFromSections: currentSections.length - normalizedSections.length,
           editorialMediaCount: galleryMediaSourceIds.length,
         },
       },
     });
 
     updated += 1;
-    console.log(`Repaired destination editorial: ${destination.slug} (${preamble ? stripTags(preamble).length : 0} intro chars, ${galleryMediaSourceIds.length} media references)`);
+    console.log(
+      `Normalized destination editorial: ${destination.slug} ` +
+      `(${lead?.content ? stripTags(lead.content).length : 0} lead chars, ` +
+      `${normalizedSections.length} chapters, ${galleryMediaSourceIds.length} media references)`,
+    );
   }
 
-  console.log(`Destination editorial repair completed: ${updated} updated.`);
+  console.log(`Destination editorial normalization completed: ${updated} updated.`);
 }
 
 try {
