@@ -4,6 +4,8 @@ import { PrismaService } from '../../infra/prisma.service.js';
 import type {
   PublicContentSnapshot,
   PublicDestination,
+  PublicDestinationEditorialFlag,
+  PublicDestinationSection,
   PublicExperience,
   PublicExperienceEditorialFlag,
   PublicExperiencePracticalInfo,
@@ -12,6 +14,7 @@ import type {
 } from './content.types.js';
 
 type ExperienceRow = Prisma.ExperienceGetPayload<Record<string, never>>;
+type DestinationRow = Prisma.DestinationGetPayload<Record<string, never>>;
 
 @Injectable()
 export class ContentService {
@@ -246,6 +249,73 @@ export class ContentService {
     };
   }
 
+  private mapDestination(
+    row: DestinationRow,
+    featuredMedia: PublicMedia | null,
+    mediaBySourceId: Map<number, PublicMedia>,
+  ): PublicDestination {
+    const galleryMediaSourceIds = this.jsonArray<number>(row.galleryMediaSourceIds)
+      .map(Number)
+      .filter(Number.isFinite);
+    const rawSections = this.jsonArray<Record<string, unknown>>(row.contentSectionsJson);
+    const contentSections: PublicDestinationSection[] = rawSections
+      .map((section, index) => {
+        const mediaSourceId = Number(section.mediaSourceId);
+        const normalizedMediaSourceId = Number.isFinite(mediaSourceId) ? mediaSourceId : undefined;
+        const items = Array.isArray(section.items)
+          ? section.items.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+          : [];
+        const mediaPosition = ['before', 'after', 'left', 'right', 'full'].includes(String(section.mediaPosition))
+          ? section.mediaPosition as PublicDestinationSection['mediaPosition']
+          : undefined;
+
+        return {
+          id: typeof section.id === 'string' && section.id.trim() ? section.id : `section-${index + 1}`,
+          eyebrow: typeof section.eyebrow === 'string' ? section.eyebrow : undefined,
+          title: typeof section.title === 'string' ? section.title : undefined,
+          content: typeof section.content === 'string' ? section.content : undefined,
+          items,
+          media: normalizedMediaSourceId ? mediaBySourceId.get(normalizedMediaSourceId) ?? null : null,
+          mediaSourceId: normalizedMediaSourceId,
+          mediaPosition,
+          anchor: typeof section.anchor === 'string' ? section.anchor : undefined,
+          order: Number.isFinite(Number(section.order)) ? Number(section.order) : index,
+        };
+      })
+      .sort((a, b) => a.order - b.order);
+    const location = this.jsonObject(row.locationJson);
+
+    return {
+      id: row.id,
+      sourceId: this.toNumericSourceId(row.sourceId),
+      slug: row.slug,
+      name: row.name,
+      excerpt: row.excerpt ?? undefined,
+      description: row.description ?? undefined,
+      featuredText: row.featuredText ?? undefined,
+      featuredMedia,
+      gallery: galleryMediaSourceIds
+        .map(sourceId => mediaBySourceId.get(sourceId))
+        .filter((media): media is PublicMedia => Boolean(media)),
+      galleryMediaSourceIds,
+      contentSections,
+      location: location
+        ? {
+            country: typeof location.country === 'string' ? location.country : undefined,
+            region: typeof location.region === 'string' ? location.region : undefined,
+            address: typeof location.address === 'string' ? location.address : undefined,
+            latitude: Number.isFinite(Number(location.latitude)) ? Number(location.latitude) : undefined,
+            longitude: Number.isFinite(Number(location.longitude)) ? Number(location.longitude) : undefined,
+            zoom: Number.isFinite(Number(location.zoom)) ? Number(location.zoom) : undefined,
+          }
+        : undefined,
+      display: this.jsonObject(row.displayJson),
+      editorialFlags: this.jsonArray<PublicDestinationEditorialFlag>(row.editorialFlagsJson),
+      sourceUrl: row.sourceUrl ?? undefined,
+      status: row.status.toLowerCase(),
+    };
+  }
+
   async getExperiences(): Promise<PublicExperience[]> {
     const rows = await this.prisma.experience.findMany({
       where: { status: ContentRecordStatus.PUBLISHED },
@@ -282,19 +352,22 @@ export class ContentService {
   async getDestinations(): Promise<PublicDestination[]> {
     const rows = await this.prisma.destination.findMany({
       where: { status: ContentRecordStatus.PUBLISHED },
-      orderBy: { name: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
-    const media = await this.mediaMap(rows.map(row => row.featuredMediaId));
+    const featuredMedia = await this.mediaMap(rows.map(row => row.featuredMediaId));
+    const sourceIds = rows.flatMap(row => [
+      ...this.jsonArray<number>(row.galleryMediaSourceIds),
+      ...this.jsonArray<Record<string, unknown>>(row.contentSectionsJson)
+        .map(section => Number(section.mediaSourceId))
+        .filter(Number.isFinite),
+    ]);
+    const mediaBySourceId = await this.mediaBySourceIdMap(sourceIds);
 
-    return rows.map(row => ({
-      id: row.id,
-      sourceId: this.toNumericSourceId(row.sourceId),
-      slug: row.slug,
-      name: row.name,
-      description: row.description ?? undefined,
-      featuredMedia: row.featuredMediaId ? media.get(row.featuredMediaId) ?? null : null,
-      sourceUrl: row.sourceUrl ?? undefined,
-    }));
+    return rows.map(row => this.mapDestination(
+      row,
+      row.featuredMediaId ? featuredMedia.get(row.featuredMediaId) ?? null : null,
+      mediaBySourceId,
+    ));
   }
 
   async getDestination(slug: string): Promise<PublicDestination | null> {
@@ -302,17 +375,21 @@ export class ContentService {
       where: { slug, status: ContentRecordStatus.PUBLISHED },
     });
     if (!row) return null;
-    const media = await this.mediaMap([row.featuredMediaId]);
 
-    return {
-      id: row.id,
-      sourceId: this.toNumericSourceId(row.sourceId),
-      slug: row.slug,
-      name: row.name,
-      description: row.description ?? undefined,
-      featuredMedia: row.featuredMediaId ? media.get(row.featuredMediaId) ?? null : null,
-      sourceUrl: row.sourceUrl ?? undefined,
-    };
+    const featuredMedia = await this.mediaMap([row.featuredMediaId]);
+    const sourceIds = [
+      ...this.jsonArray<number>(row.galleryMediaSourceIds),
+      ...this.jsonArray<Record<string, unknown>>(row.contentSectionsJson)
+        .map(section => Number(section.mediaSourceId))
+        .filter(Number.isFinite),
+    ];
+    const mediaBySourceId = await this.mediaBySourceIdMap(sourceIds);
+
+    return this.mapDestination(
+      row,
+      row.featuredMediaId ? featuredMedia.get(row.featuredMediaId) ?? null : null,
+      mediaBySourceId,
+    );
   }
 
   async getPages(): Promise<PublicPageContent[]> {
