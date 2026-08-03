@@ -3,6 +3,7 @@ import { ContentRecordStatus } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
 import type {
   PublicDmcFleetItem,
+  PublicDmcMobilityGalleryItem,
   PublicDmcService,
   PublicDmcShowcaseItem,
 } from './content.types.js';
@@ -60,6 +61,25 @@ export class DmcContentService {
     };
   }
 
+  private parseMobilityGalleryItem(value: unknown, index: number): PublicDmcMobilityGalleryItem | null {
+    const item = this.object(value);
+    if (!item) return null;
+
+    const id = this.text(item.id);
+    const image = this.text(item.image);
+    const title = this.text(item.title);
+    if (!id || !image || !title) return null;
+
+    return {
+      id,
+      image,
+      imageAlt: this.text(item.imageAlt),
+      title,
+      description: this.text(item.description),
+      order: this.integer(item.order, index),
+    };
+  }
+
   private parseShowcaseItem(value: unknown, index: number): PublicDmcShowcaseItem | null {
     const item = this.object(value);
     if (!item) return null;
@@ -104,6 +124,7 @@ export class DmcContentService {
 
     if (!id || !slug || !title || !shortDescription) return null;
 
+    const heroRaw = this.object(service.hero);
     const showcaseRaw = this.object(service.showcase);
     const secondaryCtaRaw = this.object(showcaseRaw?.secondaryCta);
     const secondaryCtaLabel = this.text(secondaryCtaRaw?.label);
@@ -120,6 +141,20 @@ export class DmcContentService {
         .filter((item): item is PublicDmcFleetItem => Boolean(item))
         .sort((a, b) => a.order - b.order)
       : [];
+    const mobilityGallery = Array.isArray(service.mobilityGallery)
+      ? service.mobilityGallery
+        .map((item, itemIndex) => this.parseMobilityGalleryItem(item, itemIndex))
+        .filter((item): item is PublicDmcMobilityGalleryItem => Boolean(item))
+        .sort((a, b) => a.order - b.order)
+      : [];
+
+    const hero = heroRaw
+      ? {
+          backgroundImage: this.text(heroRaw.backgroundImage),
+          foregroundImage: this.text(heroRaw.foregroundImage),
+          foregroundAlt: this.text(heroRaw.foregroundAlt),
+        }
+      : undefined;
 
     return {
       id,
@@ -127,8 +162,10 @@ export class DmcContentService {
       title,
       shortDescription,
       order: this.integer(service.order, index),
+      hero,
       accessibility: this.text(service.accessibility),
       fleet,
+      mobilityGallery,
       showcase: showcaseRaw
         ? {
             title: this.text(showcaseRaw.title),
