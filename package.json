@@ -22,8 +22,9 @@
     "import:reviews": "node scripts/import-reviews-json.mjs",
     "import:tourfic-metadata": "node scripts/import-tourfic-authenticated-metadata.mjs",
     "import:tourfic-gallery-media": "node scripts/import-tourfic-gallery-media.mjs",
-    "import:destination-editorials": "node scripts/import-wordpress-destination-editorials.mjs",
-    "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs && node scripts/import-wordpress-destination-editorials.mjs && node scripts/canonicalize-wordpress-experience-slugs.mjs && node scripts/import-tourfic-authenticated-metadata.mjs && node scripts/import-tourfic-gallery-media.mjs"
+    "canonicalize:destination-slugs": "node scripts/canonicalize-wordpress-destination-slugs.mjs",
+    "import:destination-editorials": "node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs",
+    "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs && node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs && node scripts/canonicalize-wordpress-experience-slugs.mjs && node scripts/import-tourfic-authenticated-metadata.mjs && node scripts/import-tourfic-gallery-media.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.19",
@@ -64,7 +65,7 @@
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
     "leaflet": "^1.9.4",
-    "postcss": "^8.5.14",
+    "postcss": "^10.5.0",
     "tailwindcss": "^4.2.4",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.59.2",
