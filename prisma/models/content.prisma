@@ -40,22 +40,30 @@ model MediaAsset {
 }
 
 model Destination {
-  id               String                @id @db.VarChar(64)
-  slug             String                @unique @db.VarChar(180)
-  name             String                @db.VarChar(220)
-  description      String?               @db.LongText
-  featuredMediaId  String?               @map("featured_media_id") @db.VarChar(64)
-  status           ContentRecordStatus   @default(PUBLISHED)
-  sourceProvider   ContentSourceProvider @default(MANUAL) @map("source_provider")
-  sourceId         String?               @map("source_id") @db.VarChar(120)
-  sourceUrl        String?               @map("source_url") @db.Text
-  sourceModifiedAt DateTime?             @map("source_modified_at") @db.Timestamp(0)
-  provenanceJson   Json?                 @map("provenance_json")
-  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+  id                    String                @id @db.VarChar(64)
+  slug                  String                @unique @db.VarChar(180)
+  name                  String                @db.VarChar(220)
+  excerpt               String?               @db.Text
+  description           String?               @db.LongText
+  featuredText          String?               @map("featured_text") @db.Text
+  featuredMediaId       String?               @map("featured_media_id") @db.VarChar(64)
+  galleryMediaSourceIds Json?                  @map("gallery_media_source_ids")
+  contentSectionsJson   Json?                  @map("content_sections_json")
+  locationJson          Json?                  @map("location_json")
+  displayJson           Json?                  @map("display_json")
+  editorialFlagsJson    Json?                  @map("editorial_flags_json")
+  status                ContentRecordStatus   @default(PUBLISHED)
+  sortOrder             Int                   @default(0) @map("sort_order")
+  sourceProvider        ContentSourceProvider @default(MANUAL) @map("source_provider")
+  sourceId              String?               @map("source_id") @db.VarChar(120)
+  sourceUrl             String?               @map("source_url") @db.Text
+  sourceModifiedAt      DateTime?             @map("source_modified_at") @db.Timestamp(0)
+  provenanceJson        Json?                 @map("provenance_json")
+  createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
 
   @@unique([sourceProvider, sourceId], map: "uniq_destination_source")
-  @@index([status], map: "idx_destinations_status")
+  @@index([status, sortOrder], map: "idx_destinations_status_order")
   @@map("destinations")
 }
 
