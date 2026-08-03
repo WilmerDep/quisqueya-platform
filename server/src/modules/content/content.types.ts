@@ -157,6 +157,21 @@ export type PublicDmcFleetItem = {
   order: number;
 };
 
+export type PublicDmcHero = {
+  backgroundImage?: string;
+  foregroundImage?: string;
+  foregroundAlt?: string;
+};
+
+export type PublicDmcMobilityGalleryItem = {
+  id: string;
+  image: string;
+  imageAlt?: string;
+  title: string;
+  description?: string;
+  order: number;
+};
+
 export type PublicDmcShowcaseItem = {
   id: string;
   slug: string;
@@ -183,8 +198,10 @@ export type PublicDmcService = {
   title: string;
   shortDescription: string;
   order: number;
+  hero?: PublicDmcHero;
   accessibility?: string;
   fleet: PublicDmcFleetItem[];
+  mobilityGallery: PublicDmcMobilityGalleryItem[];
   showcase?: {
     title?: string;
     description?: string;
