@@ -24,7 +24,7 @@ const fleetMedia = {
 };
 
 const hero = {
-  backgroundImage: 'https://quisqueyatravel.com.do/wp-content/uploads/2025/06/banner-traslados.jpg',
+  backgroundImage: 'https://quisqueyatravel.com.do/wp-content/uploads/2025/06/La-Altagracia.png',
   foregroundImage: 'https://quisqueyatravel.com.do/wp-content/uploads/2025/06/Unidades-Transporte.png',
   foregroundAlt: 'Flota de unidades de transporte de Quisqueya Travel',
 };
