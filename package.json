@@ -15,6 +15,7 @@
     "build": "npm run prisma:generate && npm run build:web && npm run build:server",
     "verify:sanitization": "node scripts/verify-sanitization.mjs",
     "verify:public-api": "node scripts/verify-public-content-api.mjs",
+    "verify:production": "node scripts/verify-production-readiness.mjs",
     "audit:experiences": "node scripts/audit-experience-normalization.mjs",
     "audit:experience-sources": "node scripts/audit-experience-source-evidence.mjs",
     "normalize:experience-baseline": "node scripts/normalize-experience-editorial-baseline.mjs",
