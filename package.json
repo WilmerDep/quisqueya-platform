@@ -16,6 +16,7 @@
     "verify:sanitization": "node scripts/verify-sanitization.mjs",
     "verify:public-api": "node scripts/verify-public-content-api.mjs",
     "audit:experiences": "node scripts/audit-experience-normalization.mjs",
+    "audit:experience-sources": "node scripts/audit-experience-source-evidence.mjs",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
     "verify:prisma": "npm run prisma:validate && npm run prisma:generate",
