@@ -18,6 +18,7 @@
     "audit:experiences": "node scripts/audit-experience-normalization.mjs",
     "audit:experience-sources": "node scripts/audit-experience-source-evidence.mjs",
     "normalize:experience-baseline": "node scripts/normalize-experience-editorial-baseline.mjs",
+    "audit:dmc-services": "node scripts/audit-dmc-services.mjs",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
     "verify:prisma": "npm run prisma:validate && npm run prisma:generate",
