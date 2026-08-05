@@ -36,6 +36,7 @@ model MediaAsset {
 
   @@unique([sourceProvider, sourceId], map: "uniq_media_source")
   @@index([sourceProvider], map: "idx_media_source_provider")
+  @@index([updatedAt], map: "idx_media_updated_at")
   @@map("media_assets")
 }
 
@@ -64,6 +65,7 @@ model Destination {
 
   @@unique([sourceProvider, sourceId], map: "uniq_destination_source")
   @@index([status, sortOrder], map: "idx_destinations_status_order")
+  @@index([updatedAt], map: "idx_destinations_updated_at")
   @@map("destinations")
 }
 
@@ -111,6 +113,7 @@ model Experience {
   @@unique([sourceProvider, sourceId], map: "uniq_experience_source")
   @@index([status, sortOrder], map: "idx_experiences_status_order")
   @@index([pricingMode], map: "idx_experiences_pricing_mode")
+  @@index([updatedAt], map: "idx_experiences_updated_at")
   @@map("experiences")
 }
 
@@ -171,5 +174,6 @@ model ContentPage {
 
   @@unique([sourceProvider, sourceId], map: "uniq_content_page_source")
   @@index([status], map: "idx_content_pages_status")
+  @@index([updatedAt], map: "idx_content_pages_updated_at")
   @@map("content_pages")
 }
