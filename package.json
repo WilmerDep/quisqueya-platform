@@ -15,6 +15,7 @@
     "build": "npm run prisma:generate && npm run build:web && npm run build:server",
     "verify:sanitization": "node scripts/verify-sanitization.mjs",
     "verify:public-api": "node scripts/verify-public-content-api.mjs",
+    "audit:experiences": "node scripts/audit-experience-normalization.mjs",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
     "verify:prisma": "npm run prisma:validate && npm run prisma:generate",
