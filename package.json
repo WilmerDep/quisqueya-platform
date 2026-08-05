@@ -17,6 +17,7 @@
     "verify:public-api": "node scripts/verify-public-content-api.mjs",
     "audit:experiences": "node scripts/audit-experience-normalization.mjs",
     "audit:experience-sources": "node scripts/audit-experience-source-evidence.mjs",
+    "normalize:experience-baseline": "node scripts/normalize-experience-editorial-baseline.mjs",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
     "verify:prisma": "npm run prisma:validate && npm run prisma:generate",
@@ -31,7 +32,7 @@
     "canonicalize:destination-slugs": "node scripts/canonicalize-wordpress-destination-slugs.mjs",
     "repair:destination-editorials": "node scripts/repair-destination-editorial-preamble.mjs",
     "import:destination-editorials": "node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs && node scripts/repair-destination-editorial-preamble.mjs",
-    "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs && node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs && node scripts/repair-destination-editorial-preamble.mjs && node scripts/canonicalize-wordpress-experience-slugs.mjs && node scripts/import-tourfic-authenticated-metadata.mjs && node scripts/import-tourfic-gallery-media.mjs"
+    "import:wordpress": "node scripts/import-wordpress-content.mjs && node scripts/link-wordpress-featured-media.mjs && node scripts/import-authenticated-wordpress-media.mjs && node scripts/canonicalize-wordpress-destination-slugs.mjs && node scripts/import-wordpress-destination-editorials.mjs && node scripts/repair-destination-editorial-preamble.mjs && node scripts/canonicalize-wordpress-experience-slugs.mjs && node scripts/import-tourfic-authenticated-metadata.mjs && node scripts/import-tourfic-gallery-media.mjs && node scripts/normalize-experience-editorial-baseline.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.19",
