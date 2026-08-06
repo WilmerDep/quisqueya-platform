@@ -20,6 +20,8 @@ type EditorialFlag = {
   severity: 'info' | 'warning' | 'error';
 };
 
+type ReviewStatus = 'provisional' | 'reviewed';
+
 @Injectable()
 export class ExperienceEditorialService {
   constructor(private readonly prisma: PrismaService) {}
@@ -33,7 +35,11 @@ export class ExperienceEditorialService {
     const existing = await this.findExperience(experienceIdOrSlug);
     const normalized = this.normalizeInput(input);
 
-    if (!Object.keys(normalized.data).length) {
+    const hasEditorialContent = Object.keys(normalized.data).length > 0;
+    const hasMetadataUpdate =
+      normalized.assistedByAi !== undefined || normalized.reviewStatus !== undefined;
+
+    if (!hasEditorialContent && !hasMetadataUpdate) {
       throw new BadRequestException('No se recibió contenido editorial para actualizar.');
     }
 
@@ -70,20 +76,32 @@ export class ExperienceEditorialService {
 
     if (input.faqs !== undefined) data.faqsJson = this.normalizeFaqs(input.faqs);
     if (input.itinerary !== undefined) data.itineraryJson = this.normalizeItinerary(input.itinerary);
-    if (input.included !== undefined) data.includedItemsJson = this.normalizeStringList(input.included, 'incluidos');
-    if (input.excluded !== undefined) data.excludedItemsJson = this.normalizeStringList(input.excluded, 'excluidos');
-    if (input.practicalInfo !== undefined) data.practicalInfoJson = this.normalizeObject(input.practicalInfo, 'información práctica');
-    if (input.availability !== undefined) data.availabilityJson = this.normalizeObject(input.availability, 'disponibilidad');
-    if (input.contact !== undefined) data.contactJson = this.normalizeObject(input.contact, 'contacto');
+    if (input.included !== undefined) {
+      data.includedItemsJson = this.normalizeStringList(input.included, 'incluidos');
+    }
+    if (input.excluded !== undefined) {
+      data.excludedItemsJson = this.normalizeStringList(input.excluded, 'excluidos');
+    }
+    if (input.practicalInfo !== undefined) {
+      data.practicalInfoJson = this.normalizeObject(input.practicalInfo, 'información práctica');
+    }
+    if (input.availability !== undefined) {
+      data.availabilityJson = this.normalizeObject(input.availability, 'disponibilidad');
+    }
+    if (input.contact !== undefined) {
+      data.contactJson = this.normalizeObject(input.contact, 'contacto');
+    }
 
-    const assistedByAi = input.assistedByAi === true;
+    const assistedByAi = this.normalizeAssistedByAi(input.assistedByAi);
     const reviewStatus = this.normalizeReviewStatus(input.reviewStatus);
 
     return { data, assistedByAi, reviewStatus };
   }
 
   private normalizeFaqs(value: unknown): Prisma.InputJsonValue {
-    if (!Array.isArray(value)) throw new BadRequestException('Las preguntas frecuentes deben ser una lista.');
+    if (!Array.isArray(value)) {
+      throw new BadRequestException('Las preguntas frecuentes deben ser una lista.');
+    }
 
     return value.map((item, index) => {
       const record = this.requireRecord(item, `pregunta frecuente ${index + 1}`);
@@ -94,7 +112,9 @@ export class ExperienceEditorialService {
   }
 
   private normalizeItinerary(value: unknown): Prisma.InputJsonValue {
-    if (!Array.isArray(value)) throw new BadRequestException('El itinerario debe ser una lista.');
+    if (!Array.isArray(value)) {
+      throw new BadRequestException('El itinerario debe ser una lista.');
+    }
 
     return value.map((item, index) => {
       const record = this.requireRecord(item, `paso de itinerario ${index + 1}`);
@@ -109,7 +129,9 @@ export class ExperienceEditorialService {
   }
 
   private normalizeStringList(value: unknown, label: string): Prisma.InputJsonValue {
-    if (!Array.isArray(value)) throw new BadRequestException(`La lista de ${label} no es válida.`);
+    if (!Array.isArray(value)) {
+      throw new BadRequestException(`La lista de ${label} no es válida.`);
+    }
     return value.map((item, index) => this.requireText(item, `${label} ${index + 1}`));
   }
 
@@ -120,43 +142,73 @@ export class ExperienceEditorialService {
     return value as Prisma.InputJsonValue;
   }
 
-  private normalizeReviewStatus(value: unknown): 'provisional' | 'reviewed' {
-    if (value === undefined || value === null || value === '') return 'provisional';
+  private normalizeAssistedByAi(value: unknown): boolean | undefined {
+    if (value === undefined) return undefined;
+    if (typeof value !== 'boolean') {
+      throw new BadRequestException('assistedByAi debe ser verdadero o falso.');
+    }
+    return value;
+  }
+
+  private normalizeReviewStatus(value: unknown): ReviewStatus | undefined {
+    if (value === undefined) return undefined;
     if (value === 'provisional' || value === 'reviewed') return value;
     throw new BadRequestException('El estado editorial debe ser provisional o reviewed.');
   }
 
   private mergeEditorialFlags(
     currentValue: Prisma.JsonValue | null,
-    assistedByAi: boolean,
-    reviewStatus: 'provisional' | 'reviewed',
+    assistedByAi: boolean | undefined,
+    reviewStatus: ReviewStatus | undefined,
   ): EditorialFlag[] {
     const managedCodes = new Set(['AI_ASSISTED_CONTENT', 'EDITORIAL_REVIEW_REQUIRED']);
-    const current = Array.isArray(currentValue)
-      ? currentValue.filter((item): item is EditorialFlag => {
-          if (!item || Array.isArray(item) || typeof item !== 'object') return false;
-          const code = (item as Record<string, unknown>).code;
-          return typeof code === 'string' && !managedCodes.has(code);
-        })
-      : [];
+    const currentFlags = this.readEditorialFlags(currentValue);
+    const unmanagedFlags = currentFlags.filter(flag => !managedCodes.has(flag.code));
+    const managedFlags = currentFlags.filter(flag => managedCodes.has(flag.code));
 
-    if (assistedByAi) {
-      current.push({
-        code: 'AI_ASSISTED_CONTENT',
-        message: 'El contenido fue preparado con asistencia de inteligencia artificial.',
-        severity: 'info',
-      });
+    let nextManagedFlags = [...managedFlags];
+
+    if (assistedByAi !== undefined) {
+      nextManagedFlags = nextManagedFlags.filter(flag => flag.code !== 'AI_ASSISTED_CONTENT');
+      if (assistedByAi) {
+        nextManagedFlags.push({
+          code: 'AI_ASSISTED_CONTENT',
+          message: 'El contenido fue preparado con asistencia de inteligencia artificial.',
+          severity: 'info',
+        });
+      }
     }
 
-    if (reviewStatus === 'provisional') {
-      current.push({
-        code: 'EDITORIAL_REVIEW_REQUIRED',
-        message: 'El contenido es provisional y requiere validación editorial.',
-        severity: 'warning',
-      });
+    if (reviewStatus !== undefined) {
+      nextManagedFlags = nextManagedFlags.filter(
+        flag => flag.code !== 'EDITORIAL_REVIEW_REQUIRED',
+      );
+      if (reviewStatus === 'provisional') {
+        nextManagedFlags.push({
+          code: 'EDITORIAL_REVIEW_REQUIRED',
+          message: 'El contenido es provisional y requiere validación editorial.',
+          severity: 'warning',
+        });
+      }
     }
 
-    return current;
+    return [...unmanagedFlags, ...nextManagedFlags];
+  }
+
+  private readEditorialFlags(value: Prisma.JsonValue | null): EditorialFlag[] {
+    if (!Array.isArray(value)) return [];
+
+    return value.filter((item): item is EditorialFlag => {
+      if (!item || Array.isArray(item) || typeof item !== 'object') return false;
+      const record = item as Record<string, unknown>;
+      return (
+        typeof record.code === 'string' &&
+        typeof record.message === 'string' &&
+        (record.severity === 'info' ||
+          record.severity === 'warning' ||
+          record.severity === 'error')
+      );
+    });
   }
 
   private toEditorialResponse(experience: Experience) {
