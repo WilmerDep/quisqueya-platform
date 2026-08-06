@@ -47,6 +47,7 @@ export class ExperienceEditorialService {
       existing.editorialFlagsJson,
       normalized.assistedByAi,
       normalized.reviewStatus,
+      input.faqs !== undefined,
     );
 
     const updated = await this.prisma.experience.update({
@@ -160,9 +161,13 @@ export class ExperienceEditorialService {
     currentValue: Prisma.JsonValue | null,
     assistedByAi: boolean | undefined,
     reviewStatus: ReviewStatus | undefined,
+    faqsWereReplaced: boolean,
   ): EditorialFlag[] {
     const managedCodes = new Set(['AI_ASSISTED_CONTENT', 'EDITORIAL_REVIEW_REQUIRED']);
-    const currentFlags = this.readEditorialFlags(currentValue);
+    const resolvedCodes = new Set(faqsWereReplaced ? ['POSSIBLE_CLONED_FAQS'] : []);
+    const currentFlags = this.readEditorialFlags(currentValue).filter(
+      flag => !resolvedCodes.has(flag.code),
+    );
     const unmanagedFlags = currentFlags.filter(flag => !managedCodes.has(flag.code));
     const managedFlags = currentFlags.filter(flag => managedCodes.has(flag.code));
 
