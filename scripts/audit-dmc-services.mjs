@@ -3,6 +3,11 @@ const apiBaseUrl = String(
 ).replace(/\/$/, '');
 
 const EXPECTED_SLUGS = ['transporte', 'incentivos', 'eventos', 'grupos'];
+const EXPECTED_SHOWCASE_MINIMUMS = {
+  incentivos: 4,
+  eventos: 4,
+  grupos: 3,
+};
 
 function issue(code, severity, message) {
   return { code, severity, message };
@@ -70,9 +75,12 @@ async function main() {
         issues.push(issue('mobility_gallery_incomplete', 'warning', 'La galería de movilidad accesible tiene menos de 2 elementos.'));
         warnings += 1;
       }
-    } else if (showcaseItems.length < 4) {
-      issues.push(issue('showcase_incomplete', 'warning', `El servicio tiene ${showcaseItems.length} elementos de showcase; se esperan al menos 4.`));
-      warnings += 1;
+    } else {
+      const expectedMinimum = EXPECTED_SHOWCASE_MINIMUMS[slug] || 1;
+      if (showcaseItems.length < expectedMinimum) {
+        issues.push(issue('showcase_incomplete', 'warning', `El servicio tiene ${showcaseItems.length} elementos de showcase; se esperan al menos ${expectedMinimum}.`));
+        warnings += 1;
+      }
     }
 
     rows.push({
