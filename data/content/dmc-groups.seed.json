@@ -4,7 +4,7 @@
       "id": "dmc-groups",
       "slug": "grupos",
       "title": "Grupos",
-      "shortDescription": "Bodas, familias, asociaciones y viajes privados con itinerarios coordinados y un único punto de contacto.",
+      "shortDescription": "Familias, asociaciones y viajes privados con itinerarios coordinados, movilidad, actividades y un único punto de contacto.",
       "order": 40,
       "showcase": {
         "title": "Cada grupo tiene su propio ritmo. La operación debe seguirlo.",
@@ -14,29 +14,6 @@
           "href": "/#solicitud"
         },
         "items": [
-          {
-            "id": "group-weddings",
-            "slug": "bodas-y-celebraciones",
-            "label": "Bodas y celebraciones",
-            "eyebrow": "Momentos compartidos",
-            "title": "Una celebración en destino con cada invitado bien acompañado.",
-            "description": "Coordinamos llegadas, estadías, traslados y actividades complementarias para bodas y celebraciones con invitados que viajan desde distintos puntos.",
-            "fallbackImage": "/media/dmc/incentives/reconocimiento-vip.jpg",
-            "imageAlt": "Grupo de invitados durante una celebración privada en República Dominicana",
-            "badge": "Coordinación de invitados",
-            "facts": ["Itinerario compartido", "Atención de invitados", "Operación en destino"],
-            "benefits": [
-              "Coordinación de llegadas y salidas",
-              "Traslados para invitados y familiares",
-              "Actividades antes y después de la celebración",
-              "Punto de contacto local para el grupo"
-            ],
-            "cta": {
-              "label": "Coordinar una celebración",
-              "href": "/#solicitud"
-            },
-            "order": 10
-          },
           {
             "id": "group-families",
             "slug": "familias-y-amigos",
@@ -58,7 +35,7 @@
               "label": "Diseñar un viaje familiar",
               "href": "/#solicitud"
             },
-            "order": 20
+            "order": 10
           },
           {
             "id": "group-associations",
@@ -66,7 +43,7 @@
             "label": "Asociaciones y comunidades",
             "eyebrow": "Logística para grupos organizados",
             "title": "Una agenda clara para grupos que comparten un propósito.",
-            "description": "Apoyamos asociaciones, clubes, comunidades y organizaciones con programas que integran movilidad, alojamiento y actividades bajo una coordinación centralizada.",
+            "description": "Apoyamos asociaciones, clubes, comunidades, cooperativas y organizaciones con programas que integran movilidad, alojamiento y actividades bajo una coordinación centralizada.",
             "fallbackImage": "/media/dmc/incentives/team-building.jpg",
             "imageAlt": "Asociación participando en una actividad coordinada de grupo",
             "badge": "Agenda coordinada",
@@ -81,7 +58,7 @@
               "label": "Coordinar una asociación",
               "href": "/#solicitud"
             },
-            "order": 30
+            "order": 20
           },
           {
             "id": "group-private",
@@ -104,7 +81,7 @@
               "label": "Solicitar operación privada",
               "href": "/#solicitud"
             },
-            "order": 40
+            "order": 30
           }
         ]
       }
