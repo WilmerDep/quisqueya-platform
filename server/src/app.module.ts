@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { HealthModule } from './health/health.module.js';
 import { PrismaModule } from './infra/prisma.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -15,11 +16,13 @@ import { AuditModule } from './modules/audit/audit.module.js';
 import { ContentModule } from './modules/content/content.module.js';
 import { ContactsModule } from './modules/contacts/contacts.module.js';
 
+const serverDistDir = dirname(fileURLToPath(import.meta.url));
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env.local', '.env'] }),
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'dist'),
+      rootPath: join(serverDistDir, 'dist'),
       exclude: ['/api/{*path}'],
     }),
     PrismaModule,
