@@ -49,11 +49,24 @@ try {
     create: { id: 'QUISQUEYA_MAIN', companyId: 'QUISQUEYA', name: 'Operación principal', address: 'Santo Domingo, República Dominicana' },
   });
 
+  const passwordHash = await bcrypt.hash(password, 12);
   const existing = await prisma.user.findUnique({ where: { username } });
+
   if (existing) {
-    console.log(`Staging admin already exists for username: ${username}; credentials were left unchanged.`);
+    await prisma.user.update({
+      where: { username },
+      data: {
+        companyId: 'QUISQUEYA',
+        branchId: 'QUISQUEYA_MAIN',
+        name,
+        email,
+        role: 'SUPER_ADMIN',
+        isActive: true,
+        passwordHash,
+      },
+    });
+    console.log(`Staging admin credentials refreshed for username: ${username}`);
   } else {
-    const passwordHash = await bcrypt.hash(password, 12);
     await prisma.user.create({
       data: {
         id: 'QUISQUEYA_ADMIN',
