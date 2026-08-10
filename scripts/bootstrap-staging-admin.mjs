@@ -31,8 +31,6 @@ const adapter = new PrismaMariaDb({
 const prisma = new PrismaClient({ adapter });
 
 try {
-  const passwordHash = await bcrypt.hash(password, 12);
-
   await prisma.plan.upsert({
     where: { id: 'quisqueya-core' },
     update: { name: 'Quisqueya Core', maxUsers: 25, maxBranches: 10, maxClients: 10000, featuresJson: { content: true, crm: true, reviews: true, dmc: true } },
@@ -51,13 +49,26 @@ try {
     create: { id: 'QUISQUEYA_MAIN', companyId: 'QUISQUEYA', name: 'Operación principal', address: 'Santo Domingo, República Dominicana' },
   });
 
-  await prisma.user.upsert({
-    where: { username },
-    update: { companyId: 'QUISQUEYA', branchId: 'QUISQUEYA_MAIN', name, role: 'SUPER_ADMIN', passwordHash, isActive: true, email },
-    create: { id: 'QUISQUEYA_ADMIN', companyId: 'QUISQUEYA', branchId: 'QUISQUEYA_MAIN', username, name, role: 'SUPER_ADMIN', passwordHash, isActive: true, email },
-  });
-
-  console.log(`Staging admin bootstrap complete for username: ${username}`);
+  const existing = await prisma.user.findUnique({ where: { username } });
+  if (existing) {
+    console.log(`Staging admin already exists for username: ${username}; credentials were left unchanged.`);
+  } else {
+    const passwordHash = await bcrypt.hash(password, 12);
+    await prisma.user.create({
+      data: {
+        id: 'QUISQUEYA_ADMIN',
+        companyId: 'QUISQUEYA',
+        branchId: 'QUISQUEYA_MAIN',
+        username,
+        name,
+        role: 'SUPER_ADMIN',
+        passwordHash,
+        isActive: true,
+        email,
+      },
+    });
+    console.log(`Staging admin created for username: ${username}`);
+  }
 } finally {
   await prisma.$disconnect();
 }
