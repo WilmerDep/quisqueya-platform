@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 
 const enabled = String(process.env.STAGING_CONTENT_IMPORT_ENABLED || '').toLowerCase() === 'true';
@@ -13,22 +15,40 @@ if (!wpBaseUrl) {
   throw new Error('WP_BASE_URL is required when STAGING_CONTENT_IMPORT_ENABLED=true.');
 }
 
+const tourficMetadataPath = process.env.TOURFIC_METADATA_PATH || 'data/content/wordpress-tourfic-authenticated-metadata.json';
+const authenticatedFeaturedMediaPath = 'data/wordpress/authenticated/tour-featured-media.json';
+
 const steps = [
-  ['scripts/import-wordpress-content.mjs'],
-  ['scripts/link-wordpress-featured-media.mjs'],
-  ['scripts/import-authenticated-wordpress-media.mjs'],
-  ['scripts/canonicalize-wordpress-destination-slugs.mjs'],
-  ['scripts/import-wordpress-destination-editorials.mjs'],
-  ['scripts/repair-destination-editorial-preamble.mjs'],
-  ['scripts/canonicalize-wordpress-experience-slugs.mjs'],
-  ['scripts/import-tourfic-authenticated-metadata.mjs'],
-  ['scripts/import-tourfic-gallery-media.mjs'],
-  ['scripts/normalize-experience-editorial-baseline.mjs'],
-  ['scripts/seed-dmc-services.mjs', '--force'],
+  { args: ['scripts/import-wordpress-content.mjs'], required: true },
+  { args: ['scripts/link-wordpress-featured-media.mjs'], required: true },
+  {
+    args: ['scripts/import-authenticated-wordpress-media.mjs'],
+    required: false,
+    sourceFiles: [authenticatedFeaturedMediaPath],
+    label: 'authenticated WordPress featured-media evidence',
+  },
+  { args: ['scripts/canonicalize-wordpress-destination-slugs.mjs'], required: true },
+  { args: ['scripts/import-wordpress-destination-editorials.mjs'], required: true },
+  { args: ['scripts/repair-destination-editorial-preamble.mjs'], required: true },
+  { args: ['scripts/canonicalize-wordpress-experience-slugs.mjs'], required: true },
+  {
+    args: ['scripts/import-tourfic-authenticated-metadata.mjs'],
+    required: false,
+    sourceFiles: [tourficMetadataPath],
+    label: 'authenticated Tourfic metadata',
+  },
+  {
+    args: ['scripts/import-tourfic-gallery-media.mjs'],
+    required: false,
+    sourceFiles: [tourficMetadataPath],
+    label: 'Tourfic gallery metadata',
+  },
+  { args: ['scripts/normalize-experience-editorial-baseline.mjs'], required: true },
+  { args: ['scripts/seed-dmc-services.mjs', '--force'], required: true },
 ];
 
 function runStep(args) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolveStep, rejectStep) => {
     const child = spawn(process.execPath, args, {
       stdio: 'inherit',
       env: {
@@ -37,22 +57,36 @@ function runStep(args) {
       },
     });
 
-    child.on('error', reject);
+    child.on('error', rejectStep);
     child.on('exit', code => {
       if (code === 0) {
-        resolve();
+        resolveStep();
         return;
       }
-      reject(new Error(`${args.join(' ')} exited with code ${code}`));
+      rejectStep(new Error(`${args.join(' ')} exited with code ${code}`));
     });
   });
 }
 
+function missingSourceFiles(step) {
+  return (step.sourceFiles || []).filter(file => !existsSync(resolve(process.cwd(), file)));
+}
+
 console.log(`Staging content bootstrap enabled. Import source: ${wpBaseUrl}`);
 
-for (const args of steps) {
-  console.log(`\n▶ ${process.execPath} ${args.join(' ')}`);
-  await runStep(args);
+for (const step of steps) {
+  const missing = missingSourceFiles(step);
+  if (missing.length) {
+    if (step.required) {
+      throw new Error(`Required staging content source file(s) missing: ${missing.join(', ')}`);
+    }
+
+    console.warn(`Skipping optional ${step.label || step.args[0]} because source file(s) are not present: ${missing.join(', ')}`);
+    continue;
+  }
+
+  console.log(`\n▶ ${process.execPath} ${step.args.join(' ')}`);
+  await runStep(step.args);
 }
 
 console.log('\nStaging content bootstrap completed successfully.');
