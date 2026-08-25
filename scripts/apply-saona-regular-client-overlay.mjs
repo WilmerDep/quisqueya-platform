@@ -90,6 +90,13 @@ const ITINERARY = [
   },
 ];
 
+const STALE_EDITORIAL_FLAGS = new Set([
+  'PRACTICAL_INFO_PENDING_CLIENT_VALIDATION',
+  'POSSIBLE_CLONED_ITINERARY',
+  'TECHNICAL_PRICES_DISABLED',
+  'EDITORIAL_REVIEW_REQUIRED',
+]);
+
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
@@ -103,6 +110,9 @@ function asFlags(value) {
 function assertTarget(row) {
   if (!row) {
     throw new Error(`Saona Regular not found for sourceId ${TARGET.sourceId}.`);
+  }
+  if (row.sourceProvider !== TARGET.sourceProvider) {
+    throw new Error(`Safety stop: expected sourceProvider ${TARGET.sourceProvider}, found ${row.sourceProvider}.`);
   }
   if (row.sourceId !== TARGET.sourceId) {
     throw new Error(`Safety stop: expected sourceId ${TARGET.sourceId}, found ${row.sourceId}.`);
@@ -119,13 +129,21 @@ function buildOverlay(row) {
   const practicalLegacy = asObject(row.practicalInfoJson);
   const provenanceLegacy = asObject(row.provenanceJson);
 
+  const {
+    publicMode: _legacyPublicMode,
+    adultDisabled: _legacyAdultDisabled,
+    childDisabled: _legacyChildDisabled,
+    infantDisabled: _legacyInfantDisabled,
+    ...compatiblePricingLegacy
+  } = pricingLegacy;
+
   return {
     pricingMode: 'FIXED',
     duration: '11 horas',
     durationValue: 11,
     durationUnit: 'hour',
     pricingJson: {
-      ...pricingLegacy,
+      ...compatiblePricingLegacy,
       version: 1,
       basis: 'person',
       currency: 'USD',
@@ -223,7 +241,7 @@ function buildOverlay(row) {
     excludedItemsJson: EXCLUDED,
     itineraryJson: ITINERARY,
     editorialFlagsJson: asFlags(row.editorialFlagsJson)
-      .filter(flag => flag.code !== 'PRACTICAL_INFO_PENDING_CLIENT_VALIDATION'),
+      .filter(flag => !STALE_EDITORIAL_FLAGS.has(flag.code)),
     provenanceJson: {
       ...provenanceLegacy,
       clientValidation: {
