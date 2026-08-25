@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
@@ -12,6 +14,7 @@ const adapter = new PrismaMariaDb({
 });
 
 const prisma = new PrismaClient({ adapter });
+const APPLY = process.argv.includes('--apply');
 
 const TARGET = {
   sourceProvider: 'WORDPRESS',
@@ -97,178 +100,282 @@ function asFlags(value) {
     : [];
 }
 
-async function main() {
-  const row = await prisma.experience.findFirst({
-    where: {
-      sourceProvider: TARGET.sourceProvider,
-      sourceId: TARGET.sourceId,
-    },
-    select: {
-      id: true,
-      sourceId: true,
-      slug: true,
-      title: true,
-      pricingJson: true,
-      bookingJson: true,
-      availabilityJson: true,
-      practicalInfoJson: true,
-      editorialFlagsJson: true,
-      provenanceJson: true,
-    },
-  });
-
+function assertTarget(row) {
   if (!row) {
     throw new Error(`Saona Regular not found for sourceId ${TARGET.sourceId}.`);
   }
-
+  if (row.sourceId !== TARGET.sourceId) {
+    throw new Error(`Safety stop: expected sourceId ${TARGET.sourceId}, found ${row.sourceId}.`);
+  }
   if (row.slug !== TARGET.expectedSlug) {
     throw new Error(`Safety stop: expected slug ${TARGET.expectedSlug}, found ${row.slug}.`);
   }
+}
 
+function buildOverlay(row) {
   const pricingLegacy = asObject(row.pricingJson);
   const bookingLegacy = asObject(row.bookingJson);
   const availabilityLegacy = asObject(row.availabilityJson);
   const practicalLegacy = asObject(row.practicalInfoJson);
   const provenanceLegacy = asObject(row.provenanceJson);
 
-  const pricingJson = {
-    ...pricingLegacy,
-    version: 1,
-    basis: 'person',
-    currency: 'USD',
-    taxIncluded: true,
-    adult: '85',
-    child: '50',
-    infant: '0',
-    tiers: [
-      { key: 'adult', label: 'Adulto', minAge: 11, maxAge: null, price: 85 },
-      { key: 'child', label: 'Niño', minAge: 3, maxAge: 10, price: 50 },
-      { key: 'infant', label: 'Menor de 3 años', minAge: 0, maxAge: 2, price: 0 },
-    ],
-  };
-
-  const bookingJson = {
-    ...bookingLegacy,
-    version: 1,
-    confirmation: {
-      pickupDetailsConfirmedBeforeExperience: true,
-      shortNoticeSubjectToAvailability: true,
-    },
-    pickup: {
-      zones: [
-        {
-          key: 'santo-domingo',
-          label: 'Santo Domingo',
-          standardMeetingPoint: 'Parque Colón',
-          hotelPickup: false,
-          privatePickupAvailable: true,
-          privatePickupSupplementApplies: true,
-          requiresCoordinatorConfirmation: true,
-        },
-        {
-          key: 'boca-chica',
-          label: 'Boca Chica',
-          hotelPickup: true,
-          requiresCoordinatorConfirmation: false,
-        },
-        {
-          key: 'juan-dolio',
-          label: 'Juan Dolio',
-          hotelPickup: true,
-          requiresCoordinatorConfirmation: false,
-        },
-        {
-          key: 'nueva-romana',
-          label: 'Nueva Romana',
-          requiresCoordinatorConfirmation: true,
-        },
-        {
-          key: 'bavaro-punta-cana',
-          label: 'Bávaro / Punta Cana',
-          requiresCoordinatorConfirmation: true,
-        },
+  return {
+    pricingMode: 'FIXED',
+    duration: '11 horas',
+    durationValue: 11,
+    durationUnit: 'hour',
+    pricingJson: {
+      ...pricingLegacy,
+      version: 1,
+      basis: 'person',
+      currency: 'USD',
+      taxIncluded: true,
+      adult: '85',
+      child: '50',
+      infant: '0',
+      tiers: [
+        { key: 'adult', label: 'Adulto', minAge: 11, maxAge: null, price: 85 },
+        { key: 'child', label: 'Niño', minAge: 3, maxAge: 10, price: 50 },
+        { key: 'infant', label: 'Menor de 3 años', minAge: 0, maxAge: 2, price: 0 },
       ],
     },
-    policyKey: 'quisqueya-general-cancellation-v1',
-  };
-
-  const availabilityJson = {
-    ...availabilityLegacy,
-    version: 1,
-    type: availabilityLegacy.type || 'continuous',
-    minimumPeople: '2',
-    minimumParticipants: 2,
-    singlePassengerRequiresConfirmation: true,
-    operatingDays: CONFIRMED_OPERATING_DAYS,
-    shortNoticeRequiresConfirmation: true,
-    shortNoticeThresholdHours: 18,
-  };
-
-  const practicalInfoJson = {
-    ...practicalLegacy,
-    whatToBring: [
-      'Toalla',
-      'Segundo cambio de ropa',
-      'Calzado fácil de retirar',
-      'Repelente de insectos',
-      'Protector solar',
-    ],
-    restrictions: [
-      'La modalidad regular no es recomendable para personas con movilidad reducida; cada caso puede evaluarse antes de confirmar.',
-      'Durante el embarazo puede evaluarse una alternativa Catamarán - Catamarán, sujeta a confirmación operacional.',
-    ],
-    accessibility: {
-      available: false,
-      details: 'La modalidad regular presenta limitaciones de accesibilidad por las condiciones de embarque y traslado. Los casos de movilidad reducida pueden evaluarse individualmente. Para embarazo puede evaluarse la alternativa Catamarán - Catamarán, sujeta a confirmación operacional.',
+    bookingJson: {
+      ...bookingLegacy,
+      version: 1,
+      confirmation: {
+        pickupDetailsConfirmedBeforeExperience: true,
+        shortNoticeSubjectToAvailability: true,
+      },
+      pickup: {
+        zones: [
+          {
+            key: 'santo-domingo',
+            label: 'Santo Domingo',
+            standardMeetingPoint: 'Parque Colón',
+            hotelPickup: false,
+            privatePickupAvailable: true,
+            privatePickupSupplementApplies: true,
+            requiresCoordinatorConfirmation: true,
+          },
+          {
+            key: 'boca-chica',
+            label: 'Boca Chica',
+            hotelPickup: true,
+            requiresCoordinatorConfirmation: false,
+          },
+          {
+            key: 'juan-dolio',
+            label: 'Juan Dolio',
+            hotelPickup: true,
+            requiresCoordinatorConfirmation: false,
+          },
+          {
+            key: 'nueva-romana',
+            label: 'Nueva Romana',
+            requiresCoordinatorConfirmation: true,
+          },
+          {
+            key: 'bavaro-punta-cana',
+            label: 'Bávaro / Punta Cana',
+            requiresCoordinatorConfirmation: true,
+          },
+        ],
+      },
+      policyKey: 'quisqueya-general-cancellation-v1',
     },
-    pickupInformation: {
-      available: true,
-      details: 'La hora y el punto exactos de recogida se confirman según la zona y la operación. En Santo Domingo el punto estándar confirmado es Parque Colón; una recogida especial en el lugar de estadía puede generar suplemento. Boca Chica y Juan Dolio permiten confirmación de recogida en hotel. Nueva Romana y Bávaro / Punta Cana se confirman según la operación.',
-      zones: ['Santo Domingo', 'Boca Chica', 'Juan Dolio', 'Nueva Romana', 'Bávaro / Punta Cana'],
+    availabilityJson: {
+      ...availabilityLegacy,
+      version: 1,
+      type: availabilityLegacy.type || 'continuous',
+      minimumPeople: '2',
+      minimumParticipants: 2,
+      singlePassengerRequiresConfirmation: true,
+      operatingDays: CONFIRMED_OPERATING_DAYS,
+      shortNoticeRequiresConfirmation: true,
+      shortNoticeThresholdHours: 18,
     },
-    cancellationPolicy: 'Aplican las políticas generales de cancelación y reembolso de Quisqueya Travel.',
-    bookingNotice: 'Las reservas realizadas con 18 horas o menos de anticipación están sujetas a confirmación de disponibilidad.',
+    practicalInfoJson: {
+      ...practicalLegacy,
+      whatToBring: [
+        'Toalla',
+        'Segundo cambio de ropa',
+        'Calzado fácil de retirar',
+        'Repelente de insectos',
+        'Protector solar',
+      ],
+      restrictions: [
+        'La modalidad regular no es recomendable para personas con movilidad reducida; cada caso puede evaluarse antes de confirmar.',
+        'Durante el embarazo puede evaluarse una alternativa Catamarán - Catamarán, sujeta a confirmación operacional.',
+      ],
+      accessibility: {
+        available: false,
+        details: 'La modalidad regular presenta limitaciones de accesibilidad por las condiciones de embarque y traslado. Los casos de movilidad reducida pueden evaluarse individualmente. Para embarazo puede evaluarse la alternativa Catamarán - Catamarán, sujeta a confirmación operacional.',
+      },
+      pickupInformation: {
+        available: true,
+        details: 'La hora y el punto exactos de recogida se confirman según la zona y la operación. En Santo Domingo el punto estándar confirmado es Parque Colón; una recogida especial en el lugar de estadía puede generar suplemento. Boca Chica y Juan Dolio permiten confirmación de recogida en hotel. Nueva Romana y Bávaro / Punta Cana se confirman según la operación.',
+        zones: ['Santo Domingo', 'Boca Chica', 'Juan Dolio', 'Nueva Romana', 'Bávaro / Punta Cana'],
+      },
+      cancellationPolicy: 'Aplican las políticas generales de cancelación y reembolso de Quisqueya Travel.',
+      bookingNotice: 'Las reservas realizadas con 18 horas o menos de anticipación están sujetas a confirmación de disponibilidad.',
+    },
+    includedItemsJson: INCLUDED,
+    excludedItemsJson: EXCLUDED,
+    itineraryJson: ITINERARY,
+    editorialFlagsJson: asFlags(row.editorialFlagsJson)
+      .filter(flag => flag.code !== 'PRACTICAL_INFO_PENDING_CLIENT_VALIDATION'),
+    provenanceJson: {
+      ...provenanceLegacy,
+      clientValidation: {
+        source: 'Breidy Solano / Quisqueya Travel',
+        validatedAt: '2026-08-21',
+        overlay: 'saona-regular-v1',
+        notes: 'Confirmed client data overrides conflicting inherited WordPress/Tourfic values. Unmentioned inherited content remains unchanged.',
+      },
+    },
   };
+}
 
-  const editorialFlagsJson = asFlags(row.editorialFlagsJson)
-    .filter(flag => flag.code !== 'PRACTICAL_INFO_PENDING_CLIENT_VALIDATION');
-
-  const provenanceJson = {
-    ...provenanceLegacy,
-    clientValidation: {
-      source: 'Breidy Solano / Quisqueya Travel',
-      validatedAt: '2026-08-21',
-      overlay: 'saona-regular-v1',
-      notes: 'Confirmed client data overrides conflicting inherited WordPress/Tourfic values. Unmentioned inherited content remains unchanged.',
+function snapshotPayload(row) {
+  return {
+    createdAt: new Date().toISOString(),
+    purpose: 'Rollback snapshot before Saona Regular client overlay',
+    target: TARGET,
+    row: {
+      id: row.id,
+      sourceProvider: row.sourceProvider,
+      sourceId: row.sourceId,
+      slug: row.slug,
+      title: row.title,
+      pricingMode: row.pricingMode,
+      duration: row.duration,
+      durationValue: row.durationValue,
+      durationUnit: row.durationUnit,
+      pricingJson: row.pricingJson,
+      bookingJson: row.bookingJson,
+      availabilityJson: row.availabilityJson,
+      practicalInfoJson: row.practicalInfoJson,
+      includedItemsJson: row.includedItemsJson,
+      excludedItemsJson: row.excludedItemsJson,
+      itineraryJson: row.itineraryJson,
+      editorialFlagsJson: row.editorialFlagsJson,
+      provenanceJson: row.provenanceJson,
     },
   };
+}
 
-  await prisma.experience.update({
-    where: { id: row.id },
-    data: {
-      pricingMode: 'FIXED',
-      duration: '11 horas',
-      durationValue: 11,
-      durationUnit: 'hour',
-      pricingJson,
-      bookingJson,
-      availabilityJson,
-      practicalInfoJson,
-      includedItemsJson: INCLUDED,
-      excludedItemsJson: EXCLUDED,
-      itineraryJson: ITINERARY,
-      editorialFlagsJson,
-      provenanceJson,
+async function writeSnapshot(row) {
+  const directory = path.resolve('data/backups');
+  await mkdir(directory, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `saona-regular-before-overlay-${stamp}.json`;
+  const filepath = path.join(directory, filename);
+  await writeFile(filepath, `${JSON.stringify(snapshotPayload(row), null, 2)}\n`, 'utf8');
+  return filepath;
+}
+
+const selectTouchedFields = {
+  id: true,
+  sourceProvider: true,
+  sourceId: true,
+  slug: true,
+  title: true,
+  pricingMode: true,
+  duration: true,
+  durationValue: true,
+  durationUnit: true,
+  pricingJson: true,
+  bookingJson: true,
+  availabilityJson: true,
+  practicalInfoJson: true,
+  includedItemsJson: true,
+  excludedItemsJson: true,
+  itineraryJson: true,
+  editorialFlagsJson: true,
+  provenanceJson: true,
+  updatedAt: true,
+};
+
+async function main() {
+  const row = await prisma.experience.findFirst({
+    where: {
+      sourceProvider: TARGET.sourceProvider,
+      sourceId: TARGET.sourceId,
     },
+    select: selectTouchedFields,
+  });
+
+  assertTarget(row);
+  const overlay = buildOverlay(row);
+
+  if (!APPLY) {
+    console.log(JSON.stringify({
+      mode: 'preview',
+      writePerformed: false,
+      target: {
+        id: row.id,
+        sourceId: row.sourceId,
+        slug: row.slug,
+        title: row.title,
+      },
+      proposed: overlay,
+      untouchedByDesign: [
+        'title',
+        'slug',
+        'excerpt',
+        'description',
+        'featuredText',
+        'media',
+        'gallery',
+        'location',
+        'contact',
+        'faqs',
+        'display',
+        'relations',
+        'sourceUrl',
+      ],
+      nextCommand: 'npm run apply:saona-regular',
+    }, null, 2));
+    return;
+  }
+
+  const snapshotPath = await writeSnapshot(row);
+
+  const updated = await prisma.$transaction(async tx => {
+    const current = await tx.experience.findUnique({
+      where: { id: row.id },
+      select: selectTouchedFields,
+    });
+    assertTarget(current);
+
+    if (current.updatedAt.getTime() !== row.updatedAt.getTime()) {
+      throw new Error('Safety stop: Saona Regular changed after the initial read. Re-run preview before applying.');
+    }
+
+    return tx.experience.update({
+      where: { id: row.id },
+      data: overlay,
+      select: {
+        id: true,
+        sourceId: true,
+        slug: true,
+        title: true,
+        pricingMode: true,
+        duration: true,
+        durationValue: true,
+        durationUnit: true,
+        pricingJson: true,
+        availabilityJson: true,
+      },
+    });
   });
 
   console.log(JSON.stringify({
+    mode: 'apply',
     updated: true,
-    id: row.id,
-    sourceId: row.sourceId,
-    slug: row.slug,
-    title: row.title,
+    snapshotPath,
     overlay: 'saona-regular-v1',
+    result: updated,
     untouchedByDesign: [
       'title',
       'slug',
