@@ -5,6 +5,8 @@
 **Estado:** validado como base funcional inicial  
 **Propósito:** usar Saona como experiencia piloto para definir una estructura reutilizable de experiencias, variantes, políticas, recogidas y reglas operativas sin acoplar la lógica al frontend comercial.
 
+> Contrato técnico asociado: [`EXPERIENCE_DATA_CONTRACT_V1.md`](./EXPERIENCE_DATA_CONTRACT_V1.md). Esta especificación conserva la verdad funcional; el contrato técnico define cómo representarla de forma reusable y retrocompatible.
+
 ---
 
 ## 1. Principio de implementación
