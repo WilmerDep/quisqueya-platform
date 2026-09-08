@@ -39,7 +39,14 @@ function nullableNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function buildData(experience, destinationId) {
+function buildData(experience, destination) {
+  const explicitGallery = array(experience.galleryMediaSourceIds);
+  const inheritedGallery = array(destination.galleryMediaSourceIds);
+  const usesTemporaryDestinationMedia =
+    !experience.featuredMediaId &&
+    explicitGallery.length === 0 &&
+    Boolean(destination.featuredMediaId || inheritedGallery.length);
+
   return {
     id: requiredText(experience.id, 'id'),
     slug: requiredText(experience.slug, 'slug'),
@@ -51,6 +58,8 @@ function buildData(experience, destinationId) {
     durationValue: nullableNumber(experience.durationValue),
     durationUnit: experience.durationUnit || null,
     categoryLabel: experience.categoryLabel || null,
+    featuredMediaId: experience.featuredMediaId || destination.featuredMediaId || null,
+    galleryMediaSourceIds: explicitGallery.length ? explicitGallery : inheritedGallery,
     pricingMode: 'FIXED',
     pricingJson: experience.pricing || null,
     bookingJson: experience.booking || null,
@@ -68,9 +77,13 @@ function buildData(experience, destinationId) {
       source: 'Breidy Solano / Quisqueya Travel',
       receivedAt: '2026-09-05',
       dataset: 'client-experiences-2026-09.seed.json',
-      note: 'Client-supplied experience content. Media and unresolved age 0-3 pricing remain intentionally pending.',
+      note: usesTemporaryDestinationMedia
+        ? `Client-supplied experience content. Temporary media inherited from destination ${destination.slug}; replace when final experience media is supplied. Age 0-3 pricing remains unresolved.`
+        : 'Client-supplied experience content. Media and unresolved age 0-3 pricing remain intentionally pending.',
+      temporaryMediaFromDestination: usesTemporaryDestinationMedia ? destination.slug : null,
     },
-    destinationId,
+    destinationId: destination.id,
+    usesTemporaryDestinationMedia,
   };
 }
 
@@ -90,7 +103,14 @@ async function main() {
     const destinationSlug = requiredText(experience.destinationSlug, `${slug}.destinationSlug`);
     const destination = await prisma.destination.findUnique({
       where: { slug: destinationSlug },
-      select: { id: true, slug: true, name: true, status: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        status: true,
+        featuredMediaId: true,
+        galleryMediaSourceIds: true,
+      },
     });
 
     if (!destination) {
@@ -120,7 +140,7 @@ async function main() {
       existing,
       destination,
       statusAfterApply: PUBLISH ? 'PUBLISHED' : 'DRAFT',
-      data: buildData(experience, destination.id),
+      data: buildData(experience, destination),
     });
   }
 
@@ -133,11 +153,23 @@ async function main() {
       experiences: proposed.map(item => ({
         slug: item.slug,
         existing: item.existing,
-        destination: item.destination,
+        destination: {
+          id: item.destination.id,
+          slug: item.destination.slug,
+          name: item.destination.name,
+          status: item.destination.status,
+        },
         statusAfterApply: item.statusAfterApply,
         pricing: item.data.pricingJson,
         duration: item.data.duration,
         durationValue: item.data.durationValue,
+        temporaryMedia: item.data.usesTemporaryDestinationMedia
+          ? {
+              inheritedFromDestination: item.destination.slug,
+              featuredMediaId: item.data.featuredMediaId,
+              galleryMediaSourceIds: item.data.galleryMediaSourceIds,
+            }
+          : null,
         editorialFlags: item.data.editorialFlagsJson,
       })),
       nextCommand: PUBLISH
@@ -150,7 +182,12 @@ async function main() {
   const results = [];
 
   for (const item of proposed) {
-    const { destinationId, id, ...mutableExperienceData } = item.data;
+    const {
+      destinationId,
+      id,
+      usesTemporaryDestinationMedia,
+      ...mutableExperienceData
+    } = item.data;
     const createData = { id, ...mutableExperienceData };
 
     const result = await prisma.$transaction(async tx => {
@@ -166,6 +203,8 @@ async function main() {
           sourceProvider: true,
           duration: true,
           durationValue: true,
+          featuredMediaId: true,
+          galleryMediaSourceIds: true,
           pricingJson: true,
           updatedAt: true,
         },
@@ -180,7 +219,10 @@ async function main() {
         },
       });
 
-      return row;
+      return {
+        ...row,
+        temporaryMediaInheritedFrom: usesTemporaryDestinationMedia ? item.destination.slug : null,
+      };
     });
 
     results.push(result);
@@ -192,7 +234,7 @@ async function main() {
     publishRequested: PUBLISH,
     results,
     reminders: [
-      'Both experiences intentionally keep media pending until final images are selected.',
+      'Destination media is temporary and should be replaced when final experience-specific images are supplied.',
       'Pricing for ages 0-3 remains intentionally unresolved because the client document did not define it.',
     ],
   }, null, 2));
