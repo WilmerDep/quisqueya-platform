@@ -33,6 +33,12 @@ function array(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function nullableNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function buildData(experience, destinationId) {
   return {
     id: requiredText(experience.id, 'id'),
@@ -42,7 +48,7 @@ function buildData(experience, destinationId) {
     description: experience.description || null,
     featuredText: experience.featuredText || null,
     duration: experience.duration || null,
-    durationValue: Number.isFinite(Number(experience.durationValue)) ? Number(experience.durationValue) : null,
+    durationValue: nullableNumber(experience.durationValue),
     durationUnit: experience.durationUnit || null,
     categoryLabel: experience.categoryLabel || null,
     pricingMode: 'FIXED',
@@ -55,7 +61,7 @@ function buildData(experience, destinationId) {
     itineraryJson: array(experience.itinerary),
     displayJson: experience.display || null,
     editorialFlagsJson: array(experience.editorialFlags),
-    sortOrder: Number.isFinite(Number(experience.sortOrder)) ? Number(experience.sortOrder) : 999,
+    sortOrder: nullableNumber(experience.sortOrder) ?? 999,
     status: PUBLISH ? ContentRecordStatus.PUBLISHED : ContentRecordStatus.DRAFT,
     sourceProvider: ContentSourceProvider.MANUAL,
     provenanceJson: {
@@ -131,6 +137,7 @@ async function main() {
         statusAfterApply: item.statusAfterApply,
         pricing: item.data.pricingJson,
         duration: item.data.duration,
+        durationValue: item.data.durationValue,
         editorialFlags: item.data.editorialFlagsJson,
       })),
       nextCommand: PUBLISH
@@ -143,16 +150,14 @@ async function main() {
   const results = [];
 
   for (const item of proposed) {
-    const { destinationId, ...experienceData } = item.data;
+    const { destinationId, id, ...mutableExperienceData } = item.data;
+    const createData = { id, ...mutableExperienceData };
 
     const result = await prisma.$transaction(async tx => {
       const row = await tx.experience.upsert({
         where: { slug: item.slug },
-        create: experienceData,
-        update: {
-          ...experienceData,
-          id: undefined,
-        },
+        create: createData,
+        update: mutableExperienceData,
         select: {
           id: true,
           slug: true,
@@ -160,6 +165,7 @@ async function main() {
           status: true,
           sourceProvider: true,
           duration: true,
+          durationValue: true,
           pricingJson: true,
           updatedAt: true,
         },
