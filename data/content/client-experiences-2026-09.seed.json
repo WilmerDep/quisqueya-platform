@@ -1,0 +1,244 @@
+{
+  "source": "Breidy Solano / Quisqueya Travel — Formulario 2 descriptivos de experiencias e informacion general",
+  "receivedAt": "2026-09-05",
+  "experiences": [
+    {
+      "id": "manual-exp-altos-chavon-medio-dia",
+      "slug": "altos-de-chavon-medio-dia",
+      "title": "Altos de Chavón – Medio Día",
+      "featuredText": "Historia, cultura y paisajes en La Romana",
+      "excerpt": "Descubre Altos de Chavón en una experiencia de medio día que combina historia, cultura, arquitectura, arte y vistas al río Chavón.",
+      "description": "<p>Descubre Altos de Chavón, una singular villa de inspiración mediterránea situada sobre una colina con impresionantes vistas al río Chavón. Durante el recorrido caminarás por sus calles y plazas empedradas mientras conoces la historia y los detalles que han convertido este lugar en uno de los principales referentes culturales y arquitectónicos de República Dominicana.</p><p>Visitaremos la emblemática Iglesia de San Estanislao, la Plaza Chavón y su famoso anfiteatro, además del Museo Arqueológico Regional, espacios dedicados al arte y la cultura y espectaculares miradores hacia el río Chavón. El recorrido se complementa con una visita al entorno del campo de golf Dye Fore y una degustación de productos típicos dominicanos.</p><p>Una experiencia de medio día que combina historia, cultura, arquitectura, arte y paisajes, ideal para descubrir una faceta diferente de República Dominicana.</p>",
+      "duration": "6–7 horas",
+      "durationValue": 6.5,
+      "durationUnit": "hour",
+      "categoryLabel": "Experiencia cultural",
+      "destinationSlug": "la-romana",
+      "sortOrder": 70,
+      "pricing": {
+        "version": 1,
+        "basis": "person",
+        "currency": "USD",
+        "adult": "69",
+        "child": "35",
+        "tiers": [
+          { "key": "adult", "label": "Adulto", "minAge": 12, "maxAge": null, "price": 69 },
+          { "key": "child", "label": "Niño", "minAge": 4, "maxAge": 11, "price": 35 }
+        ]
+      },
+      "booking": {
+        "version": 1,
+        "pickup": {
+          "zones": [
+            { "key": "bavaro-punta-cana", "label": "Bávaro / Punta Cana", "hotelPickup": true, "requiresCoordinatorConfirmation": true }
+          ]
+        },
+        "confirmation": {
+          "pickupDetailsConfirmedBeforeExperience": true,
+          "shortNoticeSubjectToAvailability": true
+        },
+        "policyKey": "quisqueya-general-cancellation-v1",
+        "shortNoticeWhatsappMessage": "Hola, quiero consultar disponibilidad para Altos de Chavón – Medio Día."
+      },
+      "availability": {
+        "version": 1,
+        "shortNoticeRequiresConfirmation": true,
+        "shortNoticeThresholdHours": 18
+      },
+      "included": [
+        "Transporte ida y vuelta desde Bávaro / Punta Cana.",
+        "Acceso a Altos de Chavón.",
+        "Recorrido guiado por los principales atractivos.",
+        "Visita al entorno del campo de golf Dye Fore.",
+        "Mirador de los Pájaros.",
+        "Plaza principal de Altos de Chavón.",
+        "Iglesia de San Estanislao.",
+        "Museo Arqueológico.",
+        "Exhibición de ámbar y larimar dominicano.",
+        "Galería de arte.",
+        "Fuente Traveso.",
+        "Anfiteatro de Altos de Chavón.",
+        "Degustación de productos típicos dominicanos.",
+        "Guía durante el recorrido.",
+        "Botella de agua.",
+        "Tiempo libre para fotografías y compras."
+      ],
+      "excluded": [
+        "Alimentos y bebidas adicionales no especificados.",
+        "Propinas.",
+        "Compras y gastos personales.",
+        "Servicios no especificados como incluidos."
+      ],
+      "itinerary": [
+        { "time": "8:00 a. m. – 9:00 a. m.", "title": "Recogida", "desc": "Recogida desde los principales hoteles y puntos establecidos de Bávaro y Punta Cana. El horario exacto dependerá de la ubicación y será confirmado el día anterior." },
+        { "time": "10:00 a. m.", "title": "Llegada a Casa de Campo", "desc": "Llegada al área de recepción de Casa de Campo y encuentro del grupo antes de continuar hacia Altos de Chavón." },
+        { "time": "10:20 a. m.", "title": "Altos de Chavón", "desc": "Recorrido guiado por el entorno del campo de golf Dye Fore, Mirador de los Pájaros, Plaza principal, Iglesia de San Estanislao, Museo Arqueológico, exhibición de ámbar y larimar, galería de arte, Fuente Traveso, anfiteatro y vistas panorámicas. Incluye tiempo libre para recorrer, tomar fotografías y realizar compras." },
+        { "time": "12:45 p. m.", "title": "Salida de Altos de Chavón", "desc": "Finalizamos la visita e iniciamos el recorrido de regreso hacia Bávaro y Punta Cana." },
+        { "time": "2:00 p. m.", "title": "Sabores dominicanos", "desc": "Parada para disfrutar de una degustación de productos típicos dominicanos, como mamajuana, café y chocolate." },
+        { "time": "2:30 p. m.", "title": "Regreso", "desc": "Continuamos hacia los hoteles y puntos de encuentro de Bávaro y Punta Cana." }
+      ],
+      "practicalInfo": {
+        "whatToBring": [
+          "Ropa ligera y cómoda.",
+          "Calzado cómodo para caminar.",
+          "Protector solar.",
+          "Repelente.",
+          "Gafas de sol.",
+          "Sombrero o gorra.",
+          "Dinero o tarjeta para gastos personales.",
+          "Cámara o teléfono para fotografías."
+        ],
+        "restrictions": [
+          "No se admiten mascotas."
+        ],
+        "accessibility": {
+          "details": "La experiencia incluye traslados terrestres y un recorrido a pie de aproximadamente 2 horas, principalmente por calles y plazas empedradas. Si tienes movilidad reducida, alguna condición que pueda dificultar el recorrido o requieres asistencia especial, contáctanos antes de reservar para que podamos orientarte sobre la accesibilidad de la experiencia."
+        },
+        "pickupInformation": {
+          "available": true,
+          "details": "El día anterior a la experiencia confirmaremos contigo la hora y el punto exacto de recogida.",
+          "zones": ["Bávaro / Punta Cana"]
+        },
+        "cancellationPolicy": "Cancelación gratuita hasta 24 horas antes del inicio de la experiencia. Las cancelaciones realizadas con menos de 24 horas de antelación y las ausencias el día de la actividad no son reembolsables. Si la experiencia es cancelada por el operador debido a condiciones meteorológicas, causas operativas o circunstancias imprevistas que impidan su realización, podrás reprogramar la actividad o solicitar el reembolso correspondiente.",
+        "bookingNotice": "Para reservas realizadas con menos de 18 horas de antelación, contáctanos para confirmar disponibilidad."
+      },
+      "display": {
+        "highlightsTitle": "Lo mejor de esta experiencia",
+        "highlights": [
+          { "icon": "landmark", "title": "Altos de Chavón", "description": "Recorre sus calles empedradas, plazas, arquitectura y rincones más emblemáticos acompañado por nuestros guías." },
+          { "icon": "gem", "title": "Historia, arte y cultura dominicana", "description": "Descubre el Museo Arqueológico, espacios dedicados al arte y una muestra de ámbar y larimar dominicano." },
+          { "icon": "church", "title": "Iglesia y Anfiteatro", "description": "Conoce dos de los lugares más representativos y fotografiados de Altos de Chavón." },
+          { "icon": "mountain", "title": "Vistas al río Chavón", "description": "Disfruta de espectaculares panorámicas del río Chavón y del paisaje tropical que rodea la villa." }
+        ]
+      },
+      "editorialFlags": [
+        { "code": "MEDIA_PENDING_CLIENT_SELECTION", "severity": "warning", "message": "El contenido está validado, pero todavía falta seleccionar la imagen principal y galería definitivas." },
+        { "code": "AGE_0_3_PRICING_PENDING", "severity": "warning", "message": "El documento recibido no especifica la tarifa o condición para menores de 4 años." }
+      ]
+    },
+    {
+      "id": "manual-exp-altos-chavon-cueva-maravillas",
+      "slug": "altos-de-chavon-cueva-de-las-maravillas",
+      "title": "Altos de Chavón + Cueva de las Maravillas",
+      "featuredText": "Cultura sobre la tierra. Historia bajo ella.",
+      "excerpt": "Una experiencia de día completo que combina Altos de Chavón, la Cueva de las Maravillas, gastronomía dominicana e historia.",
+      "description": "<p>Descubre dos de los atractivos culturales y naturales más fascinantes de la región Este de República Dominicana en una experiencia de día completo que combina historia, arquitectura, arte, naturaleza y gastronomía dominicana.</p><p>Comenzaremos en Altos de Chavón, una singular villa de inspiración mediterránea situada sobre una colina con impresionantes vistas al río Chavón. Recorreremos sus calles y plazas empedradas para conocer lugares emblemáticos como la Iglesia de San Estanislao, el Anfiteatro de Altos de Chavón y el Museo Arqueológico Regional, además de espacios dedicados al arte, miradores y rincones que forman parte de la identidad de la villa.</p><p>Después disfrutaremos de un almuerzo de cocina dominicana antes de continuar hacia la Cueva de las Maravillas, un impresionante sistema de cavernas donde formaciones naturales de estalactitas y estalagmitas conviven con importantes muestras de arte rupestre indígena.</p><p>Finalizaremos la jornada con una parada para degustar mamajuana, café y chocolate dominicano, antes de regresar a Bávaro y Punta Cana.</p>",
+      "duration": "10–11 horas",
+      "durationValue": 10.5,
+      "durationUnit": "hour",
+      "categoryLabel": "Experiencia cultural y natural",
+      "destinationSlug": "la-romana",
+      "sortOrder": 71,
+      "pricing": {
+        "version": 1,
+        "basis": "person",
+        "currency": "USD",
+        "adult": "125",
+        "child": "65",
+        "tiers": [
+          { "key": "adult", "label": "Adulto", "minAge": 12, "maxAge": null, "price": 125 },
+          { "key": "child", "label": "Niño", "minAge": 4, "maxAge": 11, "price": 65 }
+        ]
+      },
+      "booking": {
+        "version": 1,
+        "pickup": {
+          "zones": [
+            { "key": "bavaro-punta-cana", "label": "Bávaro / Punta Cana", "hotelPickup": true, "requiresCoordinatorConfirmation": true }
+          ]
+        },
+        "confirmation": {
+          "pickupDetailsConfirmedBeforeExperience": true,
+          "shortNoticeSubjectToAvailability": true
+        },
+        "policyKey": "quisqueya-general-cancellation-v1",
+        "shortNoticeWhatsappMessage": "Hola, quiero consultar disponibilidad para Altos de Chavón + Cueva de las Maravillas."
+      },
+      "availability": {
+        "version": 1,
+        "shortNoticeRequiresConfirmation": true,
+        "shortNoticeThresholdHours": 18
+      },
+      "included": [
+        "Transporte ida y vuelta desde Bávaro / Punta Cana.",
+        "Entrada a Altos de Chavón.",
+        "Recorrido guiado por sus principales atractivos.",
+        "Entorno del campo de golf Dye Fore.",
+        "Mirador de los Pájaros.",
+        "Plaza principal de Altos de Chavón.",
+        "Iglesia de San Estanislao.",
+        "Museo Arqueológico.",
+        "Exhibición de ámbar y larimar dominicano.",
+        "Galería de arte.",
+        "Fuente Traveso.",
+        "Anfiteatro de Altos de Chavón.",
+        "Entrada a Cueva de las Maravillas.",
+        "Almuerzo de cocina dominicana.",
+        "Una bebida durante el almuerzo.",
+        "Degustación de productos típicos dominicanos.",
+        "Guía durante el recorrido.",
+        "Botella de agua.",
+        "Tiempo libre para fotografías y compras."
+      ],
+      "excluded": [
+        "Alimentos y bebidas adicionales no especificados.",
+        "Propinas.",
+        "Compras y gastos personales.",
+        "Servicios no especificados como incluidos."
+      ],
+      "itinerary": [
+        { "time": "8:00 a. m. – 9:00 a. m.", "title": "Recogida", "desc": "Recogida desde los principales hoteles y puntos establecidos de Bávaro y Punta Cana. El horario exacto dependerá de la ubicación y será confirmado el día anterior." },
+        { "time": "10:00 a. m.", "title": "Llegada a Casa de Campo", "desc": "Llegada al área de recepción de Casa de Campo y encuentro del grupo antes de continuar hacia Altos de Chavón." },
+        { "time": "10:20 a. m.", "title": "Altos de Chavón", "desc": "Recorrido guiado por los principales atractivos de Altos de Chavón, con tiempo libre para recorrer la villa, tomar fotografías y realizar compras." },
+        { "time": "12:45 p. m.", "title": "Almuerzo dominicano", "desc": "Almuerzo de cocina típica dominicana servido a la mesa. Incluye una bebida por persona, a elegir entre agua, jugo natural, refresco o cerveza local." },
+        { "time": "2:30 p. m.", "title": "Cueva de las Maravillas", "desc": "Recorrido por la Cueva de las Maravillas para conocer sus formaciones geológicas y muestras de arte rupestre indígena conservadas en su interior." },
+        { "time": "3:30 p. m.", "title": "Salida hacia Bávaro / Punta Cana", "desc": "Finalizada la visita a la Cueva de las Maravillas, iniciamos el recorrido de regreso." },
+        { "time": "4:30 p. m.", "title": "Sabores dominicanos", "desc": "Parada para degustar mamajuana, café y chocolate dominicano, con tiempo para adquirir productos y recuerdos si lo deseas." },
+        { "time": "5:00 p. m.", "title": "Regreso", "desc": "Continuamos hacia los hoteles y puntos de encuentro de Bávaro y Punta Cana." }
+      ],
+      "practicalInfo": {
+        "whatToBring": [
+          "Ropa ligera y cómoda.",
+          "Calzado cerrado, cómodo y con buena adherencia.",
+          "Protector solar.",
+          "Repelente.",
+          "Gafas de sol.",
+          "Sombrero o gorra.",
+          "Dinero o tarjeta para gastos personales.",
+          "Cámara o teléfono para fotografías."
+        ],
+        "restrictions": [
+          "No se admiten mascotas.",
+          "No tocar las paredes, formaciones rocosas, pictografías ni petroglifos dentro de la cueva.",
+          "Permanecer en los senderos y áreas habilitadas y seguir las indicaciones del guía.",
+          "Mantener un tono de voz bajo y evitar sonidos que alteren el ambiente.",
+          "No arrojar basura ni extraer piedras, plantas, formaciones naturales u otros elementos del entorno.",
+          "El uso de cámaras y teléfonos dentro de la cueva está sujeto a las normas vigentes del atractivo; el guía informará las disposiciones aplicables antes de ingresar."
+        ],
+        "accessibility": {
+          "details": "La experiencia incluye traslados terrestres y diferentes recorridos a pie, incluyendo calles y plazas empedradas en Altos de Chavón y el recorrido habilitado en el interior de la Cueva de las Maravillas. Si tienes movilidad reducida, alguna condición que pueda dificultar los recorridos o requieres asistencia especial, contáctanos antes de reservar para que podamos orientarte sobre la accesibilidad de la experiencia."
+        },
+        "pickupInformation": {
+          "available": true,
+          "details": "El día anterior a la experiencia confirmaremos contigo la hora y el punto exacto de recogida.",
+          "zones": ["Bávaro / Punta Cana"]
+        },
+        "cancellationPolicy": "Cancelación gratuita hasta 24 horas antes del inicio de la experiencia. Las cancelaciones realizadas con menos de 24 horas de antelación y las ausencias el día de la actividad no son reembolsables. Si la experiencia es cancelada por el operador debido a condiciones meteorológicas, causas operativas o circunstancias imprevistas que impidan su realización, podrás reprogramar la actividad o solicitar el reembolso correspondiente.",
+        "bookingNotice": "Para reservas realizadas con menos de 18 horas de antelación, contáctanos para confirmar disponibilidad."
+      },
+      "display": {
+        "highlightsTitle": "Lo mejor de esta experiencia",
+        "highlights": [
+          { "icon": "landmark", "title": "Altos de Chavón", "description": "Recorre sus calles empedradas, plazas y algunos de sus lugares más emblemáticos mientras descubres la historia de esta singular villa." },
+          { "icon": "cave", "title": "Cueva de las Maravillas", "description": "Adéntrate en un extraordinario mundo subterráneo de formaciones naturales y descubre vestigios del arte rupestre de los antiguos habitantes de la isla." },
+          { "icon": "gem", "title": "Historia y cultura", "description": "Conoce el Museo Arqueológico, la Iglesia de San Estanislao, el famoso anfiteatro y diferentes espacios dedicados al arte y la cultura." },
+          { "icon": "utensils", "title": "Sabores dominicanos", "description": "Disfruta de un almuerzo de cocina local y completa la experiencia con una degustación de mamajuana, café y chocolate dominicano." }
+        ]
+      },
+      "editorialFlags": [
+        { "code": "MEDIA_PENDING_CLIENT_SELECTION", "severity": "warning", "message": "El contenido está validado, pero todavía falta seleccionar la imagen principal y galería definitivas." },
+        { "code": "AGE_0_3_PRICING_PENDING", "severity": "warning", "message": "El documento recibido no especifica la tarifa o condición para menores de 4 años." }
+      ]
+    }
+  ]
+}
