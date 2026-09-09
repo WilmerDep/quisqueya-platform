@@ -22,6 +22,11 @@ const APPLY = process.argv.includes('--apply');
 const PUBLISH = process.argv.includes('--publish');
 const seedPath = join(process.cwd(), 'data', 'content', 'client-experiences-2026-09.seed.json');
 
+const FREE_UNDER_FOUR_CONFIRMED_SLUGS = new Set([
+  'altos-de-chavon-medio-dia',
+  'altos-de-chavon-cueva-de-las-maravillas',
+]);
+
 function requiredText(value, label) {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw new Error(`Missing required text: ${label}`);
@@ -37,6 +42,35 @@ function nullableNumber(value) {
   if (value === null || value === undefined || value === '') return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function applyClientConfirmations(experience) {
+  if (!FREE_UNDER_FOUR_CONFIRMED_SLUGS.has(experience.slug)) return experience;
+
+  const pricing = experience.pricing && typeof experience.pricing === 'object'
+    ? { ...experience.pricing }
+    : {};
+  const tiers = array(pricing.tiers).filter(tier => tier?.key !== 'infant');
+
+  pricing.infant = '0';
+  pricing.tiers = [
+    ...tiers,
+    {
+      key: 'infant',
+      label: 'Menor de 4 años',
+      minAge: 0,
+      maxAge: 3,
+      price: 0,
+    },
+  ];
+
+  return {
+    ...experience,
+    pricing,
+    editorialFlags: array(experience.editorialFlags).filter(
+      flag => flag?.code !== 'AGE_0_3_PRICING_PENDING',
+    ),
+  };
 }
 
 function buildData(experience, destination) {
@@ -77,9 +111,12 @@ function buildData(experience, destination) {
       source: 'Breidy Solano / Quisqueya Travel',
       receivedAt: '2026-09-05',
       dataset: 'client-experiences-2026-09.seed.json',
+      confirmations: FREE_UNDER_FOUR_CONFIRMED_SLUGS.has(experience.slug)
+        ? [{ receivedAt: '2026-09-09', detail: 'Children under 4 years old are free.' }]
+        : [],
       note: usesTemporaryDestinationMedia
-        ? `Client-supplied experience content. Temporary media inherited from destination ${destination.slug}; replace when final experience media is supplied. Age 0-3 pricing remains unresolved.`
-        : 'Client-supplied experience content. Media and unresolved age 0-3 pricing remain intentionally pending.',
+        ? `Client-supplied experience content. Temporary media inherited from destination ${destination.slug}; replace when final experience media is supplied.`
+        : 'Client-supplied experience content. Final experience-specific media should be used when available.',
       temporaryMediaFromDestination: usesTemporaryDestinationMedia ? destination.slug : null,
     },
     destinationId: destination.id,
@@ -90,7 +127,7 @@ function buildData(experience, destination) {
 async function main() {
   const raw = await readFile(seedPath, 'utf8');
   const payload = JSON.parse(raw);
-  const experiences = array(payload.experiences);
+  const experiences = array(payload.experiences).map(applyClientConfirmations);
 
   if (!experiences.length) {
     throw new Error('The client experience seed does not contain any experiences.');
@@ -235,7 +272,7 @@ async function main() {
     results,
     reminders: [
       'Destination media is temporary and should be replaced when final experience-specific images are supplied.',
-      'Pricing for ages 0-3 remains intentionally unresolved because the client document did not define it.',
+      'Pricing for ages 0-3 is confirmed as free for the two Altos de Chavón experiences.',
     ],
   }, null, 2));
 }
