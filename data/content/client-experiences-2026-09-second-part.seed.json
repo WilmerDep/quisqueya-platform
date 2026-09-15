@@ -1,0 +1,268 @@
+{
+  "source": "Breidy Solano / Quisqueya Travel — Segunda parte excursiones descriptivos",
+  "receivedAt": "2026-09-14",
+  "experiences": [
+    {
+      "operation": "overlay_existing",
+      "target": {
+        "sourceProvider": "WORDPRESS",
+        "sourceId": "720",
+        "expectedSlug": "santo-domingo-city-tour"
+      },
+      "slug": "santo-domingo-city-tour",
+      "title": "Santo Domingo City Tour",
+      "featuredText": "Historia, cultura y esencia de la capital dominicana",
+      "excerpt": "Descubre Santo Domingo en una experiencia de día completo que combina naturaleza, monumentos históricos, gastronomía y la emblemática Ciudad Colonial.",
+      "description": "<p>Descubre más de 500 años de historia recorriendo Santo Domingo y algunos de sus lugares más emblemáticos.</p><p>La experiencia comienza con la impresionante belleza natural del Parque Nacional Los Tres Ojos y continúa por importantes puntos de la ciudad moderna antes de adentrarnos en la histórica Ciudad Colonial, declarada Patrimonio Mundial por la UNESCO.</p><p>Caminarás por calles y plazas que fueron escenario de los primeros años de la presencia europea en América, conocerás algunos de sus monumentos más representativos y disfrutarás de un almuerzo buffet y tiempo para realizar compras.</p>",
+      "duration": "Día completo",
+      "durationValue": null,
+      "durationUnit": "day",
+      "categoryLabel": "Experiencia cultural e histórica",
+      "destinationSlugs": ["santo-domingo"],
+      "pricing": {
+        "version": 1,
+        "basis": "person",
+        "currency": "USD",
+        "from": 85,
+        "adult": "85",
+        "child": "45",
+        "tiers": [
+          { "key": "adult", "label": "Adulto", "minAge": 12, "maxAge": null, "price": 85 },
+          { "key": "child", "label": "Niño", "minAge": 4, "maxAge": 11, "price": 45 }
+        ],
+        "zonePricing": [
+          { "zoneKey": "bavaro-punta-cana", "label": "Bávaro / Punta Cana", "adult": 85, "child": 45 },
+          { "zoneKey": "bayahibe", "label": "Bayahíbe", "adult": 85, "child": 45 },
+          { "zoneKey": "juan-dolio", "label": "Juan Dolio", "adult": 85, "child": 45 },
+          { "zoneKey": "boca-chica", "label": "Boca Chica", "adult": 85, "child": 45 },
+          { "zoneKey": "santo-domingo", "label": "Santo Domingo", "adult": 85, "child": 45 },
+          { "zoneKey": "samana", "label": "Samaná", "adult": 125, "child": 60 },
+          { "zoneKey": "las-terrenas", "label": "Las Terrenas", "adult": 125, "child": 60 }
+        ]
+      },
+      "booking": {
+        "version": 1,
+        "pickup": {
+          "zones": [
+            { "key": "bavaro-punta-cana", "label": "Bávaro / Punta Cana", "timeWindow": "7:00–7:45 a. m.", "adultPrice": 85, "childPrice": 45, "requiresCoordinatorConfirmation": true },
+            { "key": "bayahibe", "label": "Bayahíbe", "timeWindow": "8:00–8:15 a. m.", "adultPrice": 85, "childPrice": 45, "requiresCoordinatorConfirmation": true },
+            { "key": "juan-dolio", "label": "Juan Dolio", "timeWindow": "8:35–8:40 a. m.", "adultPrice": 85, "childPrice": 45, "requiresCoordinatorConfirmation": true },
+            { "key": "boca-chica", "label": "Boca Chica", "timeWindow": "8:45–9:00 a. m.", "adultPrice": 85, "childPrice": 45, "requiresCoordinatorConfirmation": true },
+            { "key": "santo-domingo", "label": "Santo Domingo", "timeWindow": "9:00–9:30 a. m.", "adultPrice": 85, "childPrice": 45, "requiresCoordinatorConfirmation": true },
+            { "key": "samana", "label": "Samaná", "timeWindow": "6:30–7:00 a. m.", "adultPrice": 125, "childPrice": 60, "requiresCoordinatorConfirmation": true },
+            { "key": "las-terrenas", "label": "Las Terrenas", "timeWindow": "7:00–7:20 a. m.", "adultPrice": 125, "childPrice": 60, "requiresCoordinatorConfirmation": true }
+          ]
+        },
+        "confirmation": {
+          "pickupDetailsConfirmedBeforeExperience": true,
+          "shortNoticeSubjectToAvailability": true
+        },
+        "policyKey": "quisqueya-general-cancellation-v1",
+        "shortNoticeWhatsappMessage": "Hola, quiero consultar disponibilidad para Santo Domingo City Tour."
+      },
+      "availability": {
+        "version": 1,
+        "shortNoticeRequiresConfirmation": true,
+        "shortNoticeThresholdHours": 18
+      },
+      "included": [
+        "Transporte terrestre ida y vuelta desde hoteles y puntos establecidos.",
+        "Entrada al Parque Nacional Los Tres Ojos.",
+        "Recorrido guiado por la Ciudad Colonial.",
+        "Visita a la Catedral Primada de América.",
+        "Recorrido por Calle Las Damas.",
+        "Parque Colón.",
+        "Panteón de la Patria.",
+        "Plaza de España.",
+        "Visitas panorámicas a Faro a Colón y Palacio Nacional.",
+        "Recorrido exterior/panorámico por otros monumentos indicados en el itinerario.",
+        "Visita a establecimiento especializado en ámbar y larimar dominicanos.",
+        "Tiempo para compras en la Ciudad Colonial.",
+        "Almuerzo buffet.",
+        "Acompañamiento de nuestro equipo de guías.",
+        "Entradas e impuestos correspondientes únicamente a los atractivos expresamente indicados como visita con entrada."
+      ],
+      "excluded": [
+        "Entradas al interior de monumentos señalados como visita panorámica o exterior.",
+        "Fotografías y servicios de fotografía profesional.",
+        "Souvenirs y compras personales.",
+        "Propinas.",
+        "Bebidas o consumos no especificados como incluidos.",
+        "Cualquier servicio no indicado expresamente en la sección ¿Qué incluye?."
+      ],
+      "itinerary": [
+        { "time": "Según zona", "title": "Recogida en hotel o punto establecido", "desc": "Comenzaremos con la recogida según la zona seleccionada. El día anterior recibirás la confirmación de la hora y punto exactos de recogida." },
+        { "time": "Durante la mañana", "title": "Parque Nacional Los Tres Ojos", "desc": "Visitaremos este conjunto de cuevas y lagos de agua dulce, rodeado de formaciones rocosas y vegetación tropical." },
+        { "time": "A continuación", "title": "Faro a Colón", "desc": "Realizaremos una visita panorámica al Faro a Colón." },
+        { "time": "A continuación", "title": "Palacio Nacional", "desc": "Durante el recorrido tendremos una vista panorámica del Palacio Nacional." },
+        { "time": "Durante el recorrido", "title": "Ciudad Colonial", "desc": "Recorrido por el corazón histórico de Santo Domingo, incluyendo Parque Colón, Catedral Primada de América, Calle Las Damas, Panteón de la Patria, Fortaleza Ozama, Plaza de España, Alcázar de Colón y Las Atarazanas." },
+        { "time": "Durante la visita", "title": "Almuerzo buffet", "desc": "Pausa para disfrutar de un almuerzo buffet incluido en la experiencia." },
+        { "time": "Después del almuerzo", "title": "Calle El Conde y compras", "desc": "Tiempo para recorrer Calle El Conde y visitar establecimientos especializados en ámbar, larimar, artesanías y souvenirs." },
+        { "time": "Al finalizar", "title": "Regreso", "desc": "Regreso hacia los hoteles y puntos de encuentro. El horario de llegada dependerá de la zona de destino, el tránsito y las condiciones operativas del día." }
+      ],
+      "practicalInfo": {
+        "whatToBring": [
+          "Ropa ligera y fresca.",
+          "Calzado cómodo para caminar.",
+          "Protector solar.",
+          "Repelente.",
+          "Gafas de sol.",
+          "Sombrero o gorra.",
+          "Dinero en efectivo o tarjeta para gastos personales."
+        ],
+        "restrictions": ["No se admiten mascotas."],
+        "accessibility": {
+          "details": "Esta experiencia combina traslados en vehículo y recorridos peatonales, especialmente durante las visitas a Los Tres Ojos y la Ciudad Colonial. Si tienes movilidad reducida, alguna condición que pueda dificultar caminar o utilizar escaleras, o requieres asistencia especial, contáctanos antes de reservar para confirmar si la experiencia es adecuada para ti."
+        },
+        "pickupInformation": {
+          "available": true,
+          "details": "La hora exacta y el punto de recogida serán confirmados el día anterior a la experiencia.",
+          "zones": ["Bávaro / Punta Cana", "Bayahíbe", "Juan Dolio", "Boca Chica", "Santo Domingo", "Samaná", "Las Terrenas"]
+        },
+        "cancellationPolicy": "Cancelación gratuita hasta 24 horas antes del inicio de la experiencia. Las cancelaciones realizadas con menos de 24 horas de antelación y los casos de no presentación no son reembolsables. Si la excursión es cancelada por el tour operador debido a condiciones climáticas, operativas u otras circunstancias que impidan realizar el servicio, el cliente podrá optar, según corresponda, por reprogramar la experiencia o recibir el reembolso del importe pagado.",
+        "bookingNotice": "Para reservas realizadas con menos de 18 horas de antelación, recomendamos confirmar disponibilidad antes de realizar el pago."
+      },
+      "display": {
+        "highlightsTitle": "Lo mejor de esta experiencia",
+        "highlights": [
+          { "icon": "mountain", "title": "Parque Nacional Los Tres Ojos", "description": "Cuevas, lagos de agua dulce y formaciones rocosas en uno de los espacios naturales más singulares de Santo Domingo." },
+          { "icon": "landmark", "title": "Ciudad Colonial", "description": "Camina por calles, plazas, iglesias y monumentos con más de cinco siglos de historia." },
+          { "icon": "landmark", "title": "Faro a Colón", "description": "Visita panorámica a uno de los monumentos más reconocibles de Santo Domingo." },
+          { "icon": "sparkles", "title": "Todo organizado", "description": "Transporte, almuerzo buffet, guía y visitas programadas en una experiencia de día completo." }
+        ]
+      },
+      "editorialFlags": [
+        { "code": "AGE_0_3_PRICING_PENDING", "severity": "warning", "message": "El documento recibido no especifica la tarifa o condición para menores de 4 años." },
+        { "code": "OPERATING_DAYS_PENDING", "severity": "warning", "message": "El documento recibido no especifica los días de operación de la experiencia." },
+        { "code": "MINIMUM_PASSENGERS_PENDING", "severity": "warning", "message": "El documento recibido no especifica mínimo de pasajeros ni condición especial para una reserva individual." }
+      ]
+    },
+    {
+      "operation": "create_draft",
+      "id": "manual-exp-santo-domingo-altos-chavon",
+      "slug": "santo-domingo-city-tour-altos-de-chavon",
+      "title": "Santo Domingo City Tour + Altos de Chavón",
+      "featuredText": "Dos destinos culturales e históricos en un solo día",
+      "excerpt": "Una experiencia de día completo que combina Altos de Chavón y Santo Domingo entre historia, arquitectura, cultura, naturaleza y gastronomía.",
+      "description": "<p>Descubre en un solo día dos de los destinos culturales e históricos más emblemáticos de República Dominicana: Altos de Chavón y Santo Domingo.</p><p>Comenzaremos descubriendo Altos de Chavón, una singular villa de inspiración mediterránea situada sobre una colina con impresionantes vistas al río Chavón. Después continuaremos hacia Santo Domingo, donde conoceremos el Parque Nacional Los Tres Ojos, realizaremos recorridos panorámicos por importantes monumentos de la ciudad moderna y nos adentraremos en la histórica Ciudad Colonial, declarada Patrimonio Mundial por la UNESCO.</p><p>Una experiencia diseñada para descubrir en un mismo día diferentes capítulos de la historia y cultura dominicanas.</p>",
+      "duration": "Aproximadamente 11 horas",
+      "durationValue": 11,
+      "durationUnit": "hour",
+      "categoryLabel": "Experiencia cultural e histórica",
+      "destinationSlugs": ["santo-domingo", "la-romana"],
+      "sortOrder": 72,
+      "pricing": {
+        "version": 1,
+        "basis": "person",
+        "currency": "USD",
+        "from": 145,
+        "adult": "145",
+        "child": "70",
+        "tiers": [
+          { "key": "adult", "label": "Adulto", "minAge": 12, "maxAge": null, "price": 145 },
+          { "key": "child", "label": "Niño", "minAge": 4, "maxAge": 11, "price": 70 }
+        ]
+      },
+      "booking": {
+        "version": 1,
+        "pickup": {
+          "zones": [
+            { "key": "bavaro-punta-cana", "label": "Bávaro / Punta Cana", "timeWindow": "7:00–7:45 a. m.", "adultPrice": 145, "childPrice": 70, "requiresCoordinatorConfirmation": true },
+            { "key": "bayahibe", "label": "Bayahíbe", "timeWindow": "8:00–8:30 a. m.", "adultPrice": 145, "childPrice": 70, "requiresCoordinatorConfirmation": true },
+            { "key": "juan-dolio", "label": "Juan Dolio", "timeWindow": "7:30–8:00 a. m.", "adultPrice": 145, "childPrice": 70, "requiresCoordinatorConfirmation": true },
+            { "key": "boca-chica", "label": "Boca Chica", "timeWindow": "7:15–7:45 a. m.", "adultPrice": 145, "childPrice": 70, "requiresCoordinatorConfirmation": true },
+            { "key": "santo-domingo", "label": "Santo Domingo", "timeWindow": "6:30–7:00 a. m.", "adultPrice": 145, "childPrice": 70, "requiresCoordinatorConfirmation": true }
+          ]
+        },
+        "confirmation": {
+          "pickupDetailsConfirmedBeforeExperience": true,
+          "shortNoticeSubjectToAvailability": true
+        },
+        "policyKey": "quisqueya-general-cancellation-v1",
+        "shortNoticeWhatsappMessage": "Hola, quiero consultar disponibilidad para Santo Domingo City Tour + Altos de Chavón."
+      },
+      "availability": {
+        "version": 1,
+        "shortNoticeRequiresConfirmation": true,
+        "shortNoticeThresholdHours": 18
+      },
+      "included": [
+        "Transporte terrestre ida y vuelta desde la zona de salida seleccionada.",
+        "Acceso a Altos de Chavón.",
+        "Recorrido guiado por Altos de Chavón.",
+        "Iglesia de San Estanislao.",
+        "Museo Arqueológico Regional, sujeto a horario de apertura, disponibilidad y condiciones de acceso.",
+        "Anfiteatro de Altos de Chavón, sujeto a horario de apertura, disponibilidad y condiciones de acceso.",
+        "Miradores y espacios culturales incluidos en el recorrido.",
+        "Entrada al Parque Nacional Los Tres Ojos.",
+        "Recorrido guiado por la Ciudad Colonial.",
+        "Visita a la Catedral Primada de América, sujeta a horario de apertura, disponibilidad y condiciones de acceso.",
+        "Calle Las Damas, Parque Colón, Panteón de la Patria y Plaza de España.",
+        "Visitas panorámicas al Faro a Colón y Palacio Nacional.",
+        "Almuerzo buffet.",
+        "Degustación de productos típicos dominicanos.",
+        "Botella de agua.",
+        "Acompañamiento de guía durante el recorrido.",
+        "Tiempo libre para fotografías y compras."
+      ],
+      "excluded": [
+        "Entradas a monumentos indicados únicamente como visitas panorámicas o exteriores.",
+        "Alimentos y bebidas adicionales no especificados.",
+        "Propinas.",
+        "Souvenirs, fotografías y gastos personales.",
+        "Servicios no indicados expresamente como incluidos."
+      ],
+      "itinerary": [
+        { "time": "Según zona", "title": "Recogida", "desc": "Recogida en los principales hoteles y puntos establecidos de la zona seleccionada. El día anterior se confirmará la hora y el punto exactos." },
+        { "time": "Primera parte", "title": "Altos de Chavón", "desc": "Recorrido por Altos de Chavón y sus principales atractivos, incluyendo el entorno del campo de golf Dye Fore, miradores hacia el río Chavón, Plaza Chavón, Iglesia de San Estanislao, Museo Arqueológico Regional, galerías de arte y Anfiteatro. Incluye tiempo libre para fotografías y compras." },
+        { "time": "A continuación", "title": "Traslado hacia Santo Domingo", "desc": "Continuación hacia la capital dominicana para iniciar la segunda parte del recorrido." },
+        { "time": "Durante la visita", "title": "Parque Nacional Los Tres Ojos", "desc": "Visita al conjunto de cuevas y lagos de agua dulce rodeado de vegetación tropical y formaciones rocosas." },
+        { "time": "A continuación", "title": "Faro a Colón", "desc": "Visita panorámica al Faro a Colón." },
+        { "time": "A continuación", "title": "Palacio Nacional", "desc": "Vista panorámica del Palacio Nacional." },
+        { "time": "Durante el recorrido", "title": "Ciudad Colonial", "desc": "Recorrido por Parque Colón, Catedral Primada de América, Calle Las Damas, Panteón de la Patria, Fortaleza Ozama, Plaza de España, Alcázar de Colón y Las Atarazanas." },
+        { "time": "Durante la estancia", "title": "Almuerzo buffet", "desc": "Pausa para disfrutar de un almuerzo buffet incluido." },
+        { "time": "Después del almuerzo", "title": "Tiempo para compras", "desc": "Tiempo para conocer establecimientos especializados en ámbar, larimar, artesanías y souvenirs." },
+        { "time": "Al finalizar", "title": "Regreso", "desc": "Regreso hacia hoteles y puntos de encuentro. La hora dependerá de la zona, el tránsito y las condiciones operativas del día." }
+      ],
+      "practicalInfo": {
+        "whatToBring": [
+          "Ropa ligera y cómoda.",
+          "Calzado apropiado para caminar.",
+          "Protector solar.",
+          "Repelente.",
+          "Gafas de sol.",
+          "Sombrero o gorra.",
+          "Dinero o tarjeta para gastos personales.",
+          "Teléfono o cámara para fotografías."
+        ],
+        "restrictions": ["No se admiten mascotas."],
+        "accessibility": {
+          "details": "Esta experiencia incluye trayectos terrestres y recorridos a pie, algunos sobre calles y plazas empedradas. Si tienes movilidad reducida, alguna condición que pueda dificultar el recorrido o necesitas asistencia especial, contáctanos antes de reservar para confirmar la accesibilidad de la experiencia."
+        },
+        "pickupInformation": {
+          "available": true,
+          "details": "Los horarios de recogida son estimados y pueden variar según la ubicación del hotel y la logística de la ruta. El día anterior se confirmarán la hora y el punto exactos de recogida.",
+          "zones": ["Bávaro / Punta Cana", "Bayahíbe", "Juan Dolio", "Boca Chica", "Santo Domingo"]
+        },
+        "cancellationPolicy": "Cancelación gratuita hasta 24 horas antes del inicio de la experiencia. Las cancelaciones realizadas con menos de 24 horas de antelación y las ausencias el día de la actividad no son reembolsables. Si la experiencia es cancelada por el tour operador debido a condiciones meteorológicas, causas operativas u otras circunstancias que impidan realizarla, podrás reprogramar la actividad o solicitar el reembolso correspondiente.",
+        "bookingNotice": "Para reservas realizadas con menos de 18 horas de antelación, contáctanos para confirmar disponibilidad."
+      },
+      "display": {
+        "highlightsTitle": "Lo mejor de esta experiencia",
+        "highlights": [
+          { "icon": "landmark", "title": "Altos de Chavón", "description": "Recorre sus calles empedradas, plazas y rincones más emblemáticos con vistas al río Chavón." },
+          { "icon": "church", "title": "Iglesia de San Estanislao y Anfiteatro", "description": "Conoce dos de los lugares más representativos de Altos de Chavón." },
+          { "icon": "mountain", "title": "Parque Nacional Los Tres Ojos", "description": "Descubre cuevas y lagos de agua dulce rodeados de vegetación tropical y formaciones rocosas." },
+          { "icon": "landmark", "title": "Ciudad Colonial de Santo Domingo", "description": "Camina entre calles, plazas, iglesias y monumentos que conservan más de cinco siglos de historia." },
+          { "icon": "sparkles", "title": "Una experiencia completa", "description": "Transporte, entradas indicadas, almuerzo buffet, guía y asistencia durante una excursión de día completo." }
+        ]
+      },
+      "editorialFlags": [
+        { "code": "MEDIA_PENDING_CLIENT_SELECTION", "severity": "warning", "message": "Se utilizará media temporal del proyecto hasta recibir o seleccionar material definitivo para esta experiencia." },
+        { "code": "AGE_0_3_PRICING_PENDING", "severity": "warning", "message": "El documento recibido no especifica la tarifa o condición para menores de 4 años." },
+        { "code": "OPERATING_DAYS_PENDING", "severity": "warning", "message": "El documento recibido no especifica los días de operación de la experiencia." },
+        { "code": "MINIMUM_PASSENGERS_PENDING", "severity": "warning", "message": "El documento recibido no especifica mínimo de pasajeros ni condición especial para una reserva individual." }
+      ]
+    }
+  ]
+}
