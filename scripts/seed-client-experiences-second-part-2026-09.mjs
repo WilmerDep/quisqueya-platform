@@ -84,14 +84,42 @@ async function findDestinations(slugs, slugLabel) {
   });
 
   const bySlug = new Map(destinations.map(item => [item.slug, item]));
-  const ordered = unique.map(slug => {
+  return unique.map(slug => {
     const destination = bySlug.get(slug);
     if (!destination) throw new Error(`Safety stop: destination ${slug} was not found for ${slugLabel}.`);
     return destination;
   });
-
-  return ordered;
 }
+
+const overlaySnapshotSelect = {
+  id: true,
+  sourceProvider: true,
+  sourceId: true,
+  slug: true,
+  title: true,
+  status: true,
+  excerpt: true,
+  description: true,
+  featuredText: true,
+  duration: true,
+  durationValue: true,
+  durationUnit: true,
+  categoryLabel: true,
+  pricingMode: true,
+  pricingJson: true,
+  bookingJson: true,
+  availabilityJson: true,
+  practicalInfoJson: true,
+  includedItemsJson: true,
+  excludedItemsJson: true,
+  itineraryJson: true,
+  displayJson: true,
+  editorialFlagsJson: true,
+  featuredMediaId: true,
+  galleryMediaSourceIds: true,
+  provenanceJson: true,
+  updatedAt: true,
+};
 
 async function buildOverlayProposal(payload, experience) {
   const target = experience.target || {};
@@ -101,18 +129,7 @@ async function buildOverlayProposal(payload, experience) {
 
   const existing = await prisma.experience.findFirst({
     where: { sourceProvider, sourceId },
-    select: {
-      id: true,
-      sourceProvider: true,
-      sourceId: true,
-      slug: true,
-      title: true,
-      status: true,
-      featuredMediaId: true,
-      galleryMediaSourceIds: true,
-      provenanceJson: true,
-      updatedAt: true,
-    },
+    select: overlaySnapshotSelect,
   });
 
   if (!existing) throw new Error(`Safety stop: existing experience ${sourceProvider}/${sourceId} was not found.`);
@@ -244,7 +261,8 @@ async function main() {
       })),
       safeguards: [
         'Santo Domingo City Tour must match WORDPRESS sourceId 720 and slug santo-domingo-city-tour.',
-        'The combined Santo Domingo + Altos product is created as a separate MANUAL DRAFT.',
+        'The City Tour overlay does not rewrite its destination relations or media.',
+        'The combined Santo Domingo + Altos product is created as a separate MANUAL DRAFT with two explicit destination relations.',
         'Shared destination names never cause pricing, itinerary, availability or media to be copied between products.',
       ],
       nextCommand: 'npm run apply:client-experiences-second-part',
@@ -265,16 +283,14 @@ async function main() {
           throw new Error('Safety stop: Santo Domingo City Tour identity changed before apply.');
         }
         if (current.updatedAt.getTime() !== proposal.existing.updatedAt.getTime()) {
-          throw new Error('Safety stop: Santo Domingo City Tour changed after preview read. Re-run preview before applying.');
+          throw new Error('Safety stop: Santo Domingo City Tour changed after the initial read. Re-run preview before applying.');
         }
 
-        const row = await tx.experience.update({
+        return tx.experience.update({
           where: { id: proposal.existing.id },
           data: proposal.data,
           select: { id: true, slug: true, title: true, status: true, sourceProvider: true, duration: true, pricingJson: true, updatedAt: true },
         });
-        await applyRelations(tx, row.id, proposal.destinations);
-        return row;
       });
       results.push({ operation: proposal.type, snapshotPath, result });
     } else {
