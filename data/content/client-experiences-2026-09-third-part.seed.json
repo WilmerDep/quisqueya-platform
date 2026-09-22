@@ -1,0 +1,189 @@
+{
+  "source": "Breidy Solano / Quisqueya Travel — Tercera parte excursiones descriptivos",
+  "receivedAt": "2026-09-21",
+  "experiences": [
+    {
+      "operation": "create_draft",
+      "id": "manual-exp-scape-park-full-admission-cap-cana",
+      "slug": "scape-park-full-admission-cap-cana",
+      "title": "Scape Park Full Admission – Cap Cana",
+      "featuredText": "Aventura, naturaleza y cultura en un día completo en Cap Cana",
+      "excerpt": "Explora Scape Park a tu propio ritmo con acceso Full Admission a cenotes, cuevas, tirolesas, senderos naturales y experiencias culturales.",
+      "description": "<p>Vive un día de aventura, naturaleza y diversión en Scape Park, uno de los principales parques de aventura de Cap Cana.</p><p>El Full Admission permite explorar diferentes atracciones a tu propio ritmo, combinando tirolesas, cenotes de aguas cristalinas, cuevas naturales, cascadas, senderos ecológicos, actividades de aventura y experiencias culturales en un espectacular entorno tropical.</p><p>Una de las características de Scape Park es la libertad de organizar gran parte del día según tus preferencias, escogiendo el orden de las atracciones y disfrutando de una experiencia que combina adrenalina, naturaleza y cultura dominicana.</p>",
+      "duration": "Día completo",
+      "durationValue": null,
+      "durationUnit": "day",
+      "categoryLabel": "Parque de aventura y naturaleza",
+      "destinationSlugs": ["punta-cana"],
+      "sortOrder": 73,
+      "pricing": {
+        "version": 1,
+        "basis": "person",
+        "currency": "USD",
+        "from": 129,
+        "adult": "129",
+        "child": "69",
+        "infant": "0",
+        "tiers": [
+          { "key": "adult", "label": "Adulto", "minAge": 13, "maxAge": null, "price": 129 },
+          { "key": "child", "label": "Niño", "minAge": 6, "maxAge": 12, "price": 69 },
+          { "key": "infant", "label": "Infante", "minAge": 0, "maxAge": 5, "price": 0 }
+        ],
+        "addOns": [
+          { "key": "buggy", "label": "Buggy", "price": 40, "basis": "person", "currency": "USD" },
+          { "key": "party-boat", "label": "Party Boat", "price": 40, "basis": "person", "currency": "USD" },
+          { "key": "juanillo-vip", "label": "Juanillo VIP", "price": 60, "basis": "person", "currency": "USD" }
+        ]
+      },
+      "booking": {
+        "version": 1,
+        "pickup": {
+          "zones": [
+            {
+              "key": "bavaro-punta-cana",
+              "label": "Bávaro / Punta Cana",
+              "hotelPickup": true,
+              "requiresCoordinatorConfirmation": true
+            }
+          ],
+          "estimatedStartTime": "7:30 a. m.",
+          "exactPickupConfirmedBeforeExperience": true
+        },
+        "confirmation": {
+          "pickupDetailsConfirmedBeforeExperience": true,
+          "shortNoticeSubjectToAvailability": true
+        },
+        "policyKey": "scape-park-provider-cancellation-v1",
+        "shortNoticeWhatsappMessage": "Hola, quiero consultar disponibilidad para Scape Park Full Admission."
+      },
+      "availability": {
+        "version": 1,
+        "shortNoticeRequiresConfirmation": true,
+        "shortNoticeThresholdHours": 18
+      },
+      "included": [
+        "Entrada Full Admission a Scape Park.",
+        "Acceso a las atracciones incluidas dentro de la modalidad Full Admission.",
+        "Blue Hole Cenote Trail / Hoyo Azul.",
+        "Saltos Azules.",
+        "Cave Swim.",
+        "Experiencias de tirolesa incluidas en el pase.",
+        "Ruta Cultural.",
+        "Senderos y áreas naturales del parque.",
+        "Traslado ida y vuelta cuando corresponda a la zona y modalidad contratada."
+      ],
+      "excluded": [
+        "Almuerzo, alimentos y bebidas, salvo que Quisqueya los incorpore expresamente al paquete.",
+        "Fotografías y videos profesionales.",
+        "Souvenirs y gastos personales.",
+        "Buggy.",
+        "Sunshine Cruise.",
+        "Propinas.",
+        "Servicios no indicados expresamente como incluidos."
+      ],
+      "itinerary": [
+        {
+          "time": "Por confirmar",
+          "title": "Recogida",
+          "desc": "Recogida desde hoteles y puntos establecidos de Bávaro / Punta Cana. El día anterior confirmaremos la hora y el punto exacto de recogida."
+        },
+        {
+          "time": "Día completo",
+          "title": "Llegada a Scape Park – Cap Cana",
+          "desc": "Llegada al parque y comienzo de la experiencia Full Admission, con libertad para organizar gran parte del recorrido según tus preferencias."
+        },
+        {
+          "time": "Durante el día",
+          "title": "Full Admission",
+          "desc": "Acceso a las atracciones incluidas en esta modalidad, entre ellas Blue Hole Cenote Trail, Saltos Azules, Cave Swim, Zip Line Eco Splash, Super Ride, Rope Runners, Ruta Cultural y otras experiencias de naturaleza y aventura sujetas a la operación del parque."
+        },
+        {
+          "time": "Durante el día",
+          "title": "Alimentación y descanso",
+          "desc": "Tiempo para descansar y utilizar los servicios de alimentos y bebidas disponibles dentro del parque. Almuerzo, refrigerios y otras compras no están incluidos salvo indicación expresa."
+        },
+        {
+          "time": "Hora asignada",
+          "title": "Regreso",
+          "desc": "A la hora indicada por nuestro equipo, encuentro en el punto establecido para iniciar el traslado de regreso."
+        }
+      ],
+      "practicalInfo": {
+        "whatToBring": [
+          "Traje de baño.",
+          "Ropa ligera y cómoda.",
+          "Calzado adecuado para caminar y realizar actividades de aventura.",
+          "Para Blue Hole, calzado cerrado con suela antideslizante.",
+          "Protector solar.",
+          "Repelente.",
+          "Toalla.",
+          "Cambio de ropa.",
+          "Dinero o tarjeta para gastos personales.",
+          "Identificación personal."
+        ],
+        "restrictions": [
+          "Las actividades de tirolesa están sujetas a restricciones específicas de peso, estatura y condiciones físicas establecidas por Scape Park.",
+          "Para las actividades de zip line, el parque publica un peso mínimo de 60 lb (27 kg) y máximo de 280 lb (127 kg).",
+          "Para Super Ride, el peso mínimo publicado es de 100 lb (45 kg).",
+          "La estatura publicada para actividades de tirolesa va de 4 pies (1.22 m) a 6'5\" (1.96 m).",
+          "Las actividades de tirolesa no son recomendadas por el parque para mujeres embarazadas ni para personas con determinadas enfermedades, discapacidades o condiciones que puedan afectar su participación.",
+          "No pueden participar personas bajo los efectos del alcohol u otras sustancias.",
+          "No está permitido ingresar con equipos profesionales de fotografía o video ni drones.",
+          "El uso de celulares, cámaras personales y selfie sticks puede estar restringido en determinadas atracciones por seguridad."
+        ],
+        "accessibility": {
+          "details": "La experiencia requiere caminar por senderos naturales y algunas áreas presentan terreno irregular. Las personas con movilidad reducida deben consultar previamente si las actividades son adecuadas para ellas."
+        },
+        "pickupInformation": {
+          "available": true,
+          "details": "Recogida en hoteles y puntos establecidos de Bávaro / Punta Cana. El día anterior se confirma la hora y el punto exactos. El horario estimado comienza a partir de las 7:30 a. m.",
+          "zones": ["Bávaro / Punta Cana"]
+        },
+        "cancellationPolicy": "La política publicada por el proveedor establece actualmente reembolso completo para cancelaciones realizadas con 48 horas o más de anticipación; 50 % de reembolso cuando la cancelación se realiza 24 horas antes; y no reembolsable para cancelaciones con menos de 24 horas de anticipación o no presentación. Las cancelaciones relacionadas con clima y modificaciones operativas están sujetas a las condiciones particulares del proveedor.",
+        "bookingNotice": "Para reservas realizadas con menos de 18 horas de antelación, contáctanos antes de realizar el pago para confirmar disponibilidad y transporte."
+      },
+      "display": {
+        "highlightsTitle": "Lo mejor de esta experiencia",
+        "highlights": [
+          {
+            "icon": "waves",
+            "title": "Blue Hole | Hoyo Azul",
+            "description": "Recorre un sendero natural hasta llegar a un espectacular cenote de agua dulce donde podrás disfrutar de un refrescante baño."
+          },
+          {
+            "icon": "droplets",
+            "title": "Saltos Azules",
+            "description": "Disfruta aguas cristalinas, cascadas, cuevas y actividades acuáticas en un entorno natural."
+          },
+          {
+            "icon": "route",
+            "title": "Tirolesas y aventura",
+            "description": "Combina experiencias aéreas y acuáticas entre cuerdas, alturas y paisajes tropicales de Cap Cana."
+          },
+          {
+            "icon": "landmark",
+            "title": "Naturaleza y cultura dominicana",
+            "description": "Complementa la aventura con senderos naturales y una Ruta Cultural dedicada a distintas etapas de la historia y cultura dominicana."
+          }
+        ]
+      },
+      "editorialFlags": [
+        {
+          "code": "MEDIA_PENDING_LIBRARY_REVIEW",
+          "severity": "warning",
+          "message": "La ficha está estructurada, pero la imagen principal y galería definitivas se seleccionarán cuando se reciba y audite la biblioteca multimedia del colaborador."
+        },
+        {
+          "code": "OPERATING_DAYS_PENDING",
+          "severity": "warning",
+          "message": "El documento recibido no define los días exactos de operación comercial de esta experiencia."
+        },
+        {
+          "code": "MINIMUM_PASSENGERS_PENDING",
+          "severity": "warning",
+          "message": "El documento recibido no define un mínimo de pasajeros ni la regla aplicable a una reserva individual."
+        }
+      ]
+    }
+  ]
+}
