@@ -1,0 +1,199 @@
+{
+  "source": "Breidy Solano / Quisqueya Travel — Tercera parte excursiones descriptivos",
+  "receivedAt": "2026-09-21",
+  "family": {
+    "key": "la-hacienda-park",
+    "label": "La Hacienda Park",
+    "destinationSlugs": ["punta-cana"],
+    "locationReference": "Anamuya, Higüey",
+    "operatingHoursReference": "Horario aproximado del parque: 9:00 a. m. – 4:00 p. m.",
+    "mediaStatus": "pending_collaborator_library_review"
+  },
+  "experiences": [
+    {
+      "operation": "create_draft",
+      "id": "manual-exp-la-hacienda-park-7-aventuras",
+      "slug": "la-hacienda-park-7-aventuras",
+      "title": "La Hacienda Park – 7 Aventuras + Transporte",
+      "featuredText": "Aventura, naturaleza y cultura dominicana en Anamuya",
+      "excerpt": "Experiencia de día completo en La Hacienda Park con siete actividades de aventura, naturaleza y cultura dominicana, con modalidad Standard desde Punta Cana/Bávaro.",
+      "description": "La Hacienda Park combina en un mismo día buggies, tirolesas, paseo a caballo, safari cultural, telesilla panorámica, Quick Jump y experiencia cultural dominicana en las montañas de Anamuya. La modalidad Standard incluye transporte compartido desde hoteles y puntos seleccionados de Punta Cana/Bávaro.",
+      "duration": "Día completo",
+      "durationValue": null,
+      "durationUnit": "day",
+      "categoryLabel": "Parque de aventura y cultura",
+      "destinationSlugs": ["punta-cana"],
+      "sortOrder": 94,
+      "familyKey": "la-hacienda-park",
+      "familyContextRef": "la-hacienda-park",
+      "pricing": {
+        "version": 1,
+        "basis": "person",
+        "currency": "USD",
+        "from": 99,
+        "adult": "99",
+        "tiers": [],
+        "ratePlans": [
+          {
+            "key": "general-admission-only",
+            "label": "Solo Admisión",
+            "price": 85,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "public"},
+            "transportIncluded": false,
+            "mealIncluded": false,
+            "mealAddOnPrice": 10,
+            "notes": ["Pensado para clientes que llegan por sus propios medios.", "Incluye entrada de día completo, siete actividades, Kids Club y estacionamiento."]
+          },
+          {
+            "key": "standard",
+            "label": "Standard",
+            "price": 99,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "public"},
+            "transportIncluded": true,
+            "transportMode": "shared",
+            "mealIncluded": false,
+            "lockerIncluded": true,
+            "notes": ["Modalidad principal para turistas alojados en Punta Cana/Bávaro.", "El almuerzo no está incluido de base en la ficha actual del producto."]
+          },
+          {
+            "key": "standard-with-lunch",
+            "label": "Standard + Almuerzo",
+            "price": 109,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "public"},
+            "transportIncluded": true,
+            "transportMode": "shared",
+            "mealIncluded": true,
+            "lockerIncluded": true,
+            "mealDetails": "Buffet dominicano + 1 botella de agua."
+          },
+          {
+            "key": "vip",
+            "label": "VIP",
+            "price": 250,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "public"},
+            "transportIncluded": true,
+            "transportMode": "private",
+            "mealIncluded": true,
+            "drinksIncluded": true,
+            "details": [
+              "Siete actividades en modalidad VIP.",
+              "Grupo reducido.",
+              "Acceso preferente a las actividades.",
+              "Rutas exclusivas.",
+              "Posibilidad de repetir actividades seleccionadas.",
+              "Posibilidad de intercambiar una actividad entre las alternativas disponibles.",
+              "Guía o atención personalizada durante el recorrido.",
+              "Área reservada en el restaurante.",
+              "Paquete de fotografías digitales incluido."
+            ]
+          },
+          {
+            "key": "dominican-resident",
+            "label": "Dominicanos / Residentes",
+            "price": 75,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {
+              "type": "document_required",
+              "requirement": "Cédula dominicana o documento válido de residencia."
+            },
+            "transportIncluded": false,
+            "mealIncluded": true,
+            "notes": ["La alimentación figura como incluida según el FAQ actual.", "La promoción ocasional de US$65 no se utiliza como tarifa base de Quisqueya Travel."]
+          }
+        ],
+        "ageReference": {
+          "adultPublished": "12 años en adelante",
+          "childPublished": "5–12 años",
+          "infantPublished": "menor de 5 años",
+          "status": "conflict_pending_confirmation",
+          "note": "La fuente solapa la edad de 12 años entre adulto y niño y no expone claramente un precio infantil final; no se crean tiers automáticos."
+        }
+      },
+      "booking": {
+        "version": 1,
+        "pickup": {
+          "standardIncludedZones": ["Punta Cana", "Bávaro"],
+          "estimatedPickupWindow": {"from": "07:00", "to": "09:00"},
+          "scheduleNote": "La hora exacta depende del hotel o punto de recogida y se confirma después de reservar; el documento recomienda confirmar el día anterior la hora y el punto exactos.",
+          "otherZonesReference": {
+            "zones": ["Bayahibe", "La Romana", "Boca Chica", "Juan Dolio", "Miches"],
+            "operatingDaysReference": ["monday", "wednesday", "friday", "sunday"],
+            "knownSupplements": [
+              {"zone": "La Romana", "price": 20, "basis": "person", "currency": "USD", "status": "reference_only"},
+              {"zone": "Miches", "price": 20, "basis": "person", "currency": "USD", "status": "reference_only"}
+            ],
+            "status": "incomplete_commercial_tariff"
+          }
+        }
+      },
+      "practicalInfo": {
+        "activities": [
+          "Buggies.",
+          "Tirolesas.",
+          "Paseo a caballo.",
+          "Safari cultural.",
+          "Telesilla panorámica.",
+          "Quick Jump / salto al vacío.",
+          "Experiencia cultural dominicana."
+        ],
+        "restrictions": [
+          "Algunas actividades están sujetas a restricciones de edad, estatura, peso y condiciones físicas; la participación final depende de los requisitos de seguridad del parque.",
+          "Para las tirolesas: altura mínima 110 cm.",
+          "Para las tirolesas: peso máximo 300 lb / 136 kg.",
+          "Para las tirolesas: cintura máxima 106 cm."
+        ],
+        "whatToBring": [
+          "Ropa ligera y cómoda.",
+          "Zapatos cerrados con buena tracción.",
+          "Traje de baño.",
+          "Toalla.",
+          "Cambio de ropa.",
+          "Protector solar.",
+          "Repelente de insectos.",
+          "Documento de identidad.",
+          "Dinero o tarjeta para alimentos, bebidas, fotografías y otros extras."
+        ]
+      },
+      "included": [
+        "Entrada de día completo a La Hacienda Park.",
+        "Las siete actividades del parque.",
+        "Buggies.",
+        "Tirolesas.",
+        "Paseo a caballo.",
+        "Safari cultural.",
+        "Telesilla panorámica.",
+        "Quick Jump / salto al vacío.",
+        "Experiencia cultural dominicana.",
+        "Kids Club sujeto a requisitos de participación.",
+        "Locker en modalidad Standard.",
+        "Transporte compartido hotel – parque – hotel desde hoteles y puntos seleccionados de Punta Cana/Bávaro en modalidad Standard.",
+        "Equipamiento correspondiente a las actividades."
+      ],
+      "excluded": [
+        "Almuerzo en modalidad Standard base; disponible como modalidad Standard + Almuerzo por US$109.",
+        "Bebidas adicionales en modalidades que no las incluyan.",
+        "Snacks.",
+        "Fotografías en modalidades que no las incluyan.",
+        "Gastos personales.",
+        "Transporte desde zonas fuera de la cobertura incluida, salvo confirmación comercial específica.",
+        "Servicios no indicados expresamente como incluidos."
+      ],
+      "editorialFlags": [
+        {"code": "MEDIA_PENDING_LIBRARY_REVIEW", "severity": "warning", "message": "Imagen principal y galería definitivas pendientes de la biblioteca multimedia del colaborador."},
+        {"code": "CHILD_PRICING_AGE_BANDS_PENDING", "severity": "warning", "message": "La fuente solapa los 12 años entre adulto y niño y no expone claramente el precio infantil final; no se crean tiers automáticos hasta confirmación comercial."},
+        {"code": "TRANSPORT_SUPPLEMENTS_PENDING", "severity": "warning", "message": "La cobertura de otras zonas y sus suplementos no está completa; solo se conservan como referencia los datos explícitos para La Romana y Miches."},
+        {"code": "CANCELLATION_POLICY_PENDING", "severity": "warning", "message": "El documento recibido no aporta una política específica de cancelación/reembolso para La Hacienda Park."},
+        {"code": "MINIMUM_PASSENGERS_PENDING", "severity": "warning", "message": "El documento recibido no define un mínimo de pasajeros ni una regla específica para reservas individuales."}
+      ]
+    }
+  ]
+}
