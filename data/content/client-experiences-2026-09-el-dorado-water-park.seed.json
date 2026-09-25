@@ -69,19 +69,20 @@
             },
             "transportIncluded": false,
             "tiers": [
-              {"key": "adult", "label": "Adulto", "minAge": 13, "maxAge": null, "price": 69},
-              {"key": "child", "label": "Niño", "minAge": 4, "maxAge": 12, "price": 30},
-              {"key": "infant", "label": "Infante", "minAge": 0, "maxAge": 3, "price": 0}
-            ]
+              {"key": "adult", "label": "Adulto", "minAge": null, "maxAge": null, "price": 69},
+              {"key": "child", "label": "Niño", "minAge": null, "maxAge": null, "price": 30},
+              {"key": "infant", "label": "Menor de 4", "minAge": 0, "maxAge": 3, "price": 0}
+            ],
+            "ageBandNote": "La fuente confirma US$69 adulto, US$30 niño y menores de 4 gratis para residentes, pero no redefine expresamente el límite de edad entre adulto y niño para esta tarifa."
           }
         ],
         "addOns": [
           {"key": "vip-balinese-bed-kids", "label": "Cama Balinesa – Área Infantil", "price": 100, "basis": "unit", "currency": "USD", "capacity": "Hasta 2 adultos + 2 niños", "admissionIncluded": false},
-          {"key": "vip-balinese-bed", "label": "Cama Balinesa – Área VIP", "price": 200, "basis": "unit", "currency": "USD", "capacity": "Máximo 2 personas", "admissionIncluded": false},
+          {"key": "vip-balinese-bed", "label": "Cama Balinesa – Área VIP", "price": 200, "basis": "unit", "currency": "USD", "capacity": "Máximo 2 personas", "admissionIncluded": false, "details": ["Botella de vino espumoso como beneficio promocional asociado."]},
           {"key": "vip-lounge", "label": "Salón VIP", "price": 350, "basis": "unit", "currency": "USD", "capacity": "Máximo 6 personas", "admissionIncluded": false},
-          {"key": "vip-tent", "label": "Carpa VIP", "price": 425, "basis": "unit", "currency": "USD", "capacity": "Máximo 6 personas", "admissionIncluded": false},
+          {"key": "vip-tent", "label": "Carpa VIP", "price": 425, "basis": "unit", "currency": "USD", "capacity": "Máximo 6 personas", "admissionIncluded": false, "details": ["Espacio VIP reservado.", "Botella de vino espumoso.", "Bandeja de frutas."]},
           {"key": "vip-family-tent", "label": "Carpa Familiar VIP", "price": 800, "basis": "unit", "currency": "USD", "capacity": "Máximo 12 personas", "admissionIncluded": false},
-          {"key": "vip-villa", "label": "Villa VIP", "price": 1100, "basis": "unit", "currency": "USD", "capacity": "Máximo 10 personas", "admissionIncluded": false}
+          {"key": "vip-villa", "label": "Villa VIP", "price": 1100, "basis": "unit", "currency": "USD", "capacity": "Máximo 10 personas", "admissionIncluded": false, "details": ["Piscina privada.", "Botella de vino espumoso.", "Bandeja de frutas.", "Tabla de quesos."]}
         ]
       },
       "booking": {
@@ -94,7 +95,7 @@
             {"zone": "Miches", "price": 20, "basis": "person", "currency": "USD"}
           ],
           "residentTransportIncluded": false,
-          "scheduleNote": "La hora y el punto exactos de recogida dependen de la ubicación del hotel y la logística de la ruta; se confirman antes de la experiencia."
+          "scheduleNote": "La hora de recogida varía según la ubicación del hotel y la logística de la ruta. El día anterior a la experiencia se confirma la hora y el punto exactos de recogida."
         }
       },
       "availability": {
@@ -107,10 +108,10 @@
       "practicalInfo": {
         "restrictions": [
           "No se permite ingresar al parque con alimentos o bebidas del exterior.",
-          "La Cámara del Tesoro es la atracción indicada por la fuente para la que se requiere saber nadar.",
+          "No es necesario saber nadar para disfrutar de la mayoría de las experiencias; La Cámara del Tesoro es la excepción indicada por la fuente para la que sí se requiere saber nadar.",
           "Determinadas atracciones aplican restricciones propias de altura y peso verificadas por el personal del parque."
         ],
-        "weatherNote": "La operación puede continuar con lluvia, pero determinadas atracciones pueden cerrar por condiciones climáticas o de seguridad.",
+        "weatherNote": "El parque normalmente continúa operando cuando llueve, pero algunas atracciones o el parque completo pueden cerrar cuando las condiciones meteorológicas comprometan la seguridad.",
         "vipAdmissionNotice": "Los servicios VIP son adicionales y NO incluyen la entrada al parque. La admisión debe adquirirse por separado.",
         "additionalCostsReference": [
           {"item": "Locker pequeño", "price": 10, "currency": "USD", "basis": "unit", "status": "reference_only"},
@@ -152,7 +153,8 @@
       "editorialFlags": [
         {"code": "MEDIA_PENDING_LIBRARY_REVIEW", "severity": "warning", "message": "Imagen principal y galería definitivas pendientes de la biblioteca multimedia del colaborador."},
         {"code": "CANCELLATION_POLICY_PENDING", "severity": "warning", "message": "El documento recibido no aporta una política específica de cancelación/reembolso para El Dorado Water Park."},
-        {"code": "MINIMUM_PASSENGERS_PENDING", "severity": "warning", "message": "El documento recibido no define un mínimo de pasajeros ni una regla específica para reservas individuales."}
+        {"code": "MINIMUM_PASSENGERS_PENDING", "severity": "warning", "message": "El documento recibido no define un mínimo de pasajeros ni una regla específica para reservas individuales."},
+        {"code": "RESIDENT_AGE_BANDS_PENDING", "severity": "warning", "message": "La fuente confirma precios de adulto, niño y menor de 4 para residentes, pero no redefine expresamente el límite de edad entre adulto y niño para esa tarifa."}
       ]
     }
   ]
