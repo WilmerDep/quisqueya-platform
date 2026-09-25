@@ -40,6 +40,8 @@
     "stage:client-experiences-third-part": "node scripts/stage-client-experiences-third-part-2026-09.mjs --apply",
     "preview:bavaro-adventure-park": "node scripts/stage-bavaro-adventure-park-2026-09.mjs",
     "stage:bavaro-adventure-park": "node scripts/stage-bavaro-adventure-park-2026-09.mjs --apply",
+    "preview:el-dorado-water-park": "node scripts/stage-el-dorado-water-park-2026-09.mjs",
+    "stage:el-dorado-water-park": "node scripts/stage-el-dorado-water-park-2026-09.mjs --apply",
     "audit:dmc-services": "node scripts/audit-dmc-services.mjs",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
