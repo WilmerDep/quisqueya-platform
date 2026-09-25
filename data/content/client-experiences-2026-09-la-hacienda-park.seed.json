@@ -31,8 +31,11 @@
         "basis": "person",
         "currency": "USD",
         "from": 99,
-        "adult": "99",
+        "adult": null,
+        "child": null,
+        "infant": null,
         "tiers": [],
+        "pricingNote": "US$99 corresponde a la modalidad Standard por persona. La fuente no permite asignar todavía una tarifa automática por categoría de pasajero.",
         "ratePlans": [
           {
             "key": "general-admission-only",
