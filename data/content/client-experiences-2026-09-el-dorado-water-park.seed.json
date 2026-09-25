@@ -1,0 +1,159 @@
+{
+  "source": "Breidy Solano / Quisqueya Travel — Tercera parte excursiones descriptivos",
+  "receivedAt": "2026-09-21",
+  "family": {
+    "key": "el-dorado-water-park",
+    "label": "El Dorado Water Park",
+    "destinationSlugs": ["punta-cana"],
+    "locationReference": "Cap Cana",
+    "operatingScheduleReference": {
+      "openDays": ["tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+      "openTime": "10:00",
+      "closeTime": "17:00",
+      "closedDays": ["monday"]
+    },
+    "mediaStatus": "pending_collaborator_library_review"
+  },
+  "experiences": [
+    {
+      "operation": "create_draft",
+      "id": "manual-exp-el-dorado-water-park-cap-cana",
+      "slug": "el-dorado-water-park-cap-cana",
+      "title": "El Dorado Water Park – Cap Cana",
+      "featuredText": "Parque acuático, aventura y áreas de relajación en Cap Cana",
+      "excerpt": "Experiencia de día completo en El Dorado Water Park con más de 20 atracciones, áreas infantiles, toboganes, piscina de olas, río lento, tirolina y zonas de descanso.",
+      "description": "El Dorado Water Park combina aventura acuática, diversión familiar y espacios de relajación en Cap Cana. La entrada regular ofrece acceso a las atracciones generales del parque y, para visitantes, transporte compartido desde zonas hoteleras seleccionadas.",
+      "duration": "Día completo",
+      "durationValue": null,
+      "durationUnit": "day",
+      "categoryLabel": "Parque acuático",
+      "destinationSlugs": ["punta-cana"],
+      "sortOrder": 93,
+      "familyKey": "el-dorado-water-park",
+      "familyContextRef": "el-dorado-water-park",
+      "pricing": {
+        "version": 1,
+        "basis": "person",
+        "currency": "USD",
+        "from": 129,
+        "adult": "129",
+        "child": "69",
+        "infant": "0",
+        "tiers": [
+          {"key": "adult", "label": "Adulto", "minAge": 13, "maxAge": null, "price": 129},
+          {"key": "child", "label": "Niño", "minAge": 4, "maxAge": 12, "price": 69},
+          {"key": "infant", "label": "Infante", "minAge": 0, "maxAge": 3, "price": 0}
+        ],
+        "ratePlans": [
+          {
+            "key": "visitor-regular",
+            "label": "Entrada Regular – Visitante",
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "public"},
+            "transportIncluded": true,
+            "tiers": [
+              {"key": "adult", "label": "Adulto", "minAge": 13, "maxAge": null, "price": 129},
+              {"key": "child", "label": "Niño", "minAge": 4, "maxAge": 12, "price": 69},
+              {"key": "infant", "label": "Infante", "minAge": 0, "maxAge": 3, "price": 0}
+            ]
+          },
+          {
+            "key": "dominican-resident",
+            "label": "Entrada – Residente dominicano",
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {
+              "type": "document_required",
+              "requirement": "Cédula dominicana o residencia válida."
+            },
+            "transportIncluded": false,
+            "tiers": [
+              {"key": "adult", "label": "Adulto", "minAge": 13, "maxAge": null, "price": 69},
+              {"key": "child", "label": "Niño", "minAge": 4, "maxAge": 12, "price": 30},
+              {"key": "infant", "label": "Infante", "minAge": 0, "maxAge": 3, "price": 0}
+            ]
+          }
+        ],
+        "addOns": [
+          {"key": "vip-balinese-bed-kids", "label": "Cama Balinesa – Área Infantil", "price": 100, "basis": "unit", "currency": "USD", "capacity": "Hasta 2 adultos + 2 niños", "admissionIncluded": false},
+          {"key": "vip-balinese-bed", "label": "Cama Balinesa – Área VIP", "price": 200, "basis": "unit", "currency": "USD", "capacity": "Máximo 2 personas", "admissionIncluded": false},
+          {"key": "vip-lounge", "label": "Salón VIP", "price": 350, "basis": "unit", "currency": "USD", "capacity": "Máximo 6 personas", "admissionIncluded": false},
+          {"key": "vip-tent", "label": "Carpa VIP", "price": 425, "basis": "unit", "currency": "USD", "capacity": "Máximo 6 personas", "admissionIncluded": false},
+          {"key": "vip-family-tent", "label": "Carpa Familiar VIP", "price": 800, "basis": "unit", "currency": "USD", "capacity": "Máximo 12 personas", "admissionIncluded": false},
+          {"key": "vip-villa", "label": "Villa VIP", "price": 1100, "basis": "unit", "currency": "USD", "capacity": "Máximo 10 personas", "admissionIncluded": false}
+        ]
+      },
+      "booking": {
+        "version": 1,
+        "pickup": {
+          "visitorIncludedZones": ["Cap Cana", "Bávaro", "Punta Cana", "Cabeza de Toro", "Macao", "Uvero Alto"],
+          "supplements": [
+            {"zone": "Bayahibe", "price": 10, "basis": "person", "currency": "USD"},
+            {"zone": "La Romana", "price": 15, "basis": "person", "currency": "USD"},
+            {"zone": "Miches", "price": 20, "basis": "person", "currency": "USD"}
+          ],
+          "residentTransportIncluded": false,
+          "scheduleNote": "La hora y el punto exactos de recogida dependen de la ubicación del hotel y la logística de la ruta; se confirman antes de la experiencia."
+        }
+      },
+      "availability": {
+        "version": 1,
+        "type": "weekly_schedule",
+        "openDays": ["tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+        "closedDays": ["monday"],
+        "hours": {"from": "10:00", "to": "17:00"}
+      },
+      "practicalInfo": {
+        "restrictions": [
+          "No se permite ingresar al parque con alimentos o bebidas del exterior.",
+          "La Cámara del Tesoro es la atracción indicada por la fuente para la que se requiere saber nadar.",
+          "Determinadas atracciones aplican restricciones propias de altura y peso verificadas por el personal del parque."
+        ],
+        "weatherNote": "La operación puede continuar con lluvia, pero determinadas atracciones pueden cerrar por condiciones climáticas o de seguridad.",
+        "vipAdmissionNotice": "Los servicios VIP son adicionales y NO incluyen la entrada al parque. La admisión debe adquirirse por separado.",
+        "additionalCostsReference": [
+          {"item": "Locker pequeño", "price": 10, "currency": "USD", "basis": "unit", "status": "reference_only"},
+          {"item": "Locker grande", "price": 15, "currency": "USD", "basis": "unit", "status": "reference_only"},
+          {"item": "Alquiler de toalla", "price": 5, "currency": "USD", "basis": "unit", "status": "reference_only"},
+          {"item": "Parking VIP", "price": 10, "currency": "USD", "basis": "vehicle", "status": "reference_only"}
+        ],
+        "additionalCostsNote": "Estos importes se conservan solo como referencia informativa y no deben tratarse como precios contractuales del checkout sin una nueva validación.",
+        "whatToBring": ["Traje de baño.", "Protector solar.", "Toalla o alquilar una en el parque.", "Calzado acuático.", "Cambio de ropa seca.", "Dinero o tarjeta para comidas, bebidas y gastos personales."]
+      },
+      "included": [
+        "Entrada a El Dorado Water Park.",
+        "Acceso a las atracciones generales incluidas.",
+        "Más de 20 atracciones y experiencias.",
+        "Áreas infantiles.",
+        "Toboganes acuáticos.",
+        "Piscina de olas.",
+        "Río lento.",
+        "Tirolina.",
+        "Áreas de relajación.",
+        "Hamacas y sombrillas.",
+        "Chalecos salvavidas.",
+        "Vestuarios y duchas.",
+        "Parking general para clientes que llegan por sus propios medios.",
+        "Wi-Fi disponible en determinadas zonas.",
+        "Transporte compartido ida y vuelta desde zonas hoteleras seleccionadas para la Entrada Regular de visitante."
+      ],
+      "excluded": [
+        "Alimentos y bebidas.",
+        "Toallas.",
+        "Lockers.",
+        "Fotografías profesionales.",
+        "Souvenirs y gastos personales.",
+        "Servicios y áreas VIP.",
+        "Parking VIP.",
+        "Transporte para la tarifa de residente dominicano.",
+        "Servicios no indicados expresamente como incluidos."
+      ],
+      "editorialFlags": [
+        {"code": "MEDIA_PENDING_LIBRARY_REVIEW", "severity": "warning", "message": "Imagen principal y galería definitivas pendientes de la biblioteca multimedia del colaborador."},
+        {"code": "CANCELLATION_POLICY_PENDING", "severity": "warning", "message": "El documento recibido no aporta una política específica de cancelación/reembolso para El Dorado Water Park."},
+        {"code": "MINIMUM_PASSENGERS_PENDING", "severity": "warning", "message": "El documento recibido no define un mínimo de pasajeros ni una regla específica para reservas individuales."}
+      ]
+    }
+  ]
+}
