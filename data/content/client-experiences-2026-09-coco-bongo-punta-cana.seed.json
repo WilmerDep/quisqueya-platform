@@ -1,0 +1,221 @@
+{
+  "source": "Breidy Solano / Quisqueya Travel — Tercera parte excursiones descriptivos",
+  "receivedAt": "2026-09-21",
+  "family": {
+    "key": "coco-bongo-punta-cana",
+    "label": "Coco Bongo Punta Cana",
+    "destinationSlugs": ["punta-cana"],
+    "locationReference": "Downtown Punta Cana, Bávaro",
+    "operatingScheduleReference": {
+      "openDays": ["tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+      "openTime": "20:00",
+      "closeTime": "02:00",
+      "closedDays": ["monday"]
+    },
+    "mediaStatus": "pending_collaborator_library_review"
+  },
+  "experiences": [
+    {
+      "operation": "create_draft",
+      "id": "manual-exp-coco-bongo-punta-cana",
+      "slug": "coco-bongo-punta-cana-show-disco",
+      "title": "Coco Bongo Punta Cana – Show & Disco",
+      "featuredText": "Shows en vivo, música, acrobacias y fiesta en Downtown Punta Cana",
+      "excerpt": "Experiencia nocturna para mayores de 18 años en Coco Bongo Punta Cana, con cinco modalidades de entrada que varían según bebidas, ubicación, asiento y acceso preferencial.",
+      "description": "Vive una noche de entretenimiento en Coco Bongo Punta Cana con producciones en vivo, música, acrobacias, baile y efectos especiales. La experiencia se comercializa en distintas modalidades, desde Drink Pack hasta Front Row VIP, con transporte compartido disponible desde hoteles seleccionados de Punta Cana/Bávaro según cobertura.",
+      "duration": "Aproximadamente 5 horas",
+      "durationValue": 5,
+      "durationUnit": "hour",
+      "categoryLabel": "Show nocturno y discoteca",
+      "destinationSlugs": ["punta-cana"],
+      "sortOrder": 95,
+      "familyKey": "coco-bongo-punta-cana",
+      "familyContextRef": "coco-bongo-punta-cana",
+      "pricing": {
+        "version": 1,
+        "basis": "person",
+        "currency": "USD",
+        "from": 75,
+        "adult": null,
+        "child": null,
+        "infant": null,
+        "tiers": [],
+        "pricingMode": "date_and_package_dependent",
+        "pricingNote": "Los precios se presentan como referencia desde y dependen de la modalidad y la fecha seleccionada. Viernes, sábado y domingo tienen tarifas específicas confirmadas en la fuente para Regular, Premium, Gold Member VIP y Front Row VIP.",
+        "ratePlans": [
+          {
+            "key": "drink-pack",
+            "label": "Drink Pack",
+            "priceFrom": 75,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "adult_only", "minimumAge": 18},
+            "area": "general",
+            "reservedSeat": false,
+            "priorityAccess": false,
+            "beveragePlan": "5 bebidas nacionales",
+            "snackIncluded": true,
+            "transportIncluded": true,
+            "transportMode": "shared",
+            "availability": {
+              "type": "selected_days",
+              "status": "pending_exact_days_confirmation"
+            },
+            "notes": [
+              "No incluye barra libre ilimitada.",
+              "No incluye bebidas Premium.",
+              "No incluye zona VIP ni asiento reservado."
+            ]
+          },
+          {
+            "key": "regular-open-bar",
+            "label": "Regular / Open Bar",
+            "priceFrom": 90,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "adult_only", "minimumAge": 18},
+            "area": "general",
+            "reservedSeat": false,
+            "priorityAccess": false,
+            "beveragePlan": "Barra libre de bebidas nacionales y cócteles del menú Regular",
+            "snackIncluded": true,
+            "transportIncluded": true,
+            "transportMode": "shared",
+            "dayPricing": [
+              {"days": ["friday", "saturday", "sunday"], "price": 99, "currency": "USD"}
+            ]
+          },
+          {
+            "key": "premium",
+            "label": "Premium",
+            "priceFrom": 125,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "adult_only", "minimumAge": 18},
+            "area": "general",
+            "reservedSeat": false,
+            "priorityAccess": false,
+            "beveragePlan": "Barra libre Premium",
+            "snackIncluded": true,
+            "transportIncluded": true,
+            "transportMode": "shared",
+            "dayPricing": [
+              {"days": ["friday", "saturday", "sunday"], "price": 135, "currency": "USD"}
+            ],
+            "notes": ["Premium mantiene al cliente en área general; no implica asiento o mesa VIP."]
+          },
+          {
+            "key": "gold-member-vip",
+            "label": "Gold Member VIP",
+            "priceFrom": 170,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "adult_only", "minimumAge": 18},
+            "area": "vip",
+            "reservedSeat": true,
+            "reservedSeatNote": "Sujeto a configuración y capacidad.",
+            "priorityAccess": true,
+            "beveragePlan": "Barra libre Premium",
+            "snackIncluded": true,
+            "personalizedService": true,
+            "transportIncluded": true,
+            "transportMode": "shared",
+            "dayPricing": [
+              {"days": ["friday", "saturday", "sunday"], "price": 189, "currency": "USD"}
+            ]
+          },
+          {
+            "key": "front-row-vip",
+            "label": "Front Row VIP",
+            "priceFrom": 190,
+            "basis": "person",
+            "currency": "USD",
+            "eligibility": {"type": "adult_only", "minimumAge": 18},
+            "area": "vip_preferred_front_row",
+            "reservedSeat": true,
+            "capacityLimited": true,
+            "priorityAccess": true,
+            "beveragePlan": "Barra libre Premium",
+            "snackIncluded": true,
+            "personalizedService": true,
+            "transportIncluded": true,
+            "transportMode": "shared",
+            "dayPricing": [
+              {"days": ["friday", "saturday", "sunday"], "price": 199, "currency": "USD"}
+            ]
+          }
+        ]
+      },
+      "booking": {
+        "version": 1,
+        "pickup": {
+          "includedAreaReference": ["Bávaro", "Punta Cana"],
+          "coverageType": "selected_hotels_and_points",
+          "scheduleNote": "La hora exacta depende del hotel y de la ruta asignada. El día anterior a la experiencia se confirma la hora y el punto exactos de recogida.",
+          "returnTransfer": true
+        },
+        "requirements": {
+          "minimumAge": 18,
+          "photoIdRequired": true,
+          "photoIdNote": "Es obligatorio presentar identificación oficial vigente con fotografía."
+        }
+      },
+      "availability": {
+        "version": 1,
+        "type": "weekly_schedule",
+        "openDays": ["tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+        "closedDays": ["monday"],
+        "hours": {"from": "20:00", "to": "02:00"},
+        "note": "La programación de shows y horarios internos puede variar. Drink Pack tiene disponibilidad en días seleccionados pendiente de definición exacta."
+      },
+      "cancellationPolicy": {
+        "version": 1,
+        "refundable": false,
+        "summary": "Esta experiencia es no reembolsable.",
+        "dateChange": {
+          "minimumAdvanceHours": 48,
+          "subjectToAvailability": true,
+          "subjectToProviderApproval": true
+        }
+      },
+      "practicalInfo": {
+        "dressCode": {
+          "label": "Casual elegante",
+          "recommended": ["Jeans o pantalones.", "Camisas, polos o blusas.", "Vestidos.", "Zapatos cerrados o calzado apropiado para salir."],
+          "avoid": ["Trajes de baño.", "Shorts de baño.", "Sandalias de playa.", "Camisetas deportivas.", "Ropa de playa."]
+        },
+        "photoVideo": {
+          "personalPhoneAllowed": true,
+          "professionalEquipmentAllowed": false,
+          "note": "Se permiten fotografías y videos personales con celular. Cámaras y equipos profesionales requieren autorización previa."
+        },
+        "showNotice": "La programación de shows puede cambiar sin previo aviso."
+      },
+      "itinerary": [
+        {"title": "Recogida", "description": "Recogida en hoteles y puntos establecidos de Bávaro/Punta Cana según cobertura; la hora exacta depende de la ruta asignada."},
+        {"title": "Llegada a Downtown Punta Cana", "description": "Llegada a Coco Bongo y acceso según la categoría de entrada seleccionada."},
+        {"title": "Coco Bongo Experience", "description": "Aproximadamente cinco horas de entretenimiento entre shows, música, baile, acrobacias y bebidas según el paquete seleccionado."},
+        {"title": "Regreso", "description": "Traslado compartido de regreso según el punto y horario asignados."}
+      ],
+      "included": [
+        "Entrada a Coco Bongo Punta Cana según la modalidad seleccionada.",
+        "Acceso a los shows de la noche.",
+        "Snack según las modalidades documentadas.",
+        "Bebidas según la modalidad seleccionada.",
+        "Transporte compartido ida y vuelta desde hoteles seleccionados de Punta Cana/Bávaro según cobertura."
+      ],
+      "excluded": [
+        "Beneficios VIP, asiento reservado o zona preferencial cuando la modalidad seleccionada no los incluya.",
+        "Bebidas Premium cuando la modalidad seleccionada no las incluya.",
+        "Servicios no indicados expresamente en la modalidad seleccionada.",
+        "Cámaras o equipos profesionales sin autorización previa."
+      ],
+      "editorialFlags": [
+        {"code": "MEDIA_PENDING_LIBRARY_REVIEW", "severity": "warning", "message": "Imagen principal y galería definitivas pendientes de la biblioteca multimedia del colaborador."},
+        {"code": "DRINK_PACK_AVAILABILITY_PENDING", "severity": "warning", "message": "Drink Pack se comercializa en días seleccionados, pero la fuente presenta inconsistencia entre martes y miércoles; la disponibilidad exacta debe confirmarse por fecha."},
+        {"code": "TRANSPORT_COVERAGE_PENDING", "severity": "warning", "message": "El transporte está documentado desde hoteles seleccionados de Punta Cana/Bávaro, pero la cobertura exacta por hotel o punto debe confirmarse antes de publicación final."},
+        {"code": "DATE_DEPENDENT_PRICING", "severity": "info", "message": "El sistema oficial muestra precios según la fecha. Se conservan como referencia los precios desde y las tarifas específicas de viernes, sábado y domingo indicadas en la fuente."}
+      ]
+    }
+  ]
+}
