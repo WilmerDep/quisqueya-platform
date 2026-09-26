@@ -131,9 +131,15 @@ function validatePayload(payload) {
 }
 
 function practicalInfoWithPolicy(experience) {
+  const policy = experience.cancellationPolicy || null;
+  const cancellationPolicy = policy
+    ? 'Esta experiencia es no reembolsable. Los cambios de fecha deben solicitarse con al menos 48 horas de anticipación y están sujetos a disponibilidad y aprobación del proveedor.'
+    : null;
+
   return {
     ...(experience.practicalInfo || {}),
-    cancellationPolicy: experience.cancellationPolicy || null,
+    cancellationPolicy,
+    cancellationPolicyDetails: policy,
   };
 }
 
@@ -260,7 +266,7 @@ async function main() {
         'Regular, Premium, Gold Member VIP and Front Row VIP preserve Friday/Saturday/Sunday pricing from the source.',
         'Premium remains general-area; Gold Member and Front Row preserve their VIP seating/access differences.',
         'The experience remains 18+ with official photo identification required.',
-        'The non-refundable policy and 48-hour date-change rule are persisted inside practicalInfoJson.',
+        'The non-refundable policy is persisted as web-safe text while the structured 48-hour date-change rule is retained separately in practicalInfoJson.',
         'This workflow creates or refreshes MANUAL DRAFT records only.',
         'It refuses to overwrite inherited/non-MANUAL records or modify an already PUBLISHED record.',
         'No Drink Pack exact day schedule, exact hotel coverage, or final media is inferred.',
