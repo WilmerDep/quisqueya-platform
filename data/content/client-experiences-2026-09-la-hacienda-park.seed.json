@@ -35,7 +35,7 @@
         "child": null,
         "infant": null,
         "tiers": [],
-        "pricingNote": "US$99 corresponde a la modalidad Standard por persona. La fuente no permite asignar todavía una tarifa automática por categoría de pasajero.",
+        "pricingNote": "US$99 corresponde a la modalidad Standard por persona. Las bandas de edad se normalizan provisionalmente como adulto 12+, niño 5–11 e infante 0–4, pero la fuente no aporta todavía precios finales separados para niño e infante.",
         "ratePlans": [
           {
             "key": "general-admission-only",
@@ -117,8 +117,13 @@
           "adultPublished": "12 años en adelante",
           "childPublished": "5–12 años",
           "infantPublished": "menor de 5 años",
-          "status": "conflict_pending_confirmation",
-          "note": "La fuente solapa la edad de 12 años entre adulto y niño y no expone claramente un precio infantil final; no se crean tiers automáticos."
+          "status": "provisional_normalization",
+          "normalizedAgeBands": [
+            {"key": "adult", "label": "Adulto", "minAge": 12, "maxAge": null},
+            {"key": "child", "label": "Niño", "minAge": 5, "maxAge": 11},
+            {"key": "infant", "label": "Infante", "minAge": 0, "maxAge": 4}
+          ],
+          "note": "Para evitar el solapamiento publicado a los 12 años, Quisqueya normaliza provisionalmente adulto 12+, niño 5–11 e infante 0–4. La tarifa final de niño e infante sigue pendiente de confirmación comercial."
         }
       },
       "booking": {
@@ -192,7 +197,7 @@
       ],
       "editorialFlags": [
         {"code": "MEDIA_PENDING_LIBRARY_REVIEW", "severity": "warning", "message": "Imagen principal y galería definitivas pendientes de la biblioteca multimedia del colaborador."},
-        {"code": "CHILD_PRICING_AGE_BANDS_PENDING", "severity": "warning", "message": "La fuente solapa los 12 años entre adulto y niño y no expone claramente el precio infantil final; no se crean tiers automáticos hasta confirmación comercial."},
+        {"code": "PASSENGER_PRICING_PENDING", "severity": "warning", "message": "Las bandas se normalizan provisionalmente como adulto 12+, niño 5–11 e infante 0–4, pero la fuente no aporta precios finales separados para niño e infante."},
         {"code": "TRANSPORT_SUPPLEMENTS_PENDING", "severity": "warning", "message": "La cobertura de otras zonas y sus suplementos no está completa; solo se conservan como referencia los datos explícitos para La Romana y Miches."},
         {"code": "CANCELLATION_POLICY_PENDING", "severity": "warning", "message": "El documento recibido no aporta una política específica de cancelación/reembolso para La Hacienda Park."},
         {"code": "MINIMUM_PASSENGERS_PENDING", "severity": "warning", "message": "El documento recibido no define un mínimo de pasajeros ni una regla específica para reservas individuales."}
