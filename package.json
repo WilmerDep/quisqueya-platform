@@ -44,6 +44,8 @@
     "stage:el-dorado-water-park": "node scripts/stage-el-dorado-water-park-2026-09.mjs --apply",
     "preview:la-hacienda-park": "node scripts/stage-la-hacienda-park-2026-09.mjs",
     "stage:la-hacienda-park": "node scripts/stage-la-hacienda-park-2026-09.mjs --apply",
+    "preview:coco-bongo-punta-cana": "node scripts/stage-coco-bongo-punta-cana-2026-09.mjs",
+    "stage:coco-bongo-punta-cana": "node scripts/stage-coco-bongo-punta-cana-2026-09.mjs --apply",
     "audit:dmc-services": "node scripts/audit-dmc-services.mjs",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
