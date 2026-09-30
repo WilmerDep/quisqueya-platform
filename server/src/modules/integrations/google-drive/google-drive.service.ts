@@ -5,7 +5,9 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
+const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILE_FIELDS = 'id,name,mimeType,webViewLink,modifiedTime,trashed,size,md5Checksum,parents';
 const STATE_MAX_AGE_MS = 10 * 60 * 1000;
 
 type OAuthStatePayload = {
@@ -29,7 +31,35 @@ type DriveFileResponse = {
   webViewLink?: string;
   modifiedTime?: string;
   trashed?: boolean;
+  size?: string;
+  md5Checksum?: string;
+  parents?: string[];
   error?: { message?: string };
+};
+
+type DriveFileListResponse = {
+  files?: DriveFileResponse[];
+  nextPageToken?: string;
+  error?: { message?: string };
+};
+
+export type GoogleDriveFileMetadata = {
+  id: string;
+  name: string;
+  mimeType?: string;
+  webViewLink?: string;
+  modifiedTime?: string;
+  trashed: boolean;
+  sizeBytes?: number;
+  checksum?: string;
+  parents: string[];
+};
+
+export type GoogleDriveUploadInput = {
+  fileName: string;
+  mimeType: string;
+  data: Buffer;
+  parentFolderId?: string;
 };
 
 @Injectable()
@@ -139,22 +169,149 @@ export class GoogleDriveService {
   }
 
   async getRootFolderMetadata() {
-    const folderId = this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID');
-    const accessToken = await this.getAccessToken();
-    const fields = 'id,name,mimeType,webViewLink,modifiedTime,trashed';
+    return this.getFileMetadata(this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID'));
+  }
 
+  async getFileMetadata(fileId: string): Promise<GoogleDriveFileMetadata> {
+    const accessToken = await this.getAccessToken();
+    const params = new URLSearchParams({
+      fields: DRIVE_FILE_FIELDS,
+      supportsAllDrives: 'true',
+    });
     const response = await fetch(
-      `${DRIVE_API_URL}/files/${encodeURIComponent(folderId)}?fields=${encodeURIComponent(fields)}&supportsAllDrives=true`,
-      {
+      `${DRIVE_API_URL}/files/${encodeURIComponent(fileId)}?${params.toString()}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    const payload = (await response.json()) as DriveFileResponse;
+
+    if (!response.ok) {
+      throw new BadRequestException(payload.error?.message || 'Unable to read Google Drive file metadata');
+    }
+
+    return this.normalizeFile(payload);
+  }
+
+  async listFolder(folderId?: string): Promise<GoogleDriveFileMetadata[]> {
+    const parentId = folderId?.trim() || this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID');
+    const accessToken = await this.getAccessToken();
+    const files: GoogleDriveFileMetadata[] = [];
+    let pageToken: string | undefined;
+
+    do {
+      const params = new URLSearchParams({
+        q: `'${parentId.replaceAll("'", "\\'")}' in parents and trashed = false`,
+        fields: `nextPageToken,files(${DRIVE_FILE_FIELDS})`,
+        pageSize: '1000',
+        spaces: 'drive',
+        supportsAllDrives: 'true',
+        includeItemsFromAllDrives: 'true',
+      });
+      if (pageToken) params.set('pageToken', pageToken);
+
+      const response = await fetch(`${DRIVE_API_URL}/files?${params.toString()}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const payload = (await response.json()) as DriveFileListResponse;
+
+      if (!response.ok) {
+        throw new BadRequestException(payload.error?.message || 'Unable to list Google Drive folder');
+      }
+
+      files.push(...(payload.files ?? []).map(file => this.normalizeFile(file)));
+      pageToken = payload.nextPageToken;
+    } while (pageToken);
+
+    return files;
+  }
+
+  async downloadFile(fileId: string) {
+    const accessToken = await this.getAccessToken();
+    const response = await fetch(
+      `${DRIVE_API_URL}/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+
+    if (!response.ok) {
+      const message = await this.readGoogleError(response, 'Unable to download Google Drive file');
+      throw new BadRequestException(message);
+    }
+
+    const data = Buffer.from(await response.arrayBuffer());
+    return {
+      data,
+      mimeType: response.headers.get('content-type') ?? undefined,
+      sizeBytes: data.byteLength,
+    };
+  }
+
+  async uploadFile(input: GoogleDriveUploadInput): Promise<GoogleDriveFileMetadata> {
+    const accessToken = await this.getAccessToken();
+    const parentFolderId = input.parentFolderId?.trim() || this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID');
+    const boundary = `quisqueya_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const metadata = JSON.stringify({
+      name: input.fileName,
+      parents: [parentFolderId],
+    });
+    const body = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`),
+      Buffer.from(`--${boundary}\r\nContent-Type: ${input.mimeType}\r\n\r\n`),
+      input.data,
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]);
+    const params = new URLSearchParams({
+      uploadType: 'multipart',
+      fields: DRIVE_FILE_FIELDS,
+      supportsAllDrives: 'true',
+    });
+
+    const response = await fetch(`${DRIVE_UPLOAD_URL}/files?${params.toString()}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`,
+        'Content-Length': String(body.byteLength),
+      },
+      body,
+    });
+    const payload = (await response.json()) as DriveFileResponse;
+
+    if (!response.ok) {
+      throw new BadRequestException(payload.error?.message || 'Unable to upload file to Google Drive');
+    }
+
+    return this.normalizeFile(payload);
+  }
+
+  async trashFile(fileId: string): Promise<void> {
+    const accessToken = await this.getAccessToken();
+    const params = new URLSearchParams({
+      fields: 'id,trashed',
+      supportsAllDrives: 'true',
+    });
+    const response = await fetch(
+      `${DRIVE_API_URL}/files/${encodeURIComponent(fileId)}?${params.toString()}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ trashed: true }),
       },
     );
 
-    const payload = (await response.json()) as DriveFileResponse;
     if (!response.ok) {
-      throw new BadRequestException(payload.error?.message || 'Unable to read Google Drive root folder');
+      const message = await this.readGoogleError(response, 'Unable to archive Google Drive file');
+      throw new BadRequestException(message);
+    }
+  }
+
+  private normalizeFile(payload: DriveFileResponse): GoogleDriveFileMetadata {
+    if (!payload.id || !payload.name) {
+      throw new BadRequestException('Google Drive returned incomplete file metadata');
     }
 
+    const parsedSize = payload.size === undefined ? undefined : Number(payload.size);
     return {
       id: payload.id,
       name: payload.name,
@@ -162,7 +319,19 @@ export class GoogleDriveService {
       webViewLink: payload.webViewLink,
       modifiedTime: payload.modifiedTime,
       trashed: payload.trashed ?? false,
+      sizeBytes: parsedSize !== undefined && Number.isFinite(parsedSize) ? parsedSize : undefined,
+      checksum: payload.md5Checksum,
+      parents: payload.parents ?? [],
     };
+  }
+
+  private async readGoogleError(response: Response, fallback: string) {
+    try {
+      const payload = (await response.json()) as DriveFileResponse;
+      return payload.error?.message || fallback;
+    } catch {
+      return fallback;
+    }
   }
 
   private createState() {
