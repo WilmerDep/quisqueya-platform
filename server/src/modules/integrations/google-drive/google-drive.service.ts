@@ -4,6 +4,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const STATE_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -19,6 +20,16 @@ type TokenResponse = {
   token_type?: string;
   error?: string;
   error_description?: string;
+};
+
+type DriveFileResponse = {
+  id?: string;
+  name?: string;
+  mimeType?: string;
+  webViewLink?: string;
+  modifiedTime?: string;
+  trashed?: boolean;
+  error?: { message?: string };
 };
 
 @Injectable()
@@ -125,6 +136,33 @@ export class GoogleDriveService {
     }
 
     return tokens.access_token;
+  }
+
+  async getRootFolderMetadata() {
+    const folderId = this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID');
+    const accessToken = await this.getAccessToken();
+    const fields = 'id,name,mimeType,webViewLink,modifiedTime,trashed';
+
+    const response = await fetch(
+      `${DRIVE_API_URL}/files/${encodeURIComponent(folderId)}?fields=${encodeURIComponent(fields)}&supportsAllDrives=true`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+
+    const payload = (await response.json()) as DriveFileResponse;
+    if (!response.ok) {
+      throw new BadRequestException(payload.error?.message || 'Unable to read Google Drive root folder');
+    }
+
+    return {
+      id: payload.id,
+      name: payload.name,
+      mimeType: payload.mimeType,
+      webViewLink: payload.webViewLink,
+      modifiedTime: payload.modifiedTime,
+      trashed: payload.trashed ?? false,
+    };
   }
 
   private createState() {
