@@ -59,6 +59,10 @@ Do not commit OAuth JSON downloads, client secrets, refresh tokens, or live fold
 
 Because the current Quisqueya folders predate this integration, a `404` or inaccessible root after OAuth does not automatically mean the folder ID is wrong. Validate the authorized account and per-file access before considering a broader Drive scope. If necessary, the next safe option is to select/grant the existing root through an app file-picker flow or create an app-owned media root and organize content beneath it.
 
+### OAuth Test token lifetime
+
+Google OAuth can remain in **Test** for the staging integration, but refresh tokens issued to an External app in Testing are time-limited and normally expire after 7 days. During staging, plan to re-authorize when needed. Before real production, the consent-screen publishing state and any applicable verification requirements must be resolved so production does not depend on a seven-day refresh-token cycle.
+
 ## Environment variables
 
 ```env
@@ -89,8 +93,6 @@ APP_ENV=production
 ```
 
 This avoids confusing framework runtime optimization with the actual deployment tier.
-
-Google OAuth can remain in **Test** while the PholioDev staging host is used.
 
 ## Platform hosting decision
 
