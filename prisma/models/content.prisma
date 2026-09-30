@@ -16,26 +16,30 @@ enum ExperiencePricingMode {
 }
 
 model MediaAsset {
-  id             String                @id @db.VarChar(64)
-  sourceProvider ContentSourceProvider @default(MANUAL) @map("source_provider")
-  sourceId       String?               @map("source_id") @db.VarChar(120)
-  sourceUrl      String?               @map("source_url") @db.Text
-  storageKey     String                @unique @map("storage_key") @db.VarChar(500)
-  publicUrl      String                @map("public_url") @db.Text
-  fileName       String?               @map("file_name") @db.VarChar(255)
-  mimeType       String?               @map("mime_type") @db.VarChar(120)
-  altText        String?               @map("alt_text") @db.Text
-  caption        String?               @db.Text
-  width          Int?
-  height         Int?
-  sizeBytes      BigInt?               @map("size_bytes")
-  checksum       String?               @db.VarChar(128)
-  provenanceJson Json?                 @map("provenance_json")
-  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
+  id                  String                @id @db.VarChar(64)
+  sourceProvider      ContentSourceProvider @default(MANUAL) @map("source_provider")
+  sourceId            String?               @map("source_id") @db.VarChar(120)
+  sourceUrl           String?               @map("source_url") @db.Text
+  storageProvider     String                @default("external") @map("storage_provider") @db.VarChar(80)
+  storageKey          String                @map("storage_key") @db.VarChar(500)
+  publicUrl           String                @map("public_url") @db.Text
+  fileName            String?               @map("file_name") @db.VarChar(255)
+  mimeType            String?               @map("mime_type") @db.VarChar(120)
+  altText             String?               @map("alt_text") @db.Text
+  caption             String?               @db.Text
+  width               Int?
+  height              Int?
+  sizeBytes           BigInt?               @map("size_bytes")
+  checksum            String?               @db.VarChar(128)
+  storageMetadataJson Json?                 @map("storage_metadata_json")
+  provenanceJson      Json?                 @map("provenance_json")
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt           DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
 
   @@unique([sourceProvider, sourceId], map: "uniq_media_source")
+  @@unique([storageProvider, storageKey], map: "uniq_media_storage_provider_key")
   @@index([sourceProvider], map: "idx_media_source_provider")
+  @@index([storageProvider], map: "idx_media_storage_provider")
   @@index([updatedAt], map: "idx_media_updated_at")
   @@map("media_assets")
 }
@@ -48,6 +52,7 @@ model Destination {
   description           String?               @db.LongText
   featuredText          String?               @map("featured_text") @db.Text
   featuredMediaId       String?               @map("featured_media_id") @db.VarChar(64)
+  galleryMediaIds       Json?                  @map("gallery_media_ids")
   galleryMediaSourceIds Json?                  @map("gallery_media_source_ids")
   contentSectionsJson   Json?                  @map("content_sections_json")
   locationJson          Json?                  @map("location_json")
@@ -59,7 +64,7 @@ model Destination {
   sourceId              String?               @map("source_id") @db.VarChar(120)
   sourceUrl             String?               @map("source_url") @db.Text
   sourceModifiedAt      DateTime?             @map("source_modified_at") @db.Timestamp(0)
-  provenanceJson        Json?                 @map("provenance_json")
+  provenanceJson        Json?                  @map("provenance_json")
   createdAt             DateTime              @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt             DateTime              @updatedAt @map("updated_at") @db.Timestamp(0)
 
@@ -87,6 +92,7 @@ model Experience {
   mapZoom               Int?                  @map("map_zoom")
   categoryLabel         String?               @map("category_label") @db.VarChar(180)
   featuredMediaId       String?               @map("featured_media_id") @db.VarChar(64)
+  galleryMediaIds       Json?                  @map("gallery_media_ids")
   galleryMediaSourceIds Json?                  @map("gallery_media_source_ids")
   pricingMode           ExperiencePricingMode @default(ON_REQUEST) @map("pricing_mode")
   pricingJson           Json?                 @map("pricing_json")
