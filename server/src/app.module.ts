@@ -16,6 +16,7 @@ import { AuditModule } from './modules/audit/audit.module.js';
 import { ContentModule } from './modules/content/content.module.js';
 import { ContactsModule } from './modules/contacts/contacts.module.js';
 import { GoogleDriveModule } from './modules/integrations/google-drive/google-drive.module.js';
+import { MediaModule } from './modules/media/media.module.js';
 
 const serverDistDir = dirname(fileURLToPath(import.meta.url));
 
@@ -39,6 +40,7 @@ const serverDistDir = dirname(fileURLToPath(import.meta.url));
     ContentModule,
     ContactsModule,
     GoogleDriveModule,
+    MediaModule,
   ],
 })
 export class AppModule {}
