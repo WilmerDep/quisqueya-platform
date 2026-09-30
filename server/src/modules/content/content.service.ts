@@ -42,6 +42,15 @@ export class ContentService {
     return value as Record<string, unknown>;
   }
 
+  private mergeMedia(...groups: PublicMedia[][]): PublicMedia[] {
+    const seen = new Set<string>();
+    return groups.flat().filter(media => {
+      if (seen.has(media.id)) return false;
+      seen.add(media.id);
+      return true;
+    });
+  }
+
   private practicalInfo(value: Prisma.JsonValue | null): PublicExperiencePracticalInfo | undefined {
     const raw = this.jsonObject(value);
     if (!raw) return undefined;
@@ -190,9 +199,11 @@ export class ContentService {
 
   private mapExperience(
     row: ExperienceRow,
-    featuredMedia: PublicMedia | null,
+    mediaById: Map<string, PublicMedia>,
     galleryBySourceId: Map<number, PublicMedia>,
   ): PublicExperience {
+    const galleryMediaIds = this.jsonArray<string>(row.galleryMediaIds)
+      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
     const galleryMediaSourceIds = this.jsonArray<number>(row.galleryMediaSourceIds)
       .map(Number)
       .filter(Number.isFinite);
@@ -204,6 +215,12 @@ export class ContentService {
       Number.isFinite(longitude) ||
       row.mapZoom !== null,
     );
+    const directGallery = galleryMediaIds
+      .map(id => mediaById.get(id))
+      .filter((media): media is PublicMedia => Boolean(media));
+    const legacyGallery = galleryMediaSourceIds
+      .map(sourceId => galleryBySourceId.get(sourceId))
+      .filter((media): media is PublicMedia => Boolean(media));
 
     return {
       id: row.id,
@@ -227,10 +244,9 @@ export class ContentService {
           }
         : undefined,
       category: row.categoryLabel ?? undefined,
-      featuredMedia,
-      gallery: galleryMediaSourceIds
-        .map(sourceId => galleryBySourceId.get(sourceId))
-        .filter((media): media is PublicMedia => Boolean(media)),
+      featuredMedia: row.featuredMediaId ? mediaById.get(row.featuredMediaId) ?? null : null,
+      gallery: this.mergeMedia(directGallery, legacyGallery),
+      galleryMediaIds,
       galleryMediaSourceIds,
       pricingMode: row.pricingMode === 'FIXED' ? 'fixed' : 'on_request',
       pricing: this.jsonObject(row.pricingJson),
@@ -251,9 +267,11 @@ export class ContentService {
 
   private mapDestination(
     row: DestinationRow,
-    featuredMedia: PublicMedia | null,
+    mediaById: Map<string, PublicMedia>,
     mediaBySourceId: Map<number, PublicMedia>,
   ): PublicDestination {
+    const galleryMediaIds = this.jsonArray<string>(row.galleryMediaIds)
+      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
     const galleryMediaSourceIds = this.jsonArray<number>(row.galleryMediaSourceIds)
       .map(Number)
       .filter(Number.isFinite);
@@ -284,6 +302,12 @@ export class ContentService {
       })
       .sort((a, b) => a.order - b.order);
     const location = this.jsonObject(row.locationJson);
+    const directGallery = galleryMediaIds
+      .map(id => mediaById.get(id))
+      .filter((media): media is PublicMedia => Boolean(media));
+    const legacyGallery = galleryMediaSourceIds
+      .map(sourceId => mediaBySourceId.get(sourceId))
+      .filter((media): media is PublicMedia => Boolean(media));
 
     return {
       id: row.id,
@@ -293,10 +317,9 @@ export class ContentService {
       excerpt: row.excerpt ?? undefined,
       description: row.description ?? undefined,
       featuredText: row.featuredText ?? undefined,
-      featuredMedia,
-      gallery: galleryMediaSourceIds
-        .map(sourceId => mediaBySourceId.get(sourceId))
-        .filter((media): media is PublicMedia => Boolean(media)),
+      featuredMedia: row.featuredMediaId ? mediaById.get(row.featuredMediaId) ?? null : null,
+      gallery: this.mergeMedia(directGallery, legacyGallery),
+      galleryMediaIds,
       galleryMediaSourceIds,
       contentSections,
       location: location
@@ -321,15 +344,15 @@ export class ContentService {
       where: { status: ContentRecordStatus.PUBLISHED },
       orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
     });
-    const featuredMedia = await this.mediaMap(rows.map(row => row.featuredMediaId));
+    const mediaIds = rows.flatMap(row => [
+      row.featuredMediaId,
+      ...this.jsonArray<string>(row.galleryMediaIds),
+    ]);
+    const mediaById = await this.mediaMap(mediaIds);
     const gallerySourceIds = rows.flatMap(row => this.jsonArray<number>(row.galleryMediaSourceIds));
-    const galleryMedia = await this.mediaBySourceIdMap(gallerySourceIds);
+    const galleryBySourceId = await this.mediaBySourceIdMap(gallerySourceIds);
 
-    return rows.map(row => this.mapExperience(
-      row,
-      row.featuredMediaId ? featuredMedia.get(row.featuredMediaId) ?? null : null,
-      galleryMedia,
-    ));
+    return rows.map(row => this.mapExperience(row, mediaById, galleryBySourceId));
   }
 
   async getExperience(slug: string): Promise<PublicExperience | null> {
@@ -338,15 +361,14 @@ export class ContentService {
     });
     if (!row) return null;
 
-    const featuredMedia = await this.mediaMap([row.featuredMediaId]);
+    const mediaById = await this.mediaMap([
+      row.featuredMediaId,
+      ...this.jsonArray<string>(row.galleryMediaIds),
+    ]);
     const gallerySourceIds = this.jsonArray<number>(row.galleryMediaSourceIds);
-    const galleryMedia = await this.mediaBySourceIdMap(gallerySourceIds);
+    const galleryBySourceId = await this.mediaBySourceIdMap(gallerySourceIds);
 
-    return this.mapExperience(
-      row,
-      row.featuredMediaId ? featuredMedia.get(row.featuredMediaId) ?? null : null,
-      galleryMedia,
-    );
+    return this.mapExperience(row, mediaById, galleryBySourceId);
   }
 
   async getDestinations(): Promise<PublicDestination[]> {
@@ -354,7 +376,11 @@ export class ContentService {
       where: { status: ContentRecordStatus.PUBLISHED },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
-    const featuredMedia = await this.mediaMap(rows.map(row => row.featuredMediaId));
+    const mediaIds = rows.flatMap(row => [
+      row.featuredMediaId,
+      ...this.jsonArray<string>(row.galleryMediaIds),
+    ]);
+    const mediaById = await this.mediaMap(mediaIds);
     const sourceIds = rows.flatMap(row => [
       ...this.jsonArray<number>(row.galleryMediaSourceIds),
       ...this.jsonArray<Record<string, unknown>>(row.contentSectionsJson)
@@ -363,11 +389,7 @@ export class ContentService {
     ]);
     const mediaBySourceId = await this.mediaBySourceIdMap(sourceIds);
 
-    return rows.map(row => this.mapDestination(
-      row,
-      row.featuredMediaId ? featuredMedia.get(row.featuredMediaId) ?? null : null,
-      mediaBySourceId,
-    ));
+    return rows.map(row => this.mapDestination(row, mediaById, mediaBySourceId));
   }
 
   async getDestination(slug: string): Promise<PublicDestination | null> {
@@ -376,7 +398,10 @@ export class ContentService {
     });
     if (!row) return null;
 
-    const featuredMedia = await this.mediaMap([row.featuredMediaId]);
+    const mediaById = await this.mediaMap([
+      row.featuredMediaId,
+      ...this.jsonArray<string>(row.galleryMediaIds),
+    ]);
     const sourceIds = [
       ...this.jsonArray<number>(row.galleryMediaSourceIds),
       ...this.jsonArray<Record<string, unknown>>(row.contentSectionsJson)
@@ -385,11 +410,7 @@ export class ContentService {
     ];
     const mediaBySourceId = await this.mediaBySourceIdMap(sourceIds);
 
-    return this.mapDestination(
-      row,
-      row.featuredMediaId ? featuredMedia.get(row.featuredMediaId) ?? null : null,
-      mediaBySourceId,
-    );
+    return this.mapDestination(row, mediaById, mediaBySourceId);
   }
 
   async getPages(): Promise<PublicPageContent[]> {
