@@ -71,6 +71,7 @@ export type PublicExperience = {
   category?: string;
   featuredMedia?: PublicMedia | null;
   gallery: PublicMedia[];
+  galleryMediaIds: string[];
   galleryMediaSourceIds: number[];
   pricingMode: 'fixed' | 'on_request';
   pricing?: Record<string, unknown>;
@@ -126,6 +127,7 @@ export type PublicDestination = {
   featuredText?: string;
   featuredMedia?: PublicMedia | null;
   gallery: PublicMedia[];
+  galleryMediaIds: string[];
   galleryMediaSourceIds: number[];
   contentSections: PublicDestinationSection[];
   location?: PublicDestinationLocation;
