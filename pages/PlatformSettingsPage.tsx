@@ -3,6 +3,7 @@ import { Building2, MapPin, RefreshCw, Save } from 'lucide-react';
 import { Company, Branch } from '../types';
 import { organizationService } from '../services/organizationService';
 import { emitPlatformToast } from '../services/platformEvents';
+import { GoogleDriveStorageCard } from '../components/GoogleDriveStorageCard';
 
 export const PlatformSettingsPage: React.FC = () => {
   const [company, setCompany] = useState<Company | null>(null);
@@ -110,6 +111,8 @@ export const PlatformSettingsPage: React.FC = () => {
           </div>
         </article>
       </section>
+
+      <GoogleDriveStorageCard />
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <form onSubmit={handleSave} className="rounded-[28px] border border-[#E5E7EB] bg-white p-6 shadow-sm">
