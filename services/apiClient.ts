@@ -79,6 +79,37 @@ export interface AuditLogItem {
   activityType: string;
 }
 
+export interface GoogleDriveStatus {
+  provider: string;
+  clientIdConfigured: boolean;
+  clientSecretConfigured: boolean;
+  refreshTokenConfigured: boolean;
+  rootFolderConfigured: boolean;
+  redirectUriConfigured: boolean;
+  pickerApiKeyConfigured: boolean;
+  pickerAppIdConfigured: boolean;
+  scope: string;
+}
+
+export interface GoogleDrivePickerConfig {
+  accessToken: string;
+  developerKey: string;
+  appId: string;
+  rootFolderId: string;
+}
+
+export interface GoogleDriveFileMetadata {
+  id: string;
+  name: string;
+  mimeType?: string;
+  webViewLink?: string;
+  modifiedTime?: string;
+  trashed: boolean;
+  sizeBytes?: number;
+  checksum?: string;
+  parents: string[];
+}
+
 const parseResponse = async <T>(response: Response): Promise<T> => {
   const payload = await response.json().catch(() => null);
 
@@ -209,6 +240,32 @@ export const apiClient = {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
+    });
+  },
+
+  async getGoogleDriveStatus(): Promise<ApiItemResponse<GoogleDriveStatus>> {
+    return request<ApiItemResponse<GoogleDriveStatus>>('/integrations/google-drive/status', {
+      headers: authHeaders(),
+    });
+  },
+
+  async getGoogleDrivePickerConfig(): Promise<ApiItemResponse<GoogleDrivePickerConfig>> {
+    return request<ApiItemResponse<GoogleDrivePickerConfig>>('/integrations/google-drive/picker-config', {
+      headers: authHeaders(),
+    });
+  },
+
+  async confirmGoogleDriveRoot(folderId: string): Promise<ApiItemResponse<GoogleDriveFileMetadata>> {
+    return request<ApiItemResponse<GoogleDriveFileMetadata>>('/integrations/google-drive/picker-root', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ folderId }),
+    });
+  },
+
+  async getGoogleDriveRoot(): Promise<ApiItemResponse<GoogleDriveFileMetadata>> {
+    return request<ApiItemResponse<GoogleDriveFileMetadata>>('/integrations/google-drive/root', {
+      headers: authHeaders(),
     });
   },
 
