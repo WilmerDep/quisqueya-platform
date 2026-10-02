@@ -74,6 +74,8 @@ export class GoogleDriveService {
       refreshTokenConfigured: Boolean(this.config.get<string>('GOOGLE_DRIVE_REFRESH_TOKEN')),
       rootFolderConfigured: Boolean(this.config.get<string>('GOOGLE_DRIVE_ROOT_FOLDER_ID')),
       redirectUriConfigured: Boolean(this.config.get<string>('GOOGLE_DRIVE_REDIRECT_URI')),
+      pickerApiKeyConfigured: Boolean(this.config.get<string>('GOOGLE_DRIVE_PICKER_API_KEY')),
+      pickerAppIdConfigured: Boolean(this.config.get<string>('GOOGLE_DRIVE_APP_ID')),
       scope: DRIVE_SCOPE,
     };
   }
@@ -90,7 +92,6 @@ export class GoogleDriveService {
     url.searchParams.set('scope', DRIVE_SCOPE);
     url.searchParams.set('access_type', 'offline');
     url.searchParams.set('prompt', 'consent');
-    url.searchParams.set('include_granted_scopes', 'true');
     url.searchParams.set('state', state);
 
     return url.toString();
@@ -166,6 +167,26 @@ export class GoogleDriveService {
     }
 
     return tokens.access_token;
+  }
+
+  async getPickerConfig() {
+    const accessToken = await this.getAccessToken();
+    return {
+      accessToken,
+      developerKey: this.requireConfig('GOOGLE_DRIVE_PICKER_API_KEY'),
+      appId: this.requireConfig('GOOGLE_DRIVE_APP_ID'),
+      rootFolderId: this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID'),
+    };
+  }
+
+  async confirmRootFolder(folderId: string) {
+    const configuredRootFolderId = this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID');
+    if (folderId.trim() !== configuredRootFolderId) {
+      throw new BadRequestException(
+        'Selected Google Drive folder does not match the configured Quisqueya media root',
+      );
+    }
+    return this.getFileMetadata(configuredRootFolderId);
   }
 
   async getRootFolderMetadata() {
