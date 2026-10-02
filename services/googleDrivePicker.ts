@@ -17,10 +17,14 @@ type PickerWindow = Window & {
   google?: {
     picker: {
       Action: { PICKED: string; CANCEL: string };
+      Response: { ACTION: string; DOCUMENTS: string };
+      Document: { ID: string };
+      DocsViewMode: { LIST: string };
       DocsView: new (viewId?: string) => {
         setIncludeFolders: (enabled: boolean) => unknown;
         setSelectFolderEnabled: (enabled: boolean) => unknown;
         setFileIds: (fileIds: string) => unknown;
+        setMode: (mode: string) => unknown;
       };
       PickerBuilder: new () => {
         addView: (view: unknown) => unknown;
@@ -38,10 +42,7 @@ type PickerWindow = Window & {
   };
 };
 
-type PickerCallbackData = {
-  action?: string;
-  docs?: Array<{ id?: string; name?: string; mimeType?: string }>;
-};
+type PickerCallbackData = Record<string, unknown>;
 
 const SCRIPT_ID = 'quisqueya-google-picker-api';
 let pickerApiPromise: Promise<void> | null = null;
@@ -117,6 +118,7 @@ export const pickGoogleDriveRootFolder = async (
       (view.setIncludeFolders(true) as typeof view)
         .setSelectFolderEnabled(true);
       view.setFileIds(config.rootFolderId);
+      view.setMode(pickerApi.DocsViewMode.LIST);
 
       const builder = new pickerApi.PickerBuilder();
       const picker = (builder.addView(view) as typeof builder)
@@ -128,19 +130,28 @@ export const pickGoogleDriveRootFolder = async (
       (configuredPicker.setMaxItems(1) as typeof builder);
       (configuredPicker.setTitle('Autorizar carpeta raíz de Quisqueya') as typeof builder);
       configuredPicker.setCallback((data: PickerCallbackData) => {
-        if (data.action === pickerApi.Action.CANCEL) {
+        const action = data[pickerApi.Response.ACTION];
+
+        if (action === pickerApi.Action.CANCEL) {
           resolve(null);
           return;
         }
 
-        if (data.action === pickerApi.Action.PICKED) {
-          const folderId = data.docs?.[0]?.id?.trim();
-          if (!folderId) {
-            reject(new Error('Google Picker no devolvió el ID de la carpeta seleccionada.'));
-            return;
-          }
-          resolve(folderId);
+        if (action !== pickerApi.Action.PICKED) return;
+
+        const documents = data[pickerApi.Response.DOCUMENTS];
+        const firstDocument = Array.isArray(documents)
+          ? (documents[0] as Record<string, unknown> | undefined)
+          : undefined;
+        const rawFolderId = firstDocument?.[pickerApi.Document.ID];
+        const folderId = typeof rawFolderId === 'string' ? rawFolderId.trim() : '';
+
+        if (!folderId) {
+          reject(new Error('Google Picker no devolvió el ID de la carpeta seleccionada.'));
+          return;
         }
+
+        resolve(folderId);
       });
 
       configuredPicker.build().setVisible(true);
