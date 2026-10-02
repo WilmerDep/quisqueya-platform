@@ -89,9 +89,6 @@ export const GoogleDriveStorageCard: React.FC = () => {
 
   useEffect(() => {
     void load();
-    // The authenticated role is the only dependency that changes whether this
-    // integration card is available.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canManage]);
 
   const authorizeRoot = async () => {
