@@ -245,7 +245,7 @@ export class ContentService {
         : undefined,
       category: row.categoryLabel ?? undefined,
       featuredMedia: row.featuredMediaId ? mediaById.get(row.featuredMediaId) ?? null : null,
-      gallery: this.mergeMedia(directGallery, legacyGallery),
+      gallery: galleryMediaIds.length ? directGallery : legacyGallery,
       galleryMediaIds,
       galleryMediaSourceIds,
       pricingMode: row.pricingMode === 'FIXED' ? 'fixed' : 'on_request',
