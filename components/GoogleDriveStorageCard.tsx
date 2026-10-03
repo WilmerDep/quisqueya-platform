@@ -148,8 +148,8 @@ export const GoogleDriveStorageCard: React.FC = () => {
             </p>
             <h2 className="mt-1 text-2xl font-black tracking-tight text-[#111827]">Google Drive</h2>
             <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#64748B]">
-              Quisqueya usa una carpeta raíz específica de Drive como límite de acceso. El resto de
-              la cuenta de Google permanece fuera del alcance de la plataforma.
+              Quisqueya usa una carpeta raíz específica de Drive como límite operativo. El backend
+              valida que toda lectura, carga o eliminación permanezca dentro de ese árbol.
             </p>
           </div>
         </div>
@@ -172,7 +172,7 @@ export const GoogleDriveStorageCard: React.FC = () => {
           'Picker web',
         )}
         {statusPill(Boolean(status?.rootFolderConfigured), 'Carpeta raíz')}
-        {statusPill(Boolean(rootFolder), 'Acceso drive.file')}
+        {statusPill(Boolean(rootFolder), 'Límite raíz validado')}
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -195,10 +195,10 @@ export const GoogleDriveStorageCard: React.FC = () => {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <p className="text-sm font-black text-[#111827]">Autorización selectiva pendiente</p>
+                <p className="text-sm font-black text-[#111827]">Validación de raíz pendiente</p>
                 <p className="mt-1 text-xs font-medium leading-5 text-[#64748B]">
                   {rootError ||
-                    'Selecciona la carpeta raíz configurada para conceder acceso explícito mediante Google Picker.'}
+                    'Selecciona la carpeta raíz configurada para confirmar que coincide con el límite multimedia de Quisqueya.'}
                 </p>
               </div>
             </div>

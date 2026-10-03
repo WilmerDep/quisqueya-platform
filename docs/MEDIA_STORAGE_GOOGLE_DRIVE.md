@@ -42,7 +42,7 @@ Google Drive API is enabled in the Quisqueya Google Cloud project.
 OAuth client:
 
 - type: Web application
-- scope: `https://www.googleapis.com/auth/drive.file`
+- scope: `https://www.googleapis.com/auth/drive`
 - app publishing state during integration: Test
 - Quisqueya Travel account is configured as a test user
 
@@ -53,11 +53,11 @@ Registered callback targets:
 
 Do not commit OAuth JSON downloads, client secrets, refresh tokens, or live folder IDs.
 
-### `drive.file` access boundary
+### Backend root boundary
 
-`drive.file` is intentionally retained as the least-privilege scope. It grants per-file access to files the application creates or files/folders explicitly opened or shared with the application flow; it is not equivalent to full Drive access.
+The Quisqueya Travel media library already contains folders and files that predate this integration. In practice, `drive.file` allows the configured root metadata to be read after Picker consent, but it does not provide reliable traversal of all pre-existing descendants. The backend OAuth scope is therefore `https://www.googleapis.com/auth/drive`.
 
-The long-term root is the dedicated **PAGINA WEB** folder inside the Quisqueya Travel Drive account. All website-managed media belongs below that boundary, for example:
+The dedicated **PAGINA WEB** folder remains the application boundary:
 
 ```text
 PAGINA WEB
@@ -69,9 +69,9 @@ PAGINA WEB
   -> other website collections
 ```
 
-Existing folders predate the integration, so OAuth alone is not enough to make them visible through `drive.file`. Quisqueya therefore uses the **Google Picker web API** as the explicit user-consent boundary. An administrator selects the configured root folder in the CRM; the backend then verifies that the selected folder ID exactly matches `GOOGLE_DRIVE_ROOT_FOLDER_ID` and confirms that Drive metadata is readable.
+Full Drive OAuth permission does **not** mean media operations may target arbitrary Drive IDs. `GoogleDriveService` verifies that every requested file/folder is the configured root or has an ancestor chain that reaches `GOOGLE_DRIVE_ROOT_FOLDER_ID`. Objects outside that tree are rejected before listing, metadata access, download, upload-parent selection or archive/delete operations continue.
 
-Do not broaden the scope to full Drive access just to bypass a missing per-file grant.
+Google Picker remains an administrative confirmation UI for the configured root folder. It is not the security boundary. The backend ancestry check is authoritative.
 
 ### OAuth Test token lifetime
 
@@ -94,7 +94,7 @@ GOOGLE_DRIVE_REDIRECT_URI=
 
 `GOOGLE_DRIVE_PICKER_API_KEY` is intentionally browser-facing because Google Picker requires a developer key. Restrict it in Google Cloud to the Quisqueya CRM website origins plus `https://docs.google.com/*`, and restrict API usage to Google Picker API (and Google Drive API when the browser needs it). Do not reuse an unrestricted general-purpose key.
 
-`GOOGLE_DRIVE_APP_ID` is the Google Cloud **project number** required by `PickerBuilder.setAppId` when using `drive.file`; it is not the OAuth client ID.
+`GOOGLE_DRIVE_APP_ID` is the Google Cloud **project number** required by `PickerBuilder.setAppId`; it is not the OAuth client ID.
 
 Google Picker API and Google Drive API must both be enabled in the same Google Cloud project.
 
@@ -159,6 +159,7 @@ Google Drive files are not automatically made public. For the initial Drive prov
 - `GET /api/v1/integrations/google-drive/callback` — signed-state OAuth callback; returns the refresh token only so it can be stored securely in the runtime environment.
 - `GET /api/v1/integrations/google-drive/picker-config` — administrative, `no-store` bootstrap for the web Picker; returns a short-lived Google access token plus the restricted browser key, App ID and configured root folder ID.
 - `POST /api/v1/integrations/google-drive/picker-root` — validates that the folder selected by Google Picker is exactly the configured Quisqueya media root, then confirms metadata access.
+- All operational Google Drive methods enforce the configured root boundary server-side before accessing provider objects.
 - `GET /api/v1/integrations/google-drive/root` — administrative root-folder metadata check.
 
 The Picker endpoints are restricted to Super Admin and Administrador roles. The refresh token never leaves the backend; only a short-lived access token required by Google Picker is sent to an authenticated administrative browser.
@@ -166,12 +167,12 @@ The Picker endpoints are restricted to Super Admin and Administrador roles. The 
 The backend OAuth authorization URL requests:
 
 ```text
-scope=https://www.googleapis.com/auth/drive.file
+scope=https://www.googleapis.com/auth/drive
 access_type=offline
 prompt=consent
 ```
 
-The CRM does **not** construct ad-hoc `trigger_onepick` authorization URLs. Folder consent is handled by the Google Picker JavaScript API with `PickerBuilder`, a folder-only `DocsView`, the current short-lived access token, the restricted developer key, and the Google Cloud project number.
+The CRM does **not** construct ad-hoc `trigger_onepick` authorization URLs. Root confirmation is handled by the Google Picker JavaScript API with `PickerBuilder`, a folder-only `DocsView`, the current short-lived access token, the restricted developer key, and the Google Cloud project number. Operational access is still constrained by the backend ancestry guard.
 
 ### Media administration / delivery
 
@@ -190,15 +191,17 @@ The administrative media endpoints require an authenticated Super Admin, Adminis
 3. Configure `GOOGLE_DRIVE_ROOT_FOLDER_ID` with the dedicated **PAGINA WEB** folder ID.
 4. Create and restrict `GOOGLE_DRIVE_PICKER_API_KEY`; configure `GOOGLE_DRIVE_APP_ID` with the Cloud project number.
 5. Sign in to the CRM as Super Admin or Administrador and open Configuracion.
-6. Use the Google Drive authorization card to open the web Picker and explicitly select the configured **PAGINA WEB** folder.
-7. The CRM posts the selected folder ID to `POST /api/v1/integrations/google-drive/picker-root`; the backend rejects any different folder and confirms metadata access.
-8. Verify `GET /api/v1/integrations/google-drive/root`.
-9. Run `POST /api/v1/media/storage/validate` only after the root is readable.
-10. List `PAGINA WEB/Experiencias` and then the Altos de Chavon folder with `GET /api/v1/media/storage/objects`.
-11. Register only the optimized files selected for the first vertical-slice test.
-12. Link those `MediaAsset` IDs to the existing Altos de Chavon experience.
-13. Verify the same experience from the public API and then from `quisqueya-web`.
-14. Do not expand ingestion or CMS upload management until this first path is validated.
+6. Authorize the backend with the full Drive scope and store the newly issued `GOOGLE_DRIVE_REFRESH_TOKEN`; an older `drive.file` refresh token does not gain the broader permission automatically.
+7. Use the Google Drive authorization card to open the web Picker and confirm the configured **PAGINA WEB** folder.
+8. The CRM posts the selected folder ID to `POST /api/v1/integrations/google-drive/picker-root`; the backend rejects any different folder and confirms metadata access.
+9. Verify `GET /api/v1/integrations/google-drive/root`.
+10. List the root with `GET /api/v1/media/storage/objects`; **Experiencias** should now be returned from the pre-existing Drive tree.
+11. Use the returned folder `key` as `parentKey` to navigate into `PAGINA WEB/Experiencias` and then the Altos de Chavon folder.
+12. Run `POST /api/v1/media/storage/validate` after traversal is confirmed.
+13. Register only the optimized files selected for the first vertical-slice test.
+14. Link those `MediaAsset` IDs to the existing Altos de Chavon experience.
+15. Verify the same experience from the public API and then from `quisqueya-web`.
+16. Do not expand ingestion or CMS upload management until this first path is validated.
 
 ## Provider-agnostic rule
 

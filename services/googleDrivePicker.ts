@@ -113,8 +113,8 @@ export const pickGoogleDriveRootFolder = async (
     try {
       const view = new pickerApi.DocsView(pickerApi.ViewId.FOLDERS);
 
-      // The configured root is the only selectable entry. Google Picker is the
-      // user-consent boundary that grants drive.file access to this folder.
+      // The configured root is the only selectable entry. Picker is the admin
+      // confirmation UX; the backend root-boundary guard is the security control.
       (view.setIncludeFolders(true) as typeof view)
         .setSelectFolderEnabled(true);
       view.setFileIds(config.rootFolderId);
