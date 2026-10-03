@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
@@ -6,7 +11,7 @@ const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const DRIVE_API_URL = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const DRIVE_FILE_FIELDS = 'id,name,mimeType,webViewLink,modifiedTime,trashed,size,md5Checksum,parents';
 const STATE_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -194,27 +199,19 @@ export class GoogleDriveService {
   }
 
   async getFileMetadata(fileId: string): Promise<GoogleDriveFileMetadata> {
+    const candidateId = fileId.trim();
+    if (!candidateId) throw new BadRequestException('Missing Google Drive file id');
+
     const accessToken = await this.getAccessToken();
-    const params = new URLSearchParams({
-      fields: DRIVE_FILE_FIELDS,
-      supportsAllDrives: 'true',
-    });
-    const response = await fetch(
-      `${DRIVE_API_URL}/files/${encodeURIComponent(fileId)}?${params.toString()}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-    const payload = (await response.json()) as DriveFileResponse;
-
-    if (!response.ok) {
-      throw new BadRequestException(payload.error?.message || 'Unable to read Google Drive file metadata');
-    }
-
-    return this.normalizeFile(payload);
+    await this.assertWithinConfiguredRoot(candidateId, accessToken);
+    return this.fetchFileMetadataUnchecked(candidateId, accessToken);
   }
 
   async listFolder(folderId?: string): Promise<GoogleDriveFileMetadata[]> {
     const parentId = folderId?.trim() || this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID');
     const accessToken = await this.getAccessToken();
+    await this.assertWithinConfiguredRoot(parentId, accessToken);
+
     const files: GoogleDriveFileMetadata[] = [];
     let pageToken: string | undefined;
 
@@ -247,6 +244,8 @@ export class GoogleDriveService {
 
   async downloadFile(fileId: string) {
     const accessToken = await this.getAccessToken();
+    await this.assertWithinConfiguredRoot(fileId, accessToken);
+
     const response = await fetch(
       `${DRIVE_API_URL}/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -268,6 +267,8 @@ export class GoogleDriveService {
   async uploadFile(input: GoogleDriveUploadInput): Promise<GoogleDriveFileMetadata> {
     const accessToken = await this.getAccessToken();
     const parentFolderId = input.parentFolderId?.trim() || this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID');
+    await this.assertWithinConfiguredRoot(parentFolderId, accessToken);
+
     const boundary = `quisqueya_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const metadata = JSON.stringify({
       name: input.fileName,
@@ -305,6 +306,8 @@ export class GoogleDriveService {
 
   async trashFile(fileId: string): Promise<void> {
     const accessToken = await this.getAccessToken();
+    await this.assertWithinConfiguredRoot(fileId, accessToken);
+
     const params = new URLSearchParams({
       fields: 'id,trashed',
       supportsAllDrives: 'true',
@@ -325,6 +328,63 @@ export class GoogleDriveService {
       const message = await this.readGoogleError(response, 'Unable to archive Google Drive file');
       throw new BadRequestException(message);
     }
+  }
+
+  private async fetchFileMetadataUnchecked(
+    fileId: string,
+    accessToken: string,
+  ): Promise<GoogleDriveFileMetadata> {
+    const params = new URLSearchParams({
+      fields: DRIVE_FILE_FIELDS,
+      supportsAllDrives: 'true',
+    });
+    const response = await fetch(
+      `${DRIVE_API_URL}/files/${encodeURIComponent(fileId)}?${params.toString()}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    );
+    const payload = (await response.json()) as DriveFileResponse;
+
+    if (!response.ok) {
+      throw new BadRequestException(
+        payload.error?.message || 'Unable to read Google Drive file metadata',
+      );
+    }
+
+    return this.normalizeFile(payload);
+  }
+
+  private async assertWithinConfiguredRoot(fileId: string, accessToken: string): Promise<void> {
+    const candidateId = fileId.trim();
+    if (!candidateId) throw new BadRequestException('Missing Google Drive file id');
+
+    const rootFolderId = this.requireConfig('GOOGLE_DRIVE_ROOT_FOLDER_ID');
+    if (candidateId === rootFolderId) return;
+
+    const pending = [candidateId];
+    const visited = new Set<string>();
+    const maxVisitedNodes = 128;
+
+    while (pending.length > 0) {
+      const currentId = pending.shift();
+      if (!currentId || visited.has(currentId)) continue;
+      if (currentId === rootFolderId) return;
+
+      if (visited.size >= maxVisitedNodes) {
+        throw new BadRequestException('Unable to verify Google Drive media root boundary');
+      }
+
+      visited.add(currentId);
+      const metadata = await this.fetchFileMetadataUnchecked(currentId, accessToken);
+
+      for (const parentId of metadata.parents) {
+        if (parentId === rootFolderId) return;
+        if (!visited.has(parentId)) pending.push(parentId);
+      }
+    }
+
+    throw new ForbiddenException(
+      'Google Drive object is outside the configured Quisqueya media root',
+    );
   }
 
   private normalizeFile(payload: DriveFileResponse): GoogleDriveFileMetadata {
