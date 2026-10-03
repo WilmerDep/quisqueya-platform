@@ -1,69 +1,73 @@
 # Quisqueya Travels — Two Node Application Architecture
 
+Updated: 2026-10-03
+
 ## Decision
 
-Quisqueya Travels will use two Node.js applications in hosting:
+Quisqueya Travels uses two Node.js applications in hosting:
 
 1. `quisqueya-web`
    - Next.js commercial website.
-   - Provisional domain: `https://quisqueya.pholiodev.com`.
-   - Official domain: `https://quisqueyatravel.com.do`.
+   - Staging: `https://quisqueya.pholiodev.com`.
+   - Production: `https://quisqueyatravel.com.do`.
 
 2. `quisqueya-platform`
    - NestJS public/private API.
-   - Serves the compiled CRM as static files from the same Node process when the CRM is ready.
-   - Provisional API domain: `https://apiquisqueya.pholiodev.com`.
-   - Provisional CRM domain: `https://crmquisquya.pholiodev.com`.
-   - Official API domain: `https://api.quisqueyatravel.com.do`.
-   - Official CRM domain: `https://app.quisqueyatravel.com.do`.
+   - Serves the compiled Vite/React CRM from the same Node application.
+   - Staging: `https://crmquisqueya.pholiodev.com`.
+   - Production: `https://app.quisqueyatravel.com.do`.
+   - API remains under the stable `/api/v1` prefix on that same host.
+
+A dedicated `api.quisqueyatravel.com.do` application is not required by the current Hostinger strategy. It remains a future option only if the API later needs independent scaling or infrastructure.
 
 ## Hosting consumption
 
-The provisional and official domains are aliases or reverse proxies to the same applications. They must not create additional Node.js applications.
+The staging and official domains map to the same two application roles; domain aliases or cutover DNS must not create duplicate application stacks.
 
-Expected Node application consumption:
+Expected Quisqueya consumption:
 
-- Existing hosting applications: 3.
-- Quisqueya web: 1.
-- Quisqueya platform API + static CRM: 1.
-- Total after deployment: 5 of 10.
-- Remaining capacity: 5 applications.
+- commercial web: 1 Node application;
+- platform CRM + API: 1 Node application.
 
 ## CRM delivery
 
-The CRM frontend must be compiled as a static SPA using the existing Vite build. Its build output will be copied or deployed inside the platform static directory. NestJS or the hosting web server will serve that output for the CRM hostname.
+The CRM frontend is compiled as a static SPA using the existing Vite build and packaged into the NestJS runtime artifact.
 
-The CRM must not start a separate Vite or Node development server in production.
+The CRM must not start a separate Vite or Node development server in staging/production.
 
 ## Routing
 
-The reverse proxy or hosting panel should route:
+Staging:
 
-- Web hostname(s) to the Next.js application.
-- API hostname(s) to NestJS API routes.
-- CRM hostname(s) to the static CRM build served by the platform application or directly by the web server.
-
-API routes keep the `/api/v1` prefix. The CRM hostname must fall back to `index.html` for client-side routes.
-
-## Production command policy
-
-`npm run build:production` and `npm run deploy:prepare` are server commands. They intentionally fail in a development environment because they require:
-
-- `NODE_ENV=production`.
-- HTTPS production/staging URLs.
-- Real CORS origins.
-- A production database account and password.
-- Strong JWT access and refresh secrets.
-
-For local development use:
-
-```bash
-npm run build:server
-npm run dev:server
+```text
+https://quisqueya.pholiodev.com                  -> Next.js commercial web
+https://crmquisqueya.pholiodev.com/              -> CRM
+https://crmquisqueya.pholiodev.com/api/v1/*      -> Nest API
 ```
 
-Do not modify the local development `.env` merely to force the production preflight to pass.
+Production:
+
+```text
+https://quisqueyatravel.com.do                    -> Next.js commercial web
+https://app.quisqueyatravel.com.do/               -> CRM
+https://app.quisqueyatravel.com.do/api/v1/*       -> Nest API
+```
+
+The CRM uses `VITE_API_URL=/api/v1`; the commercial web uses an absolute `QUISQUEYA_API_URL` because it is a separate application/origin.
+
+## Media storage
+
+Google Drive is the temporary storage provider behind the provider-agnostic MediaAsset layer. Public media is delivered through the platform API, so `APP_URL` must match the active platform hostname.
+
+The full CRM media-management UI belongs to a later phase. The current phase only requires the functional storage/API path and correct visible consumption by the commercial web.
 
 ## Domain transition
 
-During cutover, provisional and official domains may coexist in CORS and proxy configuration. Both sets of domains must point to the same two applications. Once validation is complete, remove the provisional domains without rebuilding the data model or duplicating the applications.
+The staging and production architectures are intentionally identical. Cutover changes DNS/TLS plus environment values such as:
+
+- platform `APP_URL`, `APP_ENV`, `CORS_ORIGINS`, `GOOGLE_DRIVE_REDIRECT_URI`;
+- web `QUISQUEYA_API_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_INDEXABLE`.
+
+`VITE_API_URL=/api/v1`, database models, API routes and content relationships remain unchanged.
+
+Before removing staging, validate public content, provider-managed media, CRM auth and the approved experience singles on the official domains.

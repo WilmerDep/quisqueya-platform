@@ -28,14 +28,14 @@ https://crm.example.com/api/v1/... -> API
 https://crm.example.com/healthz    -> health check
 ```
 
-Recommended production pattern when the architecture is later separated:
+Current production pattern keeps CRM and API on the same platform host:
 
 ```text
-https://app.example.com/ -> CRM
-https://api.example.com/ -> API
+https://app.example.com/           -> CRM
+https://app.example.com/api/v1/... -> API
 ```
 
-The frontend must use environment variables so that this migration requires URL changes instead of presentation rewrites.
+A dedicated API hostname remains a future option only. Both frontends must use environment variables so staging-to-production migration requires hostname/configuration changes instead of presentation rewrites.
 
 ---
 
@@ -274,11 +274,13 @@ Benefits:
 - keeps the frontend portable;
 - the same build can later switch to a dedicated API origin through environment variables.
 
-For production separation, change only the environment variable:
+For the current production architecture keep:
 
 ```env
-VITE_API_URL=https://api.example.com/api/v1
+VITE_API_URL=/api/v1
 ```
+
+Only a future, explicitly approved independent API deployment would require an absolute CRM API origin.
 
 ---
 
@@ -535,3 +537,30 @@ A green build is not the same as a healthy runtime. A healthy runtime is not the
 Each layer must be proven independently.
 
 This playbook should be updated whenever a new hosting-specific issue is discovered so future Quisqueya deployments — and future CRM/CMS/API projects — start from the accumulated operational knowledge rather than rediscovering the same problems.
+
+
+---
+
+## 19. Google Drive media and staging-to-production domains
+
+The current temporary media provider is Google Drive behind the provider-agnostic MediaAsset layer.
+
+For staging:
+
+```env
+APP_URL=https://crmquisqueya.pholiodev.com
+GOOGLE_DRIVE_REDIRECT_URI=https://crmquisqueya.pholiodev.com/api/v1/integrations/google-drive/callback
+```
+
+For production:
+
+```env
+APP_URL=https://app.quisqueyatravel.com.do
+GOOGLE_DRIVE_REDIRECT_URI=https://app.quisqueyatravel.com.do/api/v1/integrations/google-drive/callback
+```
+
+The OAuth client must contain the exact active callback and the restricted Picker key must allow the active CRM origin.
+
+Because provider-managed media is delivered through the platform API, staging validation must include at least one public `/api/v1/media/:id/content` request and the approved experience singles in the commercial web.
+
+Do not build the later full CRM media-manager UI as part of this functional deployment block. The current requirement is storage, registration, relations, public delivery and correct commercial rendering.

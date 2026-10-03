@@ -148,7 +148,14 @@ MediaService
        -> GoogleDriveStorageProvider
 ```
 
-`MediaAsset` stores the active `storageProvider`, provider key, metadata and a delivery URL. Legacy WordPress media remains compatible. Experiences and destinations keep their existing `galleryMediaSourceIds` while provider-managed assets use `galleryMediaIds`; the public content API merges both into the existing `gallery[]` response.
+`MediaAsset` stores the active `storageProvider`, provider key, metadata and a delivery URL. Legacy WordPress media remains compatible. Experiences keep their existing `galleryMediaSourceIds` as a migration fallback while provider-managed assets use `galleryMediaIds`.
+
+For experiences, the public contract now follows an explicit precedence rule:
+
+- if `galleryMediaIds` contains managed assets, `gallery[]` is built only from those managed MediaAsset records;
+- if `galleryMediaIds` is empty, the legacy WordPress/Tourfic gallery remains available as fallback.
+
+This prevents new managed galleries from being mixed with legacy media after an experience has been migrated.
 
 Google Drive files are not automatically made public. For the initial Drive provider, `MediaAsset.publicUrl` points to the platform delivery endpoint, which streams the bytes from Drive without persisting them on Hostinger. A future R2/S3 provider can return a direct CDN URL without changing CMS relationships.
 
@@ -201,7 +208,8 @@ The administrative media endpoints require an authenticated Super Admin, Adminis
 13. Register only the optimized files selected for the first vertical-slice test.
 14. Link those `MediaAsset` IDs to the existing Altos de Chavon experience.
 15. Verify the same experience from the public API and then from `quisqueya-web`.
-16. Do not expand ingestion or CMS upload management until this first path is validated.
+16. Repeat the same path with a second experience to prove the integration is reusable rather than hardcoded.
+17. Keep full visual media-library management inside the CRM for the later phase where it is already planned; the current phase only requires the functional storage/API path and visible commercial consumption.
 
 ## Provider-agnostic rule
 
@@ -217,3 +225,55 @@ The storage layer exposes neutral operations such as:
 - provider key.
 
 When migrating to R2/S3 in the future, the CMS and content relationships should remain unchanged; only the storage provider and migrated asset metadata should change.
+
+
+## Validated integration status — 2026-10-03
+
+The local end-to-end path has now been validated with two real experience slices:
+
+- **Aventura en Buggies y altos de Chavón**
+- **Haitises + Isla Bacardi**, using the Drive folder currently named **Cayo Levantado**
+
+Validated behavior:
+
+- full Drive OAuth scope is active;
+- pre-existing descendants under **PAGINA WEB** can be traversed;
+- objects outside the configured root are rejected by the backend ancestry guard;
+- repeated registration of the same provider object reuses the same MediaAsset instead of creating duplicates;
+- featured media and five-item managed galleries can be linked to an existing experience;
+- once a managed gallery exists, legacy WordPress gallery media is no longer mixed into the public gallery;
+- `GET /api/v1/media/:id/content` streams the provider file without persisting it on the application server;
+- `quisqueya-web` consumes the managed featured/gallery media through the public API.
+
+The names of Drive folders/files are not a permanent relational key. Experience-to-media association is stored by MediaAsset ID, so a Drive folder may have a descriptive name that differs from the public experience title.
+
+## Staging environment contract
+
+Before staging validation, configure the platform deployment with the correct public host **before** registering/reconciling MediaAsset records:
+
+```env
+NODE_ENV=production
+APP_ENV=staging
+APP_URL=https://crmquisqueya.pholiodev.com
+VITE_API_URL=/api/v1
+CORS_ORIGINS=https://quisqueya.pholiodev.com,https://crmquisqueya.pholiodev.com
+
+STORAGE_PROVIDER=google-drive
+GOOGLE_DRIVE_REDIRECT_URI=https://crmquisqueya.pholiodev.com/api/v1/integrations/google-drive/callback
+```
+
+The remaining Google Drive credentials/IDs stay secret in the staging environment.
+
+The commercial staging web must consume:
+
+```env
+QUISQUEYA_API_URL=https://crmquisqueya.pholiodev.com/api/v1
+NEXT_PUBLIC_SITE_URL=https://quisqueya.pholiodev.com
+NEXT_PUBLIC_INDEXABLE=false
+```
+
+### Domain migration note
+
+`MediaAsset.publicUrl` is currently persisted. If an asset was registered with a localhost or staging `APP_URL`, changing only DNS does not rewrite that stored value automatically. Before production cutover, reconcile existing provider-managed records or evolve delivery URL resolution so no public response retains an obsolete host.
+
+The desired final-domain architecture remains unchanged: the web moves to `quisqueyatravel.com.do`, the platform moves to `app.quisqueyatravel.com.do`, and the API continues under `/api/v1`.

@@ -1,195 +1,153 @@
 # Quisqueya Platform — Production Deployment
 
-## Target architecture
+Updated: 2026-10-03
 
-- API domain: `https://api.quisqueyatravel.com.do`
-- Internal API listener: `127.0.0.1:3000`
-- Public API prefix: `/api/v1`
-- Health check: `/healthz`
-- Process manager: PM2
-- Reverse proxy and TLS termination: Nginx
-- Database: MySQL/MariaDB
+## Current target architecture
 
-## 1. Server prerequisites
+Quisqueya Platform is one Hostinger-managed Node application containing:
 
-Install Node.js compatible with the project, npm, Git, MySQL or MariaDB, Nginx, Certbot and PM2.
+- NestJS API under `/api/v1`;
+- compiled Vite/React CRM served from the same runtime artifact;
+- Prisma + MySQL/MariaDB;
+- Google Drive as the current temporary media storage provider behind `MediaAsset`.
 
-```bash
-npm install --global pm2
-```
-
-Create a dedicated deployment directory and clone the repository.
-
-```bash
-sudo mkdir -p /var/www/quisqueya-platform
-sudo chown -R $USER:$USER /var/www/quisqueya-platform
-git clone https://github.com/WilmerDep/quisqueya-platform.git /var/www/quisqueya-platform
-cd /var/www/quisqueya-platform
-```
-
-## 2. Production environment
-
-Copy the production template without committing the real file.
-
-```bash
-cp .env.production.example .env
-```
-
-Replace every placeholder with real values. Generate two different random JWT secrets with at least 32 characters each.
-
-The production application URL must be:
+Production host:
 
 ```text
-https://api.quisqueyatravel.com.do
-```
-
-The expected CORS origins are:
-
-```text
-https://quisqueyatravel.com.do
-https://www.quisqueyatravel.com.do
 https://app.quisqueyatravel.com.do
+├── /              CRM
+├── /api/v1        Nest API
+└── /healthz       health check
 ```
 
-## 3. Database
+The public Next.js site is the second Node application at `https://quisqueyatravel.com.do`.
 
-Create the database and a restricted application user. Do not use the MySQL root account in production.
+A separate `api.quisqueyatravel.com.do` application is not part of the current deployment target.
 
-Example only:
+## 1. Production environment
 
-```sql
-CREATE DATABASE quisqueya_core CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'quisqueya_user'@'127.0.0.1' IDENTIFIED BY 'REPLACE_WITH_STRONG_PASSWORD';
-GRANT ALL PRIVILEGES ON quisqueya_core.* TO 'quisqueya_user'@'127.0.0.1';
-FLUSH PRIVILEGES;
+Real values belong only in Hostinger environment settings or another approved secrets store.
+
+Required core values include:
+
+```env
+NODE_ENV=production
+APP_ENV=production
+PORT=3000
+APP_URL=https://app.quisqueyatravel.com.do
+VITE_API_URL=/api/v1
+CORS_ORIGINS=https://quisqueyatravel.com.do,https://www.quisqueyatravel.com.do,https://app.quisqueyatravel.com.do
 ```
 
-Ensure `DATABASE_URL` and the individual `MYSQL_*` variables describe the same connection.
+Database and JWT variables must use production credentials/secrets.
 
-## 4. Install and prepare the release
+Google Drive media variables:
+
+```env
+STORAGE_PROVIDER=google-drive
+GOOGLE_DRIVE_CLIENT_ID=
+GOOGLE_DRIVE_CLIENT_SECRET=
+GOOGLE_DRIVE_REFRESH_TOKEN=
+GOOGLE_DRIVE_ROOT_FOLDER_ID=
+GOOGLE_DRIVE_PICKER_API_KEY=
+GOOGLE_DRIVE_APP_ID=
+GOOGLE_DRIVE_REDIRECT_URI=https://app.quisqueyatravel.com.do/api/v1/integrations/google-drive/callback
+```
+
+Never commit the real values.
+
+## 2. Google Cloud before cutover
+
+Before production authorization:
+
+1. Register the exact production OAuth callback shown above.
+2. Allow the production CRM origin in the restricted Picker API key/browser configuration.
+3. Keep the same approved **PAGINA WEB** root unless a deliberate storage migration is being performed.
+4. Confirm the OAuth consent/publishing strategy so production does not rely on short-lived Testing refresh tokens.
+
+## 3. Build and release
+
+The approved release must come from the production branch after local and staging QA.
+
+Hostinger build command:
 
 ```bash
-npm ci
 npm run deploy:prepare
 ```
 
-`deploy:prepare` performs, in order:
+The build must remain self-contained and include the compiled CRM within the server artifact.
 
-1. production environment validation;
-2. Prisma migration deployment;
-3. Prisma schema validation and client generation;
-4. NestJS server build.
+Do not bypass Prisma, production-readiness or CRM packaging checks to force a deployment green.
 
-A failed step must stop the release.
+## 4. Content and media
 
-## 5. Initial content population
+WordPress remains a migration/fallback source, not the final authority.
 
-Run imports only for the initial deployment or when intentionally refreshing migrated source data.
+For experience galleries:
 
-```bash
-npm run import:wordpress
-npm run seed:dmc-services -- --force
-npm run migrate:dmc-transport-media
-npm run import:reviews
-```
+- when `galleryMediaIds` contains managed MediaAsset IDs, the public API uses that managed gallery;
+- when no managed gallery exists, legacy WordPress/Tourfic media may remain as fallback.
 
-Afterward, verify the stored content:
-
-```bash
-npm run audit:experiences
-npm run audit:dmc-services
-```
-
-Do not rerun destructive or forced imports during a routine code deployment without first backing up the database.
-
-## 6. Start with PM2
-
-Create the log directory and start the process definition.
-
-```bash
-mkdir -p logs
-pm2 start ecosystem.config.cjs --update-env
-pm2 save
-pm2 startup
-```
-
-Run the command printed by `pm2 startup`, then execute `pm2 save` again.
-
-Useful checks:
-
-```bash
-pm2 status
-pm2 logs quisqueya-platform-api
-pm2 restart quisqueya-platform-api --update-env
-```
-
-## 7. Nginx and TLS
-
-Copy the provided template:
-
-```bash
-sudo cp deploy/nginx/api.quisqueyatravel.com.do.conf /etc/nginx/sites-available/api.quisqueyatravel.com.do.conf
-sudo ln -s /etc/nginx/sites-available/api.quisqueyatravel.com.do.conf /etc/nginx/sites-enabled/api.quisqueyatravel.com.do.conf
-```
-
-Before enabling the HTTPS server block, obtain the certificate with Certbot according to the server's current Nginx setup. Then validate and reload Nginx.
-
-```bash
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-## 8. Post-deployment validation
-
-Validate the API locally on the server:
-
-```bash
-curl --fail http://127.0.0.1:3000/healthz
-```
-
-Validate it through the public domain:
-
-```bash
-curl --fail https://api.quisqueyatravel.com.do/healthz
-QUISQUEYA_API_URL=https://api.quisqueyatravel.com.do/api/v1 npm run verify:public-api
-```
-
-Then configure the public web with:
+Provider-managed media is delivered through:
 
 ```text
-QUISQUEYA_API_URL=https://api.quisqueyatravel.com.do/api/v1
-NEXT_PUBLIC_QUISQUEYA_API_URL=https://api.quisqueyatravel.com.do/api/v1
+https://app.quisqueyatravel.com.do/api/v1/media/{mediaAssetId}/content
 ```
 
-Rebuild or redeploy `quisqueya-web`, then run its integration verifier against the production domains.
+If MediaAsset records were created under localhost or staging, reconcile any persisted `publicUrl` after changing `APP_URL`.
 
-## 9. Routine release procedure
+## 5. Commercial web production environment
+
+After the platform is healthy:
+
+```env
+QUISQUEYA_API_URL=https://app.quisqueyatravel.com.do/api/v1
+NEXT_PUBLIC_SITE_URL=https://quisqueyatravel.com.do
+NEXT_PUBLIC_INDEXABLE=true
+```
+
+Redeploy the web after changing these values.
+
+## 6. Production validation
+
+Platform:
 
 ```bash
-cd /var/www/quisqueya-platform
-git pull origin main
-npm ci
-npm run deploy:prepare
-pm2 restart quisqueya-platform-api --update-env
-curl --fail https://api.quisqueyatravel.com.do/healthz
-QUISQUEYA_API_URL=https://api.quisqueyatravel.com.do/api/v1 npm run verify:public-api
+npm run verify:production
+npm run prisma:migrate:deploy
+npm run build:production
+npm run verify:public-api
 ```
 
-## 10. Rollback baseline
+Runtime checks:
+
+```text
+GET https://app.quisqueyatravel.com.do/healthz
+GET https://app.quisqueyatravel.com.do/api/v1/public/experiences
+GET https://app.quisqueyatravel.com.do/api/v1/media/{knownMediaAssetId}/content
+```
+
+Also validate:
+
+- CRM login and refresh;
+- Google Drive integration status/root traversal;
+- featured media and galleries on approved experience singles;
+- commercial forms;
+- canonical/SEO URLs;
+- responsive desktop/mobile behavior.
+
+## 7. Initial population vs routine deployment
+
+Do not rerun destructive WordPress imports or forced seed operations during a routine release.
+
+Initial population/intentional refresh operations must be treated separately, backed up and audited.
+
+## 8. Rollback baseline
 
 Before every release:
 
-1. record the current Git commit;
-2. create a database backup;
-3. keep the previous `server-dist` until the health check passes.
+1. record the known-good Git commit;
+2. back up the database;
+3. keep the prior deployment/release available until health, API, CRM and media checks pass.
 
-Code rollback example:
-
-```bash
-git checkout <previous-known-good-commit>
-npm ci
-npm run build:production
-pm2 restart quisqueya-platform-api --update-env
-```
-
-Database rollback must use the pre-release backup. Prisma migration rollback is not automatic and must not be improvised on production data.
+Database rollback must use the pre-release backup. Prisma rollback must not be improvised on production data.

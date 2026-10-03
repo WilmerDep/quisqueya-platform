@@ -82,7 +82,11 @@ Hostinger staging may run with `NODE_ENV=production` because the application is 
 
 Persistent multimedia must live outside disposable application build directories and must not accumulate on the Hostinger application server.
 
-Current temporary provider: Google Drive owned by Quisqueya Travel. The API/CMS will manage a provider-agnostic `MediaAsset` catalog so Google Drive can later be replaced by Cloudflare R2, S3, or another object storage provider without rebuilding content relationships.
+Current temporary provider: Google Drive owned by Quisqueya Travel. The API/CMS manages a provider-agnostic `MediaAsset` catalog so Google Drive can later be replaced by Cloudflare R2, S3, or another object storage provider without rebuilding content relationships.
+
+As of 2026-10-03 the Google Drive path has been validated end-to-end in local development: OAuth with full Drive scope, the server-side **PAGINA WEB** root boundary, traversal of pre-existing folders, idempotent MediaAsset registration, experience featured/gallery relations, public delivery through the Nest proxy, and consumption from `quisqueya-web`. Altos de Chavon and Haitises + Isla Bacardi / Cayo Levantado are the two validated experience slices.
+
+The current phase is intentionally limited to the functional media path required by the CRM/API and the visible commercial result. A full visual media manager inside the CRM belongs to a later approved phase.
 
 See:
 
