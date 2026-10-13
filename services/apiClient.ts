@@ -249,9 +249,17 @@ export const apiClient = {
     });
   },
 
+  async getGoogleDriveAuthorizationUrl(): Promise<ApiItemResponse<{ authorizationUrl: string }>> {
+    return request<ApiItemResponse<{ authorizationUrl: string }>>('/integrations/google-drive/connect', {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(20000),
+    });
+  },
+
   async getGoogleDrivePickerConfig(): Promise<ApiItemResponse<GoogleDrivePickerConfig>> {
     return request<ApiItemResponse<GoogleDrivePickerConfig>>('/integrations/google-drive/picker-config', {
       headers: authHeaders(),
+      signal: AbortSignal.timeout(20000),
     });
   },
 
@@ -266,6 +274,7 @@ export const apiClient = {
   async getGoogleDriveRoot(): Promise<ApiItemResponse<GoogleDriveFileMetadata>> {
     return request<ApiItemResponse<GoogleDriveFileMetadata>>('/integrations/google-drive/root', {
       headers: authHeaders(),
+      signal: AbortSignal.timeout(20000),
     });
   },
 

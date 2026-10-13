@@ -77,6 +77,17 @@ Google Picker remains an administrative confirmation UI for the configured root 
 
 Google OAuth can remain in **Test** for the staging integration, but refresh tokens issued to an External app in Testing are time-limited and normally expire after 7 days. During staging, plan to re-authorize when needed. Before real production, the consent-screen publishing state and any applicable verification requirements must be resolved so production does not depend on a seven-day refresh-token cycle.
 
+**Recovering an expired or revoked refresh token (no media migration):**
+
+1. In the CRM **Configuración → Google Drive**, a failed root check such as `Token has been expired or revoked` means the backend cannot refresh Google OAuth. A green "configured" indicator is not proof of a valid token.
+2. Sign in with Brady's authorized Google account, and choose **Renovar acceso de Google**. This calls the existing authenticated `GET /api/v1/integrations/google-drive/connect` endpoint. The backend OAuth callback returns a replacement **secret** `refreshToken`.
+3. Store the replacement value privately as `GOOGLE_DRIVE_REFRESH_TOKEN` in the **Hostinger staging application environment**. Never commit it, paste it into chat, or distribute screenshots of the callback. Restart/redeploy the platform to load the new environment value.
+4. Click **Verificar** to confirm `GET /api/v1/integrations/google-drive/root` succeeds; then confirm `PAGINA WEB/Experiencias` traversal via the existing `GET /api/v1/media/storage/objects`.
+5. Keep `GOOGLE_DRIVE_ROOT_FOLDER_ID`, the Drive files, and `MediaAsset` associations unchanged. A refresh-token replacement does not require reuploading or re-registering photos.
+
+If the OAuth callback does not return a refresh token, inspect the Google consent screen and OAuth testing/user permissions before continuing; do not invent one. When the token is healthy but the Picker still fails, diagnose browser script/popup/network errors separately.
+
+
 ## Environment variables
 
 ```env
