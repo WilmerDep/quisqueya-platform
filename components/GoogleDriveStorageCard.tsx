@@ -17,6 +17,10 @@ import {
 import { pickGoogleDriveRootFolder } from '../services/googleDrivePicker';
 import { emitPlatformToast } from '../services/platformEvents';
 
+// Google may return either invalid_grant or its human-readable expiry/revocation detail.
+export const googleDriveOAuthNeedsRenewal = (message: string) =>
+  /invalid_grant|expired or revoked|token.{0,40}(expir|revok|revoc)|refresh.{0,30}(expir|revoc)/i.test(message);
+
 const statusPill = (ready: boolean, label: string) => (
   <span
     className={
@@ -37,6 +41,8 @@ export const GoogleDriveStorageCard: React.FC = () => {
   const [rootError, setRootError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthorizing, setIsAuthorizing] = useState(false);
+  const [isRenewing, setIsRenewing] = useState(false);
+  const oauthNeedsRenewal = googleDriveOAuthNeedsRenewal(rootError);
 
   const canManage = currentUser?.role === 'Super Admin' || currentUser?.role === 'Administrador';
 
@@ -91,7 +97,36 @@ export const GoogleDriveStorageCard: React.FC = () => {
     void load();
   }, [canManage]);
 
+  const renewGoogleAccess = async () => {
+    setIsRenewing(true);
+    try {
+      const response = await apiClient.getGoogleDriveAuthorizationUrl();
+      const authorizationUrl = new URL(response.data.authorizationUrl);
+      if (authorizationUrl.origin !== 'https://accounts.google.com') {
+        throw new Error('La URL de autorización OAuth no pertenece a Google.');
+      }
+      window.location.assign(authorizationUrl.toString());
+    } catch (error) {
+      emitPlatformToast({
+        title: 'No se pudo iniciar OAuth de Google',
+        message: error instanceof Error ? error.message : 'Revisa la conexión con la API.',
+        tone: 'error',
+        durationMs: 6200,
+      });
+      setIsRenewing(false);
+    }
+  };
+
   const authorizeRoot = async () => {
+    if (oauthNeedsRenewal) {
+      emitPlatformToast({
+        title: 'Es necesario renovar OAuth',
+        message: 'Primero renueva el token de la cuenta de Brady y actualiza su valor en Hostinger.',
+        tone: 'warning',
+        durationMs: 6000,
+      });
+      return;
+    }
     if (!pickerReady) {
       emitPlatformToast({
         title: 'Google Picker no está listo',
@@ -157,7 +192,7 @@ export const GoogleDriveStorageCard: React.FC = () => {
         <button
           type="button"
           onClick={() => void load()}
-          disabled={isLoading || isAuthorizing}
+          disabled={isLoading || isAuthorizing || isRenewing}
           className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm font-semibold text-[#334155] transition hover:border-[#BFDBFE] hover:text-[#2563EB] disabled:opacity-60"
         >
           <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
@@ -166,7 +201,7 @@ export const GoogleDriveStorageCard: React.FC = () => {
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        {statusPill(Boolean(status?.refreshTokenConfigured), 'OAuth backend')}
+        {statusPill(Boolean(status?.refreshTokenConfigured) && !oauthNeedsRenewal, 'OAuth backend')}
         {statusPill(
           Boolean(status?.pickerApiKeyConfigured && status?.pickerAppIdConfigured),
           'Picker web',
@@ -197,8 +232,10 @@ export const GoogleDriveStorageCard: React.FC = () => {
               <div>
                 <p className="text-sm font-black text-[#111827]">Validación de raíz pendiente</p>
                 <p className="mt-1 text-xs font-medium leading-5 text-[#64748B]">
-                  {rootError ||
-                    'Selecciona la carpeta raíz configurada para confirmar que coincide con el límite multimedia de Quisqueya.'}
+                  {oauthNeedsRenewal
+                    ? 'El acceso OAuth de la cuenta de Drive expiró o fue revocado. Primero renueva el token; la carpeta y los archivos existentes no necesitan moverse.'
+                    : rootError ||
+                      'Selecciona la carpeta raíz configurada para confirmar que coincide con el límite multimedia de Quisqueya.'}
                 </p>
               </div>
             </div>
@@ -208,13 +245,34 @@ export const GoogleDriveStorageCard: React.FC = () => {
         <button
           type="button"
           onClick={() => void authorizeRoot()}
-          disabled={!pickerReady || isAuthorizing}
+          disabled={!pickerReady || isAuthorizing || isRenewing || oauthNeedsRenewal}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#2563EB] px-5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(37,99,235,0.22)] transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isAuthorizing ? <Loader2 size={17} className="animate-spin" /> : <FolderOpen size={17} />}
           {rootFolder ? 'Reautorizar carpeta raíz' : 'Autorizar carpeta raíz'}
         </button>
       </div>
+
+      {oauthNeedsRenewal ? (
+        <div className="mt-4 rounded-2xl border border-[#FED7AA] bg-[#FFF7ED] px-4 py-4 text-sm text-[#9A3412]">
+          <p className="font-bold">Renovación de acceso requerida</p>
+          <p className="mt-1 leading-6">
+            Autoriza nuevamente con la cuenta de Google de Brady. El flujo existente devolverá un
+            nuevo refresh token: guárdalo solamente en la variable privada
+            {' '}<code>GOOGLE_DRIVE_REFRESH_TOKEN</code> de Hostinger, reinicia el servicio y pulsa
+            «Verificar». Mantén el mismo <code>GOOGLE_DRIVE_ROOT_FOLDER_ID</code> y no compartas el token.
+          </p>
+          <button
+            type="button"
+            onClick={() => void renewGoogleAccess()}
+            disabled={isRenewing || isLoading || isAuthorizing}
+            className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#9A3412] px-4 py-2 font-semibold text-white disabled:opacity-60"
+          >
+            {isRenewing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            Renovar acceso de Google
+          </button>
+        </div>
+      ) : null}
 
       {status && !pickerReady ? (
         <div className="mt-4 rounded-2xl border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3 text-xs font-semibold leading-5 text-[#9A3412]">
