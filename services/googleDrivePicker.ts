@@ -110,6 +110,20 @@ export const pickGoogleDriveRootFolder = async (
   if (!pickerApi) throw new Error('Google Picker no está disponible.');
 
   return new Promise<string | null>((resolve, reject) => {
+    let settled = false;
+    let activePicker: { setVisible: (visible: boolean) => void } | null = null;
+    const finish = (folderId: string | null, error?: Error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      try { activePicker?.setVisible(false); } catch { /* Picker may already be closed. */ }
+      if (error) reject(error);
+      else resolve(folderId);
+    };
+    const timeout = window.setTimeout(() => {
+      finish(null, new Error('Google Picker no respondió. Comprueba las ventanas bloqueadas y vuelve a intentar.'));
+    }, 90000);
+
     try {
       const view = new pickerApi.DocsView(pickerApi.ViewId.FOLDERS);
 
@@ -133,7 +147,12 @@ export const pickGoogleDriveRootFolder = async (
         const action = data[pickerApi.Response.ACTION];
 
         if (action === pickerApi.Action.CANCEL) {
-          resolve(null);
+          finish(null);
+          return;
+        }
+
+        if (action === 'error' || action === 'ERROR') {
+          finish(null, new Error('Google Picker reportó un error al abrir o validar la carpeta.'));
           return;
         }
 
@@ -147,16 +166,17 @@ export const pickGoogleDriveRootFolder = async (
         const folderId = typeof rawFolderId === 'string' ? rawFolderId.trim() : '';
 
         if (!folderId) {
-          reject(new Error('Google Picker no devolvió el ID de la carpeta seleccionada.'));
+          finish(null, new Error('Google Picker no devolvió el ID de la carpeta seleccionada.'));
           return;
         }
 
-        resolve(folderId);
+        finish(folderId);
       });
 
-      configuredPicker.build().setVisible(true);
+      activePicker = configuredPicker.build();
+      activePicker.setVisible(true);
     } catch (error) {
-      reject(error);
+      finish(null, error instanceof Error ? error : new Error('Google Picker no pudo abrirse.'));
     }
   });
 };
