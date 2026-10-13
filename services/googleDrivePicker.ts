@@ -53,22 +53,43 @@ const loadGoogleApiScript = async () => {
 
   await new Promise<void>((resolve, reject) => {
     const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
-    if (existing) {
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => reject(new Error('No se pudo cargar Google Picker.')), {
-        once: true,
-      });
-      return;
-    }
+    const script = existing ?? document.createElement('script');
 
-    const script = document.createElement('script');
-    script.id = SCRIPT_ID;
-    script.src = 'https://apis.google.com/js/api.js';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('No se pudo cargar Google Picker.'));
-    document.head.appendChild(script);
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      script.removeEventListener('load', onLoad);
+      script.removeEventListener('error', onError);
+    };
+    const onLoad = () => {
+      cleanup();
+      if (!pickerWindow.gapi) {
+        script.remove();
+        reject(new Error('Google API cargó, pero no quedó disponible en el navegador.'));
+        return;
+      }
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      script.remove();
+      reject(new Error('No se pudo cargar Google Picker.'));
+    };
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      script.remove();
+      reject(new Error('Google Picker tardó demasiado en cargar. Revisa bloqueadores o acceso a apis.google.com.'));
+    }, 15000);
+
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+
+    if (!existing) {
+      script.id = SCRIPT_ID;
+      script.src = 'https://apis.google.com/js/api.js';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
   });
 };
 
