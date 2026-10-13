@@ -63,11 +63,33 @@ export class ContentPreviewService {
         })
       : null;
 
+    const galleryMediaIds = this.jsonArray<string>(row.galleryMediaIds)
+      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
+
+    const managedGalleryRows = galleryMediaIds.length
+      ? await this.prisma.mediaAsset.findMany({
+          where: { id: { in: [...new Set(galleryMediaIds)] } },
+          select: {
+            id: true,
+            sourceId: true,
+            sourceUrl: true,
+            publicUrl: true,
+            altText: true,
+            width: true,
+            height: true,
+            mimeType: true,
+          },
+        })
+      : [];
+    const managedGalleryMap = new Map(
+      managedGalleryRows.map(item => [item.id, this.mapMedia(item)] as const),
+    );
+
     const galleryMediaSourceIds = this.jsonArray<number>(row.galleryMediaSourceIds)
       .map(Number)
       .filter(Number.isFinite);
 
-    const galleryRows = galleryMediaSourceIds.length
+    const galleryRows = !galleryMediaIds.length && galleryMediaSourceIds.length
       ? await this.prisma.mediaAsset.findMany({
           where: {
             sourceProvider: ContentSourceProvider.WORDPRESS,
@@ -122,9 +144,10 @@ export class ContentPreviewService {
         : undefined,
       category: row.categoryLabel ?? undefined,
       featuredMedia: featured ? this.mapMedia(featured) : null,
-      gallery: galleryMediaSourceIds
-        .map(sourceId => galleryMap.get(sourceId))
-        .filter(Boolean),
+      gallery: galleryMediaIds.length
+        ? galleryMediaIds.map(id => managedGalleryMap.get(id)).filter(Boolean)
+        : galleryMediaSourceIds.map(sourceId => galleryMap.get(sourceId)).filter(Boolean),
+      galleryMediaIds,
       galleryMediaSourceIds,
       pricingMode: row.pricingMode === 'FIXED' ? 'fixed' : 'on_request',
       pricing: this.jsonObject(row.pricingJson),
