@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ContentSourceProvider, type Prisma } from '@prisma/client';
+import { ContentRecordStatus, ContentSourceProvider, type Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../infra/prisma.service.js';
 import {
@@ -32,6 +32,118 @@ export class MediaService {
       provider: this.storage.name,
       parentKey: parentKey ?? null,
       objects: await this.storage.list(parentKey),
+    };
+  }
+
+  /**
+   * Administrative read-only snapshot used to reconcile existing Google Drive
+   * MediaAsset records with both published and draft experiences.
+   * Folder traversal remains available via /media/storage/objects.
+   */
+  async getExperienceMediaInventory() {
+    const [experiences, assets] = await Promise.all([
+      this.prisma.experience.findMany({
+        where: { status: { in: [ContentRecordStatus.DRAFT, ContentRecordStatus.PUBLISHED] } },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          status: true,
+          sourceProvider: true,
+          featuredMediaId: true,
+          galleryMediaIds: true,
+          galleryMediaSourceIds: true,
+        },
+        orderBy: [{ status: 'asc' }, { title: 'asc' }],
+      }),
+      this.prisma.mediaAsset.findMany({
+        orderBy: [{ storageProvider: 'asc' }, { fileName: 'asc' }],
+      }),
+    ]);
+
+    type MediaUsage = {
+      experienceId: string;
+      slug: string;
+      status: ContentRecordStatus;
+      role: 'featured' | 'gallery';
+    };
+
+    const knownMediaIds = new Set(assets.map(asset => asset.id));
+    const usages = new Map<string, MediaUsage[]>();
+    const addUsage = (mediaId: string, usage: MediaUsage) => {
+      const existing = usages.get(mediaId) ?? [];
+      existing.push(usage);
+      usages.set(mediaId, existing);
+    };
+
+    const items = experiences.map(experience => {
+      const galleryMediaIds = Array.isArray(experience.galleryMediaIds)
+        ? experience.galleryMediaIds.filter(
+            (id): id is string => typeof id === 'string' && id.trim().length > 0,
+          )
+        : [];
+      const galleryMediaSourceIds = Array.isArray(experience.galleryMediaSourceIds)
+        ? experience.galleryMediaSourceIds
+        : [];
+      if (experience.featuredMediaId) {
+        addUsage(experience.featuredMediaId, {
+          experienceId: experience.id,
+          slug: experience.slug,
+          status: experience.status,
+          role: 'featured',
+        });
+      }
+      for (const id of new Set(galleryMediaIds)) {
+        addUsage(id, {
+          experienceId: experience.id,
+          slug: experience.slug,
+          status: experience.status,
+          role: 'gallery',
+        });
+      }
+
+      const referencedIds = [
+        ...(experience.featuredMediaId ? [experience.featuredMediaId] : []),
+        ...galleryMediaIds,
+      ];
+      const missingMediaAssetIds = [...new Set(referencedIds)]
+        .filter(id => !knownMediaIds.has(id));
+      const duplicateGalleryMediaIds = [...new Set(
+        galleryMediaIds.filter((id, index) => galleryMediaIds.indexOf(id) !== index),
+      )];
+
+      return {
+        id: experience.id,
+        slug: experience.slug,
+        title: experience.title,
+        status: experience.status,
+        sourceProvider: experience.sourceProvider,
+        featuredMediaId: experience.featuredMediaId,
+        galleryMediaIds,
+        galleryMediaSourceIds,
+        missingMediaAssetIds,
+        duplicateGalleryMediaIds,
+      };
+    });
+
+    return {
+      mode: 'read-only',
+      summary: {
+        draftExperiences: items.filter(item => item.status === ContentRecordStatus.DRAFT).length,
+        publishedExperiences: items.filter(item => item.status === ContentRecordStatus.PUBLISHED).length,
+        mediaAssets: assets.length,
+        googleDriveMediaAssets: assets.filter(asset => asset.storageProvider === 'google-drive').length,
+        experiencesWithMissingMedia: items.filter(item => item.missingMediaAssetIds.length > 0).length,
+      },
+      experiences: items,
+      mediaAssets: assets.map(asset => {
+        const assetUsages = usages.get(asset.id) ?? [];
+        return {
+          ...this.serializeAsset(asset),
+          usages: assetUsages,
+          linkedExperienceCount: new Set(assetUsages.map(usage => usage.experienceId)).size,
+        };
+      }),
     };
   }
 
