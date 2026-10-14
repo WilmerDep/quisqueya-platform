@@ -98,6 +98,22 @@ export interface GoogleDrivePickerConfig {
   rootFolderId: string;
 }
 
+export interface MediaStorageObject {
+  key: string;
+  name: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  checksum?: string;
+  modifiedAt?: string;
+  parentKey?: string;
+}
+
+export interface MediaStorageListing {
+  provider: string;
+  parentKey: string | null;
+  objects: MediaStorageObject[];
+}
+
 export interface MediaExperienceInventory {
   mode: 'read-only';
   summary: {
@@ -288,6 +304,13 @@ export const apiClient = {
         Authorization: `Bearer ${accessToken}`,
       },
     });
+  },
+
+  async getMediaStorageObjects(parentKey: string): Promise<ApiItemResponse<MediaStorageListing>> {
+    return request<ApiItemResponse<MediaStorageListing>>(
+      `/media/storage/objects?parentKey=${encodeURIComponent(parentKey)}`,
+      { headers: authHeaders() },
+    );
   },
 
   async getExperienceMediaInventory(): Promise<ApiItemResponse<MediaExperienceInventory>> {
