@@ -54,6 +54,17 @@ Se ha ampliado el PR de inventario de solo lectura, no desplegado. Tras QA y un 
 3. El navegador descarga `quisqueya-media-inventory-YYYY-MM-DD.json` que incluye todos los `DRAFT` y `PUBLISHED` de staging, referencias `MediaAsset`, título, extracto, descripción, actividades, alertas y la lista de archivos con **ID de Drive** + ruta. **No exporta tokens, contraseñas ni Picker access tokens**.
 4. Confirmar `driveAudit.complete === true`. Si es falso, revisar `driveAudit.issues`: el inventario puede ser parcial; no aplicar relaciones basándose en información incompleta.
 5. Cruzar cada archivo `storageProvider:'google-drive'` + `storageKey` con `mediaAssets`; para cada combinación seleccionar `KEEP` / `REUSE` / `ADD` / `REPLACE_AFTER_REVIEW` / `HOLD`. Las coincidencias por nombre son **propuestas, no identidad**.
+
+   También existe un verificador **100 % de solo lectura** dentro del repositorio para generar las propuestas de las 13 experiencias conocidas, una vez descargado el JSON:
+
+   ```bash
+   node scripts/review-experience-media-audit.mjs ./quisqueya-media-inventory-2026-10-14.json ./reporte-revision-multimedia.json
+   ```
+
+   El verificador une únicamente **rutas exactas**, **IDs reales de Drive** y **claves `google-drive:storageKey`** con los `MediaAsset` ya registrados; no llama a la API ni lee secretos. Marca archivos no encontrados y devuelve `REGISTER_ONLY_IF_APPROVED` cuando falta `MediaAsset`, en vez de registrarlo sin consentimiento. El reporte local es privado y no debe subirse a un repositorio público.
+   
+   Las pruebas del verificador se ejecutan con `node --test scripts/review-experience-media-audit.test.mjs`; las de NestJS con `npm test -- server/src/modules/media/media.service.test.ts`.
+
 6. Tras revisión visual de las imágenes, registrar únicamente claves faltantes con `POST /api/v1/media/register`, operación existente que **reutiliza el asset** cuando la clave ya existe. Asociar por `PATCH /api/v1/media/experiences/:id` pasando **todos** los `galleryMediaIds` que deben conservarse: enviar el campo sustituye el array completo.
 7. Volver a consultar inventario, estado de las experiencias, preview protegido `DRAFT` y `GET /public/experiences/:slug` + web comercial para `PUBLISHED`. Registrar estado anterior y nuevo para rollback. No publicar por defecto.
 
