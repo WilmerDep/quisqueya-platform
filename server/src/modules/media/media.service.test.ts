@@ -68,6 +68,11 @@ describe('MediaService reconciliation inventory', () => {
       {
         id: 'draft-1', slug: 'buggy-zipline', title: 'Buggy + Zipline',
         status: ContentRecordStatus.DRAFT, sourceProvider: ContentSourceProvider.MANUAL,
+        excerpt: 'Circuito de tirolesas y buggy', description: 'Visita el parque',
+        categoryLabel: 'Aventura', locationAddress: 'Bávaro, Punta Cana',
+        includedItemsJson: ['Buggy', 'Tirolesas'],
+        itineraryJson: [{ title: 'Recorrido' }],
+        editorialFlagsJson: [{ code: 'MEDIA_PENDING_LIBRARY_REVIEW', severity: 'warning', message: 'Review media' }],
         featuredMediaId: 'shared', galleryMediaIds: ['shared', 'zipline', 'zipline'],
         galleryMediaSourceIds: [123],
       },
@@ -91,6 +96,9 @@ describe('MediaService reconciliation inventory', () => {
       mediaAssets: 3,
       googleDriveMediaAssets: 2,
       experiencesWithMissingMedia: 1,
+      experiencesWithManagedFeatured: 1,
+      experiencesWithManagedGallery: 2,
+      experiencesWithDuplicateGalleryIds: 1,
     });
     expect(prisma.experience.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -107,6 +115,9 @@ describe('MediaService reconciliation inventory', () => {
       galleryMediaSourceIds: [123],
       duplicateGalleryMediaIds: ['zipline'],
       missingMediaAssetIds: [],
+      excerpt: 'Circuito de tirolesas y buggy',
+      included: ['Buggy', 'Tirolesas'],
+      editorialFlags: [expect.objectContaining({ code: 'MEDIA_PENDING_LIBRARY_REVIEW' })],
     });
     expect(result.experiences[1].missingMediaAssetIds).toEqual(['not-in-db']);
 
