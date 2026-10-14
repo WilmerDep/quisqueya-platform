@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
+  Download,
   FolderOpen,
   HardDrive,
   Loader2,
@@ -37,6 +38,7 @@ export const GoogleDriveStorageCard: React.FC = () => {
   const [rootError, setRootError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthorizing, setIsAuthorizing] = useState(false);
+  const [isAuditing, setIsAuditing] = useState(false);
 
   const canManage = currentUser?.role === 'Super Admin' || currentUser?.role === 'Administrador';
 
@@ -133,6 +135,45 @@ export const GoogleDriveStorageCard: React.FC = () => {
     }
   };
 
+  const exportMediaInventory = async () => {
+    setIsAuditing(true);
+    try {
+      const response = await apiClient.getExperienceMediaInventory();
+      const inventory = response.data;
+      if (inventory.mode !== 'read-only') {
+        throw new Error('La API no devolvió un inventario de solo lectura.');
+      }
+      const json = JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        source: 'Quisqueya CRM - API authenticated read-only inventory',
+        ...inventory,
+      }, null, 2);
+      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `quisqueya-media-inventory-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      emitPlatformToast({
+        title: 'Auditoría descargada',
+        message: `${inventory.summary.publishedExperiences} publicadas y ${inventory.summary.draftExperiences} borradores. No se modificaron datos.`,
+        tone: 'success',
+        durationMs: 5200,
+      });
+    } catch (error) {
+      emitPlatformToast({
+        title: 'No se pudo exportar el inventario',
+        message: error instanceof Error ? error.message : 'La API no respondió.',
+        tone: 'error',
+        durationMs: 6200,
+      });
+    } finally {
+      setIsAuditing(false);
+    }
+  };
+
   if (!canManage) return null;
 
   return (
@@ -154,15 +195,27 @@ export const GoogleDriveStorageCard: React.FC = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={isLoading || isAuthorizing}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm font-semibold text-[#334155] transition hover:border-[#BFDBFE] hover:text-[#2563EB] disabled:opacity-60"
-        >
-          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-          Verificar
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void exportMediaInventory()}
+            disabled={isAuditing || isLoading || isAuthorizing}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm font-semibold text-[#334155] transition hover:border-[#BFDBFE] hover:text-[#2563EB] disabled:opacity-60"
+            title="Descarga el inventario actual de MySQL sin modificar experiencias ni archivos"
+          >
+            {isAuditing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            Exportar auditoría
+          </button>
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={isLoading || isAuthorizing || isAuditing}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-sm font-semibold text-[#334155] transition hover:border-[#BFDBFE] hover:text-[#2563EB] disabled:opacity-60"
+          >
+            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+            Verificar
+          </button>
+        </div>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
