@@ -143,10 +143,78 @@ export const GoogleDriveStorageCard: React.FC = () => {
       if (inventory.mode !== 'read-only') {
         throw new Error('La API no devolvió un inventario de solo lectura.');
       }
+      // Use the existing authorized storage/objects endpoint; no Google access token
+      // or browser Picker credentials are exported.
+      const driveAudit: {
+        provider: string;
+        rootFolder: { id: string; name: string } | null;
+        path: string;
+        complete: boolean;
+        objects: Array<{ path: string; key: string; name: string; mimeType?: string; sizeBytes?: number; checksum?: string }>;
+        issues: string[];
+      } = {
+        provider: 'google-drive',
+        rootFolder: rootFolder ? { id: rootFolder.id, name: rootFolder.name } : null,
+        path: 'PAGINA WEB/Experiencias',
+        complete: false,
+        objects: [],
+        issues: [],
+      };
+
+      if (!rootFolder?.id) {
+        driveAudit.issues.push('No se ha validado la carpeta raíz en esta sesión.');
+      } else {
+        try {
+          const rootListing = await apiClient.getMediaStorageObjects(rootFolder.id);
+          const experiencesFolder = rootListing.data.objects.find(
+            item => item.mimeType === 'application/vnd.google-apps.folder' &&
+              item.name.trim().toLocaleLowerCase() === 'experiencias',
+          );
+          if (!experiencesFolder) {
+            driveAudit.issues.push('No se encontró la carpeta Experiencias dentro de PAGINA WEB.');
+          } else {
+            const queue = [{ key: experiencesFolder.key, path: 'Experiencias' }];
+            const visited = new Set<string>();
+            const maxFolders = 100;
+            while (queue.length > 0 && visited.size < maxFolders) {
+              const folder = queue.shift();
+              if (!folder || visited.has(folder.key)) continue;
+              visited.add(folder.key);
+              try {
+                const listing = await apiClient.getMediaStorageObjects(folder.key);
+                for (const item of listing.data.objects) {
+                  const itemPath = `${folder.path}/${item.name}`;
+                  if (item.mimeType === 'application/vnd.google-apps.folder') {
+                    if (!visited.has(item.key)) queue.push({ key: item.key, path: itemPath });
+                  } else {
+                    driveAudit.objects.push({
+                      path: itemPath,
+                      key: item.key,
+                      name: item.name,
+                      mimeType: item.mimeType,
+                      sizeBytes: item.sizeBytes,
+                      checksum: item.checksum,
+                    });
+                  }
+                }
+              } catch (error) {
+                driveAudit.issues.push(`Error al listar ${folder.path}: ${error instanceof Error ? error.message : 'API error'}`);
+              }
+            }
+            if (queue.length > 0) driveAudit.issues.push('Se alcanzó el límite de 100 carpetas; el inventario está incompleto.');
+            driveAudit.complete = driveAudit.issues.length === 0;
+          }
+        } catch (error) {
+          driveAudit.issues.push(`No se pudo listar PAGINA WEB: ${error instanceof Error ? error.message : 'API error'}`);
+        }
+      }
+
+      driveAudit.objects.sort((a, b) => a.path.localeCompare(b.path));
       const json = JSON.stringify({
         exportedAt: new Date().toISOString(),
-        source: 'Quisqueya CRM - API authenticated read-only inventory',
+        source: 'Quisqueya CRM - authenticated API read-only inventory',
         ...inventory,
+        driveAudit,
       }, null, 2);
       const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
       const link = document.createElement('a');
