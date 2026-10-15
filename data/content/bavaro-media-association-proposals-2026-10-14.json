@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "qt-bavaro-proposals-1",
+  "sourceDataset": "data/content/client-experiences-2026-09-bavaro-adventure-park.seed.json",
+  "candidateCatalog": "data/content/drive-ready-media-candidates-2026-10-14.json",
+  "state": "REVIEW_ONLY_NOT_APPLIED",
+  "rules": [
+    "Never infer Drive file IDs from filenames.",
+    "Never overwrite approved galleries.",
+    "Do not publish DRAFT experiences.",
+    "Review provider-specific package components before linking."
+  ],
+  "experiences": [
+    {
+      "slug": "bavaro-adventure-park-explorer-adventure-catamaran",
+      "featuredGroup": "Catamaran Adventure",
+      "supportGroups": [],
+      "notes": "Verify this folder documents the exact catamaran excursion.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-vip",
+      "featuredGroup": "Buggy VIP",
+      "supportGroups": [
+        "Blue Lagoon Cenote",
+        "Dominican Village",
+        "Maze Garden",
+        "Waterfall Pool"
+      ],
+      "notes": "Cross-check component locations before selecting gallery images.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-zipline-mega-splash",
+      "featuredGroup": "Zipline Mega Splash",
+      "supportGroups": [
+        "Blue Lagoon Cenote",
+        "Maze Garden",
+        "Waterfall Pool"
+      ],
+      "notes": "Zipline must be represented, and gallery must reflect actual included attractions.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river",
+      "featuredGroup": "Sacred River",
+      "supportGroups": [
+        "Blue Lagoon Cenote",
+        "Jungle River",
+        "Dominican Village"
+      ],
+      "notes": "Use scenic river media; approved-looking featured candidate is sacred-river-68.webp.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-zipline",
+      "featuredGroup": "Buggy VIP",
+      "supportGroups": [
+        "Zipline Mega Splash"
+      ],
+      "notes": "The gallery must represent both Buggy and Zipline, not just one.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river-zipline",
+      "featuredGroup": "Sacred River",
+      "supportGroups": [
+        "Zipline Mega Splash"
+      ],
+      "notes": "Gallery may reuse assets where activities genuinely match.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-party-boat",
+      "featuredGroup": "Buggy VIP",
+      "supportGroups": [],
+      "notes": "No verified Party Boat media in the selected package; DO NOT equate with Catamaran Adventure.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-vip",
+      "featuredGroup": "Polaris VIP",
+      "supportGroups": [],
+      "notes": "Polaris photos only; verify the exact vehicle/route.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-zipline",
+      "featuredGroup": "Polaris VIP",
+      "supportGroups": [
+        "Zipline Mega Splash"
+      ],
+      "notes": "Gallery must represent Polaris and Zipline.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-full-access-buggy",
+      "featuredGroup": "Buggy VIP",
+      "supportGroups": [],
+      "notes": "Full Access extras are NOT inferred from this candidate mapping.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river-de-noche",
+      "featuredGroup": "Sacred River at night",
+      "supportGroups": [],
+      "notes": "Night-time imagery only for night-time itinerary.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-de-noche",
+      "featuredGroup": "Polaris At Night",
+      "supportGroups": [],
+      "notes": "Only one selected cover candidate, remaining night galleries pending verification.",
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "slug": "bavaro-adventure-park-full-access-polaris",
+      "featuredGroup": "Polaris VIP",
+      "supportGroups": [],
+      "notes": "Full Access extras are NOT inferred.",
+      "status": "REVIEW_REQUIRED"
+    }
+  ]
+}

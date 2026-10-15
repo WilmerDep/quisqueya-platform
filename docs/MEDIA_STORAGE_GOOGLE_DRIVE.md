@@ -184,6 +184,7 @@ The CRM does **not** construct ad-hoc `trigger_onepick` authorization URLs. Root
 ### Media administration / delivery
 
 - `GET /api/v1/media/storage/objects?parentKey=...` — list accessible objects from the configured provider.
+- `GET /api/v1/media/inventory` — authenticated read-only inventory of `DRAFT` and `PUBLISHED` experiences, their current featured/gallery references, and registered `MediaAsset` records (including usage references and missing links).
 - `POST /api/v1/media/storage/validate` — write/read/metadata/cleanup smoke test using a temporary text file.
 - `POST /api/v1/media/register` — register an accessible provider object as `MediaAsset`.
 - `PATCH /api/v1/media/experiences/:experienceId` — link registered assets as featured/gallery media without changing publication status.
@@ -210,6 +211,22 @@ The administrative media endpoints require an authenticated Super Admin, Adminis
 15. Verify the same experience from the public API and then from `quisqueya-web`.
 16. Repeat the same path with a second experience to prove the integration is reusable rather than hardcoded.
 17. Keep full visual media-library management inside the CRM for the later phase where it is already planned; the current phase only requires the functional storage/API path and visible commercial consumption.
+
+### Existing-media reconciliation (DRAFT + PUBLISHED)
+
+Use the existing API and database records; do not re-upload ZIPs, mirror Drive content into the repository, or infer a link from a folder or file name alone.
+
+1. As an authenticated Super Admin, Administrador or Supervisor, call `GET /api/v1/media/inventory`. The endpoint **only reads MySQL**, returns both `DRAFT` and `PUBLISHED`, and includes:
+   - `experiences[]`: id, slug, status, existing `featuredMediaId`, ordered `galleryMediaIds`, and legacy `galleryMediaSourceIds`;
+   - `mediaAssets[]`: registered provider, `storageKey` (Google Drive file ID for the Drive provider), file name, delivery URL, size, checksum, and usages by experience/role;
+   - possible missing MediaAsset IDs and duplicate gallery references for review.
+2. Call `GET /api/v1/media/storage/objects` with the authorized existing `PAGINA WEB` root, and then navigate existing folder IDs with `parentKey`. This lists actual Drive files and keys; no Google OAuth reconfiguration should be necessary if the integration is already healthy.
+3. Cross-reference by the **exact `storageProvider + storageKey`** pair. A name/size similarity is only a candidate, not proof that a file is identical or relevant to a given excursion. Existing JPEG and new optimized WebP may be two different Drive objects even when the subject is the same.
+4. Review every relevant current `PUBLISHED` and `DRAFT` experience. Preserve correct media; decide `KEEP`, `REUSE`, `ADD_TO_GALLERY`, `REPLACE_AFTER_REVIEW` or `NO_MATCH`. Existing Altos de Chavón and Cayo Levantado associations must not be overwritten merely because new Bávaro Adventure Park photos arrived.
+5. For a Drive file without a `MediaAsset`, use the existing `POST /api/v1/media/register` endpoint **once**, which reuses the existing record if the same provider key was already registered. Use the existing `PATCH /api/v1/media/experiences/:experienceId` only after verifying the association and preserving unrelated gallery IDs. One asset may be linked to multiple experiences.
+6. Confirm the unchanged experience status. Validate `DRAFT` via the authenticated preview contract and `PUBLISHED` via the public API and web. Keep assets marked `hold` out of associations.
+
+This inventory endpoint does **not** create records, modify Drive, mutate gallery relations, inspect image bytes, or publish drafts. It does not claim that every Drive file has already been registered. As with existing admin media endpoints, it requires JWT and the role guard; never expose this inventory through public routes or include auth tokens in audit exports.
 
 ## Provider-agnostic rule
 
