@@ -22,7 +22,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       prepareCacheLength: 0,
     });
 
-    super({ adapter: new PrismaMariaDb(pool) });
+    // The adapter types its Pool against bundled mariadb@3.4.5, while this
+    // runtime pool comes from patched mariadb@3.5.4. TypeScript treats their
+    // PoolConnection signatures as incompatible despite compatible runtime APIs.
+    // Limit the assertion to this driver boundary; never replace the pool.
+    type AdapterPool = Extract<
+      ConstructorParameters<typeof PrismaMariaDb>[0],
+      { getConnection(): Promise<unknown> }
+    >;
+    super({ adapter: new PrismaMariaDb(pool as unknown as AdapterPool) });
     this.pool = pool;
   }
 
