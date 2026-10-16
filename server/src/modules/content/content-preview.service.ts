@@ -63,11 +63,35 @@ export class ContentPreviewService {
         })
       : null;
 
+    // Match the public experience contract: managed MediaAsset references take
+    // precedence over legacy WordPress source IDs whenever they are present.
+    const galleryMediaIds = this.jsonArray<string>(row.galleryMediaIds)
+      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
     const galleryMediaSourceIds = this.jsonArray<number>(row.galleryMediaSourceIds)
       .map(Number)
       .filter(Number.isFinite);
 
-    const galleryRows = galleryMediaSourceIds.length
+    const managedGalleryRows = galleryMediaIds.length
+      ? await this.prisma.mediaAsset.findMany({
+          where: { id: { in: [...new Set(galleryMediaIds)] } },
+          select: {
+            id: true,
+            sourceId: true,
+            sourceUrl: true,
+            publicUrl: true,
+            altText: true,
+            width: true,
+            height: true,
+            mimeType: true,
+          },
+        })
+      : [];
+    const managedGalleryMap = new Map(
+      managedGalleryRows.map(item => [item.id, this.mapMedia(item)]),
+    );
+
+    // Do not mix old WordPress media into a gallery migrated to Google Drive.
+    const galleryRows = !galleryMediaIds.length && galleryMediaSourceIds.length
       ? await this.prisma.mediaAsset.findMany({
           where: {
             sourceProvider: ContentSourceProvider.WORDPRESS,
@@ -92,6 +116,16 @@ export class ContentPreviewService {
         return sourceId === undefined ? [] : [[sourceId, this.mapMedia(item)] as const];
       }),
     );
+
+    const gallery = galleryMediaIds.length
+      ? galleryMediaIds.flatMap(id => {
+          const media = managedGalleryMap.get(id);
+          return media ? [media] : [];
+        })
+      : galleryMediaSourceIds.flatMap(sourceId => {
+          const media = galleryMap.get(sourceId);
+          return media ? [media] : [];
+        });
 
     const latitude = row.latitude === null ? undefined : Number(row.latitude);
     const longitude = row.longitude === null ? undefined : Number(row.longitude);
@@ -122,9 +156,8 @@ export class ContentPreviewService {
         : undefined,
       category: row.categoryLabel ?? undefined,
       featuredMedia: featured ? this.mapMedia(featured) : null,
-      gallery: galleryMediaSourceIds
-        .map(sourceId => galleryMap.get(sourceId))
-        .filter(Boolean),
+      gallery,
+      galleryMediaIds,
       galleryMediaSourceIds,
       pricingMode: row.pricingMode === 'FIXED' ? 'fixed' : 'on_request',
       pricing: this.jsonObject(row.pricingJson),
