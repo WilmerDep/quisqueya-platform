@@ -183,7 +183,16 @@ if (args.includes('--database')) {
       operationIfApprovedLater: collision ? 'STOP_REVIEW_COLLISION' : alreadyConfigured ? 'NOOP' : 'CREATE_DRAFT_PARENT',
     };
   } catch (error) {
-    report.databaseChecks = { status: 'DATABASE_READ_FAILED', code: error?.code ?? 'UNKNOWN' };
+    let detail = String(error?.message ?? 'No database error details available.');
+    for (const secret of [process.env.MYSQL_PASSWORD, process.env.DATABASE_URL].filter(value => value?.length >= 3)) {
+      detail = detail.replaceAll(secret, '[REDACTED]');
+    }
+    detail = detail.replace(/(mysql|mariadb):\/\/[^\s`'"<>]+/gi, '$1://[REDACTED]');
+    report.databaseChecks = {
+      status: 'DATABASE_READ_FAILED',
+      code: error?.code ?? 'UNKNOWN',
+      detail: detail.slice(0, 1200),
+    };
     process.exitCode = 1;
   } finally {
     await prisma.$disconnect();
