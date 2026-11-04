@@ -12,6 +12,11 @@ import type {
   PublicMedia,
   PublicPageContent,
 } from './content.types.js';
+import {
+  getExperienceFamilyConfig,
+  resolveExperienceCatalog,
+  resolveExperienceFamily,
+} from './experience-families.js';
 
 type ExperienceRow = Prisma.ExperienceGetPayload<Record<string, never>>;
 type DestinationRow = Prisma.DestinationGetPayload<Record<string, never>>;
@@ -352,7 +357,7 @@ export class ContentService {
     const gallerySourceIds = rows.flatMap(row => this.jsonArray<number>(row.galleryMediaSourceIds));
     const galleryBySourceId = await this.mediaBySourceIdMap(gallerySourceIds);
 
-    return rows.map(row => this.mapExperience(row, mediaById, galleryBySourceId));
+    return resolveExperienceCatalog(rows.map(row => this.mapExperience(row, mediaById, galleryBySourceId)));
   }
 
   async getExperience(slug: string): Promise<PublicExperience | null> {
@@ -368,7 +373,27 @@ export class ContentService {
     const gallerySourceIds = this.jsonArray<number>(row.galleryMediaSourceIds);
     const galleryBySourceId = await this.mediaBySourceIdMap(gallerySourceIds);
 
-    return this.mapExperience(row, mediaById, galleryBySourceId);
+    const experience = this.mapExperience(row, mediaById, galleryBySourceId);
+    const family = getExperienceFamilyConfig(experience);
+    if (!family) return experience;
+
+    const childRows = await this.prisma.experience.findMany({
+      where: {
+        status: ContentRecordStatus.PUBLISHED,
+        slug: { in: family.packageSlugs },
+      },
+    });
+    if (!childRows.length) return experience;
+
+    const childMedia = await this.mediaMap(childRows.flatMap(child => [
+      child.featuredMediaId,
+      ...this.jsonArray<string>(child.galleryMediaIds),
+    ]));
+    const childLegacyMedia = await this.mediaBySourceIdMap(
+      childRows.flatMap(child => this.jsonArray<number>(child.galleryMediaSourceIds)),
+    );
+    const packages = childRows.map(child => this.mapExperience(child, childMedia, childLegacyMedia));
+    return resolveExperienceFamily(experience, packages);
   }
 
   async getDestinations(): Promise<PublicDestination[]> {
