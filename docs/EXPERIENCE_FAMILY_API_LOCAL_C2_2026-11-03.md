@@ -1,6 +1,6 @@
 # API de experiencias y modalidades — ciclo C2 local (03/11/2026)
 
-**Estado:** implementación de lectura preparada y probada **solo en una rama local**. No se han creado padres ni modificado datos. Este documento no constituye aprobación de staging.
+**Estado:** implementación de lectura preparada y probada localmente; versionada en la rama aislada `feat/experience-family-api-local-20261103` para sincronizar con la copia local de Wilmer. No se han creado padres ni modificado datos. Este documento no constituye aprobación de staging.
 
 ## Fuente y alcance
 
