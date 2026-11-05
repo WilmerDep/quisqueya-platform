@@ -68,6 +68,21 @@ describe('Experiencias con modalidades — contrato público v2', () => {
     expect(resolveExperienceCatalog([main])).toEqual([main]);
   });
 
+  it('admite borradores solo mediante la opción explícita para la vista previa protegida', () => {
+    const main = parent(['draft-package', 'active-package', 'archived-package']);
+    const draft = experience('draft-package', { status: 'draft' });
+    const published = experience('active-package');
+    const archived = experience('archived-package', { status: 'archived' });
+
+    expect(resolveExperienceFamily(main, [draft, published, archived]).packages?.map(item => item.slug))
+      .toEqual(['active-package']);
+    expect(resolveExperienceFamily(main, [archived, published, draft], { includeDrafts: true })
+      .packages?.map(item => item.slug)).toEqual(['draft-package', 'active-package']);
+    expect(resolveExperienceCatalog([main, published]).map(item => item.slug)).toEqual([
+      'bavaro-adventure-park',
+    ]);
+  });
+
   it('no agrupa configuraciones inválidas, duplicadas, autorreferenciales ni versiones desconocidas', () => {
     const child = experience('package-a');
     for (const config of [

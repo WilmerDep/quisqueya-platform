@@ -59,11 +59,14 @@ function startingPrice(packages: PublicExperience[]): Record<string, unknown> | 
 export function resolveExperienceFamily(
   parent: PublicExperience,
   published: PublicExperience[],
+  options: { includeDrafts?: boolean } = {},
 ): PublicExperience {
   const config = getExperienceFamilyConfig(parent);
   if (!config) return parent;
 
-  const bySlug = new Map(published.filter(item => item.status === 'published').map(item => [item.slug, item]));
+  const bySlug = new Map(published.filter(item =>
+    item.status === 'published' || (options.includeDrafts && item.status === 'draft'),
+  ).map(item => [item.slug, item]));
   const packages = config.packageSlugs
     .map(slug => bySlug.get(slug))
     .filter((item): item is PublicExperience => Boolean(item));

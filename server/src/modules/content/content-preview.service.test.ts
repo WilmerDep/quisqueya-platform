@@ -38,7 +38,7 @@ const experience = (overrides: Record<string, unknown> = {}) => ({
 
 function setup() {
   const prisma = {
-    experience: { findUnique: vi.fn() },
+    experience: { findUnique: vi.fn(), findMany: vi.fn() },
     mediaAsset: { findUnique: vi.fn(), findMany: vi.fn() },
   };
   const service = new ContentPreviewService(prisma as unknown as PrismaService);
@@ -145,5 +145,76 @@ describe('ContentPreviewService managed experience gallery precedence', () => {
 
     expect(await service.getExperience('not-a-tour')).toBeNull();
     expect(prisma.mediaAsset.findMany).not.toHaveBeenCalled();
+  });
+
+  it('resolves the protected DRAFT family in configured order without inheriting child prices', async () => {
+    const { prisma, service } = setup();
+    const slugs = Array.from({ length: 13 }, (_, i) => `bavaro-adventure-park-package-${i + 1}`);
+    prisma.experience.findUnique.mockResolvedValue(experience({
+      id: 'manual-exp-bavaro-adventure-park',
+      slug: 'bavaro-adventure-park',
+      title: 'Bávaro Adventure Park',
+      featuredMediaId: null,
+      galleryMediaIds: [],
+      galleryMediaSourceIds: [],
+      pricingMode: 'ON_REQUEST',
+      pricingJson: null,
+      displayJson: { experienceFamily: { version: 2, mode: 'multi_inquiry', packageSlugs: slugs } },
+    }));
+    const children = slugs.map((slug, i) => experience({
+      id: `manual-exp-${slug}`,
+      slug,
+      title: `Modalidad ${i + 1}`,
+      featuredMediaId: null,
+      galleryMediaIds: [],
+      galleryMediaSourceIds: [],
+      pricingMode: 'FIXED',
+      pricingJson: { currency: 'USD', basis: 'person', from: 100 + i * 10 },
+      includedItemsJson: [`Incluido ${i + 1}`],
+      excludedItemsJson: [`No incluido ${i + 1}`],
+    }));
+    prisma.experience.findMany.mockResolvedValue([...children].reverse());
+
+    const result = await service.getExperience('bavaro-adventure-park');
+
+    expect(result).toMatchObject({
+      kind: 'package_family',
+      status: 'draft',
+      preview: true,
+      packageCount: 13,
+      packageSelection: { version: 2, mode: 'multi_inquiry' },
+      pricingMode: 'on_request',
+    });
+    expect(result?.pricing).toBeUndefined();
+    expect(result?.packages?.map(item => item.slug)).toEqual(slugs);
+    expect(result?.packages?.[0]).toMatchObject({
+      preview: true,
+      status: 'draft',
+      pricing: { from: 100, currency: 'USD', basis: 'person' },
+      included: ['Incluido 1'],
+      excluded: ['No incluido 1'],
+    });
+    expect(result?.packages?.[12].pricing?.from).toBe(220);
+    expect(prisma.experience.findMany).toHaveBeenCalledWith({
+      where: {
+        slug: { in: slugs },
+        status: { in: [ContentRecordStatus.DRAFT, ContentRecordStatus.PUBLISHED] },
+      },
+    });
+    expect(prisma.mediaAsset.findMany).not.toHaveBeenCalled();
+  });
+
+  it('does not query unrelated packages for a standalone preview', async () => {
+    const { prisma, service } = setup();
+    prisma.experience.findUnique.mockResolvedValue(experience({
+      featuredMediaId: null,
+      galleryMediaIds: [],
+      galleryMediaSourceIds: [],
+    }));
+
+    const result = await service.getExperience('bavaro-adventure-park-buggy-vip');
+
+    expect(result?.kind).toBeUndefined();
+    expect(prisma.experience.findMany).not.toHaveBeenCalled();
   });
 });
