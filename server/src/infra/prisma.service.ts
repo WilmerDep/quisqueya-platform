@@ -11,15 +11,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor(config: ConfigService) {
     // Use the independently patched MariaDB connector rather than the adapter's
     // bundled connector. The external pool is owned and closed by this service.
+    const host = config.get<string>('MYSQL_HOST', '127.0.0.1');
+    const password = config.get<string>('MYSQL_PASSWORD', '');
+    const isLocalDevelopment =
+      config.get<string>('NODE_ENV') === 'development' &&
+      ['127.0.0.1', 'localhost', '::1'].includes(host);
+
     const pool = mariadb.createPool({
-      host: config.get<string>('MYSQL_HOST', '127.0.0.1'),
+      host,
       port: Number(config.get<string>('MYSQL_PORT', '3306')),
       user: config.get<string>('MYSQL_USER', 'root'),
-      password: config.get<string>('MYSQL_PASSWORD', ''),
+      ...(password ? { password } : {}),
       database: config.get<string>('MYSQL_DATABASE', 'quisqueya_core'),
       connectionLimit: Number(config.get<string>('MYSQL_POOL_LIMIT', '10')),
       // Match PrismaMariaDb's internal-pool behavior for prepared statements.
       prepareCacheLength: 0,
+      ...(isLocalDevelopment && !password ? { allowPublicKeyRetrieval: true } : {}),
     });
 
     // The adapter types its Pool against bundled mariadb@3.4.5, while this
