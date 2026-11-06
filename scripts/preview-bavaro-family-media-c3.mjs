@@ -84,8 +84,11 @@ export function inspectDatabaseMedia(manifest, experiences, assets) {
     .map(file => ({ fileName: file.fileName, driveFileId: file.driveFileId }));
   const metadataMismatches = allFiles.flatMap(file => {
     const asset = assetsByKey.get(file.driveFileId);
-    return asset && asset.fileName !== file.fileName
-      ? [{ driveFileId: file.driveFileId, expectedFileName: file.fileName, foundFileName: asset.fileName }]
+    // Los nombres .webp del manifiesto son etiquetas editoriales. En Drive
+    // el original puede ser JPEG/PNG; el importador conserva su nombre real.
+    const reviewedName = asset?.provenanceJson?.reviewedFileName ?? asset?.fileName;
+    return asset && reviewedName !== file.fileName
+      ? [{ driveFileId: file.driveFileId, expectedFileName: file.fileName, foundFileName: reviewedName }]
       : [];
   });
 
@@ -103,10 +106,10 @@ export function inspectDatabaseMedia(manifest, experiences, assets) {
     const featuredMediaId = assetsByKey.get(item.featured.driveFileId)?.id ?? null;
     const galleryMediaIds = item.gallery.map(file => assetsByKey.get(file.driveFileId)?.id ?? null);
     const existingGallery = Array.isArray(row.galleryMediaIds) ? row.galleryMediaIds : [];
-    if (row.featuredMediaId && featuredMediaId && row.featuredMediaId !== featuredMediaId) {
+    if (row.featuredMediaId && row.featuredMediaId !== featuredMediaId) {
       conflicts.push({ slug: item.slug, field: 'featuredMediaId', reason: 'EXISTING_FEATURED_MUST_BE_REVIEWED' });
     }
-    if (existingGallery.length > 0 && galleryMediaIds.every(Boolean) &&
+    if (existingGallery.length > 0 &&
         JSON.stringify(existingGallery) !== JSON.stringify(galleryMediaIds)) {
       conflicts.push({ slug: item.slug, field: 'galleryMediaIds', reason: 'EXISTING_GALLERY_MUST_BE_REVIEWED' });
     }
@@ -189,7 +192,7 @@ async function run() {
         }),
         prisma.mediaAsset.findMany({
           where: { storageProvider: 'google-drive', storageKey: { in: driveIds } },
-          select: { id: true, storageProvider: true, storageKey: true, fileName: true },
+          select: { id: true, storageProvider: true, storageKey: true, fileName: true, provenanceJson: true },
         }),
       ]);
       report.database = inspectDatabaseMedia(manifest, experiences, assets);

@@ -79,3 +79,17 @@ test('bloquea si una experiencia no está DRAFT o su galería previa difiere', (
   assert.equal(report.conflicts[0].slug, rows[1].slug);
   assert.equal(report.proposedLinks.length, 0);
 });
+
+test('admite JPEG original si la etiqueta editorial aprobada está en procedencia', () => {
+  const actual = structuredClone(assets);
+  actual[0].fileName = 'Catamaran Adventure 02.jpg';
+  actual[0].provenanceJson = { reviewedFileName: files[0].fileName };
+  assert.equal(inspectDatabaseMedia(manifest, experiences, actual).readyForReviewedDraftLinks, true);
+});
+
+test('detecta relaciones anteriores aun antes de registrar los assets', () => {
+  const rows = structuredClone(experiences);
+  rows[0].featuredMediaId = 'legacy-media-id';
+  const report = inspectDatabaseMedia(manifest, rows, []);
+  assert.ok(report.blockReasons.includes('EXISTING_MEDIA_RELATIONS_REQUIRE_REVIEW'));
+});
