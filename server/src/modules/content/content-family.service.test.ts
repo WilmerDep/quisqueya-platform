@@ -90,4 +90,28 @@ describe('ContentService /api/v1/public/experiences (familias)', () => {
     expect(legacy?.kind).toBeUndefined();
     expect(prisma.experience.findMany).not.toHaveBeenCalled();
   });
+
+  it('aplica la etiqueta de Altos en la familia sin renombrar el detalle histórico de WordPress', async () => {
+    const { prisma, service } = setup();
+    const legacySlug = 'aventura-en-buggies-y-altos-de-chavon';
+    const originalTitle = 'Aventura en Buggies y Altos de Chavón';
+    const presentationLabel = 'Altos de Chavón + Aventura en Buggies';
+    const family = row('altos-de-chavon', { displayJson: {
+      experienceFamily: { version: 2, mode: 'multi_inquiry', packageSlugs: [legacySlug] },
+      experiencePackageLabels: { [legacySlug]: presentationLabel },
+    } });
+    const child = row(legacySlug, { title: originalTitle, sourceProvider: 'WORDPRESS' });
+    prisma.experience.findFirst.mockImplementation(async ({ where }) =>
+      where.slug === family.slug ? family : child);
+    prisma.experience.findMany.mockResolvedValue([child]);
+
+    const parentDetail = await service.getExperience(family.slug);
+    expect(parentDetail?.packages?.[0]).toMatchObject({
+      slug: legacySlug, title: presentationLabel,
+    });
+
+    const oldDetail = await service.getExperience(legacySlug);
+    expect(oldDetail).toMatchObject({ slug: legacySlug, title: originalTitle });
+    expect(child.title).toBe(originalTitle);
+  });
 });
