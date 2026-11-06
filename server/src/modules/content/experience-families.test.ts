@@ -141,4 +141,45 @@ describe('Experiencias con modalidades — contrato público v2', () => {
     expect(detail.pricing?.from).toBe(120);
     expect(detail.packageSelection?.mode).toBe('multi_inquiry');
   });
+
+  it('usa rótulos de presentación solo dentro del selector de Altos y conserva títulos históricos', () => {
+    const slugs = [
+      'altos-de-chavon-medio-dia',
+      'altos-de-chavon-cueva-de-las-maravillas',
+      'santo-domingo-city-tour-altos-de-chavon',
+      'aventura-en-buggies-y-altos-de-chavon',
+    ];
+    const labels = [
+      'Altos de Chavón – Medio Día',
+      'Altos de Chavón + Cueva de las Maravillas',
+      'Altos de Chavón + Santo Domingo City Tour',
+      'Altos de Chavón + Aventura en Buggies',
+    ];
+    const main = experience('altos-de-chavon', { display: {
+      experienceFamily: { version: 2, mode: 'multi_inquiry', packageSlugs: slugs },
+      experiencePackageLabels: Object.fromEntries(slugs.map((slug, i) => [slug, labels[i]])),
+    } });
+    const children = slugs.map((slug, i) => experience(slug, {
+      title: `Título histórico ${i + 1}`,
+      pricingMode: i === 3 ? 'on_request' : 'fixed',
+      pricing: i === 3 ? undefined : { currency: 'USD', basis: 'person', from: 69 + i * 20 },
+    }));
+    const result = resolveExperienceFamily(main, [...children].reverse());
+
+    expect(result.packages?.map(item => item.title)).toEqual(labels);
+    expect(result.packages?.map(item => item.slug)).toEqual(slugs);
+    expect(result.pricingMode).toBe('on_request');
+    expect(children[2].title).toBe('Título histórico 3');
+    expect(resolveExperienceFamily(children[2], children).title).toBe('Título histórico 3');
+    expect(resolveExperienceCatalog([main, ...children]).map(item => item.slug)).toEqual(['altos-de-chavon']);
+  });
+
+  it('ignora etiquetas no válidas sin deshacer una familia válida', () => {
+    const main = experience('altos-de-chavon', { display: {
+      experienceFamily: { version: 2, mode: 'multi_inquiry', packageSlugs: ['package-a'] },
+      experiencePackageLabels: { 'package-a': '   ', 'unrelated-package': 'No aplicar' },
+    } });
+    const item = experience('package-a', { title: 'Nombre original' });
+    expect(resolveExperienceFamily(main, [item]).packages?.[0].title).toBe('Nombre original');
+  });
 });
