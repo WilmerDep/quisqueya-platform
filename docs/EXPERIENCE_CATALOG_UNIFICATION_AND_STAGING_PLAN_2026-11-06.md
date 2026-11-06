@@ -7,10 +7,10 @@ Estado: diagnóstico y plan de ejecución. **No constituye publicación ni aprob
 
 1. Se aprueba la composición responsive y las animaciones de la vista privada C4 de Bávaro Adventure Park, incluida la navegación de escritorio y móvil. La aceptación visual del usuario no sustituye lint, build ni QA contra el catálogo real.
 2. La web comercial mostrará una **experiencia principal por familia** y, dentro de ella, los paquetes o modalidades que realmente correspondan. No se eliminarán URLs históricas ni registros para conseguir ese resultado.
-3. Las experiencias nuevas que se publiquen deben aparecer en la sección `/experiencias`, con la incorporación reciente destacada al principio, manteniendo la navegación hacia su single.
+3. Las experiencias **nuevas** aprobadas deben ocupar las primeras posiciones de `/experiencias`, comenzando por la incorporación más reciente; las experiencias **antiguas migradas desde WordPress** deben quedar después de las nuevas. Se mantienen todas las fichas y sus enlaces a las singles.
 4. La API NestJS y MySQL son la fuente de verdad; la web consume la información y el CRM administrará el catálogo en su fase correspondiente.
 5. Después de consolidar datos y UI se preparará una publicación supervisada en **staging**, antes de cualquier cambio en producción.
-6. Más adelante se investigarán imágenes faltantes. Las imágenes externas se separarán en Drive de las propias y tendrán procedencia, titular y condiciones de uso registradas antes de asociarlas a experiencias.
+6. Más adelante se buscarán en internet imágenes para experiencias sin multimedia suficiente en Drive. Dentro de **la carpeta existente de cada experiencia** se creará una subcarpeta `Imágenes externas`, diferenciada del material propio. Estas imágenes serán **temporales y reemplazables por las originales**, con procedencia, derechos de uso y asociaciones documentados.
 
 ## Fuentes revisadas y nivel de certeza
 
@@ -69,8 +69,9 @@ Estado: diagnóstico y plan de ejecución. **No constituye publicación ni aprob
 ### U3 — Orden editorial y catálogo
 
 1. Publicar una tarjeta por experiencia/familia en `/experiencias` y enlazar a la single correspondiente.
-2. Para destacar las incorporaciones más recientes, definir **posición editorial explícita** con `sortOrder` y comprobar el resultado; el backend actual ordena ascendente y **no** por fecha de publicación.
-3. No ocultar fichas aisladas, borrar slugs existentes ni cambiar URL/canonical/SEO sin revisión de enlaces históricos.
+2. Definir **posición editorial explícita** en `sortOrder`: primero las experiencias nuevas aprobadas, ordenadas entre sí de la más reciente a la anterior; después las experiencias antiguas provenientes de WordPress. El backend actual ordena `sortOrder` ascendente y luego título, **no** por fecha. No basta con marcar una experiencia `PUBLISHED`.
+3. Utilizar `sourceProvider` (`MANUAL` / `WORDPRESS`, declarado en Prisma) como evidencia de procedencia para conciliar el catálogo, pero no asumir que todo registro `MANUAL` es automáticamente reciente: confirmar la prioridad editorial real y evitar reordenar indiscriminadamente contenido preexistente.
+4. No ocultar fichas aisladas, borrar slugs existentes ni cambiar URL/canonical/SEO sin revisión de enlaces históricos.
 
 ### U4 — Staging supervisado
 
@@ -81,13 +82,13 @@ Estado: diagnóstico y plan de ejecución. **No constituye publicación ni aprob
 
 ## Trabajo posterior de multimedia externa
 
-Cuando las familias estén conciliadas, crear bajo el árbol autorizado de Drive una carpeta claramente separada, por ejemplo:
+Cuando las familias estén conciliadas, localizar primero la carpeta de cada experiencia bajo el árbol autorizado de Drive. Solo cuando falten imágenes adecuadas, crear dentro de **esa misma carpeta** la subcarpeta:
 
-`PAGINA WEB / Experiencias / REFERENCIAS EXTERNAS - NO PROPIAS / <slug-de-experiencia>`
+`PAGINA WEB / Experiencias / <carpeta-existente-de-la-experiencia> / Imágenes externas`
 
-Por cada candidata documentar al menos: URL original, página del proveedor, autor/titular si consta, licencia o permiso verificable, fecha de consulta, descripción, experiencia y modalidad correctas, atribución exigida, estado de revisión y nombre/ID de Drive. **Que una imagen tenga crédito o diga «no propia» no concede permiso para reutilizarla comercialmente.** Usar materiales oficiales autorizados, licencias compatibles o autorización del titular; si no se comprueban derechos, dejarla pendiente y no publicarla.
+Buscar candidatas de la experiencia concreta, preferentemente fotografías de proveedores y fuentes oficiales autorizadas, y descargarlas a esa subcarpeta **solo cuando su reutilización esté permitida**. Por cada candidata documentar: URL original, página del proveedor, autor/titular si consta, licencia o permiso verificable, fecha de consulta, descripción, experiencia y modalidad correctas, atribución exigida, condición de **recurso externo temporal** y nombre/ID de Drive. **Que una imagen tenga crédito o diga «no propia» no concede permiso para reutilizarla comercialmente.** Si no se comprueban derechos, dejarla pendiente y no publicarla.
 
-Después de la aprobación editorial y legal, registrar la referencia en `MediaAsset` y vincularla mediante `featuredMediaId` o `galleryMediaIds`. El frontend consumirá el proxy de la API. No subir binarios al repositorio, crear enlaces directos improvisados de Drive ni mezclar imágenes externas con las aprobadas por Quisqueya Travel.
+Después de la aprobación editorial y de uso, registrar la referencia en `MediaAsset` y vincularla mediante `featuredMediaId` o `galleryMediaIds`. El frontend consumirá el proxy de la API. Cuando Breidy suministre la foto original aprobada, se actualizará la asociación del `MediaAsset` correspondiente y se conservará el registro de procedencia/reemplazo para poder auditar qué recurso temporal se sustituyó. No subir binarios al repositorio, crear enlaces directos improvisados de Drive ni mezclar imágenes externas con las propias en una misma subcarpeta.
 
 ## Criterios mínimos para considerar cerrada una unificación
 
@@ -95,7 +96,7 @@ Después de la aprobación editorial y legal, registrar la referencia en `MediaA
 - Precio, unidad, alimentación, transporte, menores y restricciones conservados **por opción**; incertidumbre visible como consulta.
 - API como fuente única; frontend sin datos ficticios ni acoplamiento directo al seed.
 - Slugs previos y enlaces existentes funcionales.
-- Lista de experiencias ordenada según decisión editorial verificada y single correcta.
+- Lista de experiencias con nuevas incorporaciones primero y contenido histórico de WordPress después, en el orden editorial verificado, y cada tarjeta enlazando a la single correcta.
 - Pruebas de integridad, build, responsive y reversión aprobadas antes de staging.
 
 ## Próxima tarea ejecutable
