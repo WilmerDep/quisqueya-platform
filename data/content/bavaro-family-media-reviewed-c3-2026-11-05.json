@@ -1,0 +1,424 @@
+{
+  "schemaVersion": "qt-bavaro-family-media-c3-reviewed-1",
+  "familySlug": "bavaro-adventure-park",
+  "sourceDataset": "data/content/client-experiences-2026-09-bavaro-adventure-park.seed.json",
+  "sourceDriveFolder": "https://drive.google.com/drive/u/1/folders/1l1_ULH51T7brst4J4l6fY6H5q3p18HFS",
+  "review": {
+    "status": "EDITORIALLY_APPROVED_NOT_APPLIED",
+    "approvedBy": "Wilmer",
+    "approvedSelection": {
+      "experienceCount": 13,
+      "featuredCount": 13,
+      "galleryCount": 31,
+      "uniqueFileCount": 44
+    },
+    "constraints": [
+      "No repeated Drive file IDs across the 13 modalities.",
+      "Compare visual content; different names and IDs can still show near-duplicate photographs.",
+      "Keep the 13 experiences and the family in DRAFT; this proposal is not a publication or database-write authorization.",
+      "Do not treat Catamaran Adventure media as Party Boat without a verified source.",
+      "Do not expose provider credentials; these Drive identifiers are references, not public image delivery URLs."
+    ]
+  },
+  "visualDuplicateReview": [
+    {
+      "candidatePair": [
+        "sacred-river-06.webp",
+        "sacred-river-33.webp"
+      ],
+      "decision": "KEEP_BOTH",
+      "reason": "Same setting, distinct poses, per Wilmer."
+    },
+    {
+      "candidatePair": [
+        "sacred-river-70.webp",
+        "sacred-river-72.webp"
+      ],
+      "decision": "PREFER_SINGLE",
+      "keep": "sacred-river-72.webp",
+      "omit": "sacred-river-70.webp"
+    },
+    {
+      "candidatePair": [
+        "sacred-river-night-01.webp",
+        "sacred-river-night-02.webp"
+      ],
+      "decision": "PREFER_SINGLE",
+      "keep": "sacred-river-night-02.webp",
+      "omit": "sacred-river-night-01.webp"
+    },
+    {
+      "candidatePair": [
+        "sacred-river-45.webp",
+        "sacred-river-67.webp"
+      ],
+      "decision": "PREFER_SINGLE",
+      "keep": "sacred-river-45.webp",
+      "omit": "sacred-river-67.webp"
+    },
+    {
+      "candidatePair": [
+        "sacred-river-22.webp",
+        "sacred-river-55.webp"
+      ],
+      "decision": "PREFER_SINGLE",
+      "keep": "sacred-river-22.webp",
+      "omit": "sacred-river-55.webp"
+    },
+    {
+      "candidatePair": [
+        "sacred-river-night-03.webp",
+        "sacred-river-night-17.webp"
+      ],
+      "decision": "PREFER_WITH_PEOPLE",
+      "keep": "sacred-river-night-03.webp",
+      "omit": "sacred-river-night-17.webp",
+      "note": "Interpreted from Wilmer's description of the image featuring two people; he referred to '13' verbally, so confirm filename if questioned."
+    }
+  ],
+  "experiences": [
+    {
+      "slug": "bavaro-adventure-park-explorer-adventure-catamaran",
+      "reviewSheetIndex": 1,
+      "featured": {
+        "fileName": "catamaran-adventure-02.webp",
+        "driveFileId": "16eDpv-z49gNiY6DbPJJphAGbPQ8AMooG",
+        "sourceFolder": "Catamaran Adventure",
+        "sourceUrl": "https://drive.google.com/file/d/16eDpv-z49gNiY6DbPJJphAGbPQ8AMooG/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "catamaran-adventure-04.webp",
+          "driveFileId": "1dEGwxPhAbbIF5H89eSU5r7kHnMTV0Qae",
+          "sourceFolder": "Catamaran Adventure",
+          "sourceUrl": "https://drive.google.com/file/d/1dEGwxPhAbbIF5H89eSU5r7kHnMTV0Qae/view?usp=drivesdk"
+        },
+        {
+          "fileName": "catamaran-adventure-05.webp",
+          "driveFileId": "1AlBPdd9Ek5HRpHia7Ewl-vQkKsx3Dl3O",
+          "sourceFolder": "Catamaran Adventure",
+          "sourceUrl": "https://drive.google.com/file/d/1AlBPdd9Ek5HRpHia7Ewl-vQkKsx3Dl3O/view?usp=drivesdk"
+        },
+        {
+          "fileName": "catamaran-adventure-07.webp",
+          "driveFileId": "1JtpgHaug8rK6wo9LWqSfEaoY7aa4wrn2",
+          "sourceFolder": "Catamaran Adventure",
+          "sourceUrl": "https://drive.google.com/file/d/1JtpgHaug8rK6wo9LWqSfEaoY7aa4wrn2/view?usp=drivesdk"
+        },
+        {
+          "fileName": "catamaran-adventure-08.webp",
+          "driveFileId": "1VTi9T7H_TYwk8wbgfZz5dpVXcXHF9TJQ",
+          "sourceFolder": "Catamaran Adventure",
+          "sourceUrl": "https://drive.google.com/file/d/1VTi9T7H_TYwk8wbgfZz5dpVXcXHF9TJQ/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-vip",
+      "reviewSheetIndex": 2,
+      "featured": {
+        "fileName": "buggy-vip-01.webp",
+        "driveFileId": "194GRCPVOj5hH8BmBvQzmO4CO8OgWUecM",
+        "sourceFolder": "Buggy VIP",
+        "sourceUrl": "https://drive.google.com/file/d/194GRCPVOj5hH8BmBvQzmO4CO8OgWUecM/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "blue-lagoon-cenote-03.webp",
+          "driveFileId": "1IHZMk7IU6XSEtMbLu-HJJSyZtuE8lAPJ",
+          "sourceFolder": "Blue Lagoon Cenote",
+          "sourceUrl": "https://drive.google.com/file/d/1IHZMk7IU6XSEtMbLu-HJJSyZtuE8lAPJ/view?usp=drivesdk"
+        },
+        {
+          "fileName": "dominican-village-01.webp",
+          "driveFileId": "188TMWAJKP2MnZk2Ljb1BqRfcAQwWvdox",
+          "sourceFolder": "Dominican Village",
+          "sourceUrl": "https://drive.google.com/file/d/188TMWAJKP2MnZk2Ljb1BqRfcAQwWvdox/view?usp=drivesdk"
+        },
+        {
+          "fileName": "maze-garden-02.webp",
+          "driveFileId": "1i17bPHpEjL3X0zSVd0cd2uE5DPOCU3Ce",
+          "sourceFolder": "Maze Garden",
+          "sourceUrl": "https://drive.google.com/file/d/1i17bPHpEjL3X0zSVd0cd2uE5DPOCU3Ce/view?usp=drivesdk"
+        },
+        {
+          "fileName": "waterfall-pool-04.webp",
+          "driveFileId": "1fqbvxu-so9aE6x4Onfa4gBNga3rRBXAU",
+          "sourceFolder": "Waterfall Pool",
+          "sourceUrl": "https://drive.google.com/file/d/1fqbvxu-so9aE6x4Onfa4gBNga3rRBXAU/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-zipline-mega-splash",
+      "reviewSheetIndex": 3,
+      "featured": {
+        "fileName": "zipline-mega-splash-01.webp",
+        "driveFileId": "1FU__gJd24NZvMalt6l3CFRInrnGhqNaj",
+        "sourceFolder": "Zipline Mega Splash",
+        "sourceUrl": "https://drive.google.com/file/d/1FU__gJd24NZvMalt6l3CFRInrnGhqNaj/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "zipline-mega-splash-03.webp",
+          "driveFileId": "1TYVD348DS_FShm2bLnNHBdsb_JIfVUvr",
+          "sourceFolder": "Zipline Mega Splash",
+          "sourceUrl": "https://drive.google.com/file/d/1TYVD348DS_FShm2bLnNHBdsb_JIfVUvr/view?usp=drivesdk"
+        },
+        {
+          "fileName": "blue-lagoon-cenote-02.webp",
+          "driveFileId": "1LFPL7PgkzrjacE7IzFyg2vNtE88CVXHO",
+          "sourceFolder": "Blue Lagoon Cenote",
+          "sourceUrl": "https://drive.google.com/file/d/1LFPL7PgkzrjacE7IzFyg2vNtE88CVXHO/view?usp=drivesdk"
+        },
+        {
+          "fileName": "dominican-village-02.webp",
+          "driveFileId": "1-t_h9b7MSb32wvOd_pOae_ghwSeBN1JB",
+          "sourceFolder": "Dominican Village",
+          "sourceUrl": "https://drive.google.com/file/d/1-t_h9b7MSb32wvOd_pOae_ghwSeBN1JB/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river",
+      "reviewSheetIndex": 4,
+      "featured": {
+        "fileName": "sacred-river-68.webp",
+        "driveFileId": "1AQgHjnzzjfqGyrtjyedbbQwPkQ5x8hyE",
+        "sourceFolder": "Sacred River",
+        "sourceUrl": "https://drive.google.com/file/d/1AQgHjnzzjfqGyrtjyedbbQwPkQ5x8hyE/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "sacred-river-48.webp",
+          "driveFileId": "1bUkPcIT6JEjhN1TWULSK_nxKCEMJOILt",
+          "sourceFolder": "Sacred River",
+          "sourceUrl": "https://drive.google.com/file/d/1bUkPcIT6JEjhN1TWULSK_nxKCEMJOILt/view?usp=drivesdk"
+        },
+        {
+          "fileName": "jungle-river-03.webp",
+          "driveFileId": "19La4w_cZ7OAtQYLkqPFIWpRg9kRkeO1y",
+          "sourceFolder": "Jungle River",
+          "sourceUrl": "https://drive.google.com/file/d/19La4w_cZ7OAtQYLkqPFIWpRg9kRkeO1y/view?usp=drivesdk"
+        },
+        {
+          "fileName": "waterfall-pool-02.webp",
+          "driveFileId": "1pULZ6-TYsrdD4_BEofqJAwgfcT-oZDRz",
+          "sourceFolder": "Waterfall Pool",
+          "sourceUrl": "https://drive.google.com/file/d/1pULZ6-TYsrdD4_BEofqJAwgfcT-oZDRz/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-zipline",
+      "reviewSheetIndex": 5,
+      "featured": {
+        "fileName": "zipline-mega-splash-02.webp",
+        "driveFileId": "1HX92U4KeZF_7JIixSma24pA0dTfRzjAh",
+        "sourceFolder": "Zipline Mega Splash",
+        "sourceUrl": "https://drive.google.com/file/d/1HX92U4KeZF_7JIixSma24pA0dTfRzjAh/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "buggy-vip-03.webp",
+          "driveFileId": "1Cw9ciY7-Ke7MBrxgmp1GpUMjgOzKblqn",
+          "sourceFolder": "Buggy VIP",
+          "sourceUrl": "https://drive.google.com/file/d/1Cw9ciY7-Ke7MBrxgmp1GpUMjgOzKblqn/view?usp=drivesdk"
+        },
+        {
+          "fileName": "zipline-mega-splash-05.webp",
+          "driveFileId": "1uje-kzTdaVXxlQKPTn5_D_I9Q4y3MOtJ",
+          "sourceFolder": "Zipline Mega Splash",
+          "sourceUrl": "https://drive.google.com/file/d/1uje-kzTdaVXxlQKPTn5_D_I9Q4y3MOtJ/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river-zipline",
+      "reviewSheetIndex": 6,
+      "featured": {
+        "fileName": "sacred-river-45.webp",
+        "driveFileId": "1btDXhnc6yfDK5X39RMsdxLOU3YfoVjM_",
+        "sourceFolder": "Sacred River",
+        "sourceUrl": "https://drive.google.com/file/d/1btDXhnc6yfDK5X39RMsdxLOU3YfoVjM_/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "sacred-river-51.webp",
+          "driveFileId": "11JDjREg1Of7RFpJHslCrCGMvEuJi05_l",
+          "sourceFolder": "Sacred River",
+          "sourceUrl": "https://drive.google.com/file/d/11JDjREg1Of7RFpJHslCrCGMvEuJi05_l/view?usp=drivesdk"
+        },
+        {
+          "fileName": "zipline-mega-splash-06.webp",
+          "driveFileId": "1oPDzs8RV36H_eIfrHvQ6T_Y2gtZGwnTP",
+          "sourceFolder": "Zipline Mega Splash",
+          "sourceUrl": "https://drive.google.com/file/d/1oPDzs8RV36H_eIfrHvQ6T_Y2gtZGwnTP/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-party-boat",
+      "reviewSheetIndex": 7,
+      "featured": {
+        "fileName": "buggy-vip-02.webp",
+        "driveFileId": "1axL3mPNYHLfrElG7nT6Jzg2pbuTRZQUn",
+        "sourceFolder": "Buggy VIP",
+        "sourceUrl": "https://drive.google.com/file/d/1axL3mPNYHLfrElG7nT6Jzg2pbuTRZQUn/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "buggy-vip-04.webp",
+          "driveFileId": "1UwETvX52AXEPRbKHiRTBNBg157lkCnxq",
+          "sourceFolder": "Buggy VIP",
+          "sourceUrl": "https://drive.google.com/file/d/1UwETvX52AXEPRbKHiRTBNBg157lkCnxq/view?usp=drivesdk"
+        }
+      ],
+      "openIssue": "PARTY_BOAT_MEDIA_NOT_VERIFIED; verified Buggy images only. Do not substitute Catamaran Adventure without source confirmation."
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-vip",
+      "reviewSheetIndex": 8,
+      "featured": {
+        "fileName": "polaris-vip-02.webp",
+        "driveFileId": "1xXqeOGH926g7sv5e7oxlwO14kISolTye",
+        "sourceFolder": "Polaris VIP",
+        "sourceUrl": "https://drive.google.com/file/d/1xXqeOGH926g7sv5e7oxlwO14kISolTye/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "polaris-vip-04.webp",
+          "driveFileId": "1r3gkfhWygHHV-oL2ghAX1IAdaTNmxdtl",
+          "sourceFolder": "Polaris VIP",
+          "sourceUrl": "https://drive.google.com/file/d/1r3gkfhWygHHV-oL2ghAX1IAdaTNmxdtl/view?usp=drivesdk"
+        },
+        {
+          "fileName": "polaris-vip-05.webp",
+          "driveFileId": "1PYHY07lSMlQwJBc8gzGBAFddRxwy6qkf",
+          "sourceFolder": "Polaris VIP",
+          "sourceUrl": "https://drive.google.com/file/d/1PYHY07lSMlQwJBc8gzGBAFddRxwy6qkf/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-zipline",
+      "reviewSheetIndex": 9,
+      "featured": {
+        "fileName": "polaris-vip-01.webp",
+        "driveFileId": "1Z6TYw_Yst6N16D_a4ob9rOw0WWoZBZGG",
+        "sourceFolder": "Polaris VIP",
+        "sourceUrl": "https://drive.google.com/file/d/1Z6TYw_Yst6N16D_a4ob9rOw0WWoZBZGG/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "zipline-mega-splash-04.webp",
+          "driveFileId": "1uJHFeTIP4zWwJcPirRMPaRFWVVprlsUL",
+          "sourceFolder": "Zipline Mega Splash",
+          "sourceUrl": "https://drive.google.com/file/d/1uJHFeTIP4zWwJcPirRMPaRFWVVprlsUL/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-full-access-buggy",
+      "reviewSheetIndex": 10,
+      "featured": {
+        "fileName": "buggy-vip-05.webp",
+        "driveFileId": "1cjLcMednqzCtr6hXHBYVbO_H93P1ZqkD",
+        "sourceFolder": "Buggy VIP",
+        "sourceUrl": "https://drive.google.com/file/d/1cjLcMednqzCtr6hXHBYVbO_H93P1ZqkD/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "horseback-riding-02.webp",
+          "driveFileId": "1LPWtgyFl4T9kJmRkI5sqXFRmieYn6Ydb",
+          "sourceFolder": "HorseBack Riding",
+          "sourceUrl": "https://drive.google.com/file/d/1LPWtgyFl4T9kJmRkI5sqXFRmieYn6Ydb/view?usp=drivesdk"
+        },
+        {
+          "fileName": "sacred-river-66.webp",
+          "driveFileId": "1pn-iZQrxbk_ok4Vkwo9FoUP8vxTanTKX",
+          "sourceFolder": "Sacred River",
+          "sourceUrl": "https://drive.google.com/file/d/1pn-iZQrxbk_ok4Vkwo9FoUP8vxTanTKX/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river-de-noche",
+      "reviewSheetIndex": 12,
+      "featured": {
+        "fileName": "sacred-river-night-03.webp",
+        "driveFileId": "1eX2K4wzvyfewAw1u2_wXRFN0x7z8tCW1",
+        "sourceFolder": "Sacred River at night",
+        "sourceUrl": "https://drive.google.com/file/d/1eX2K4wzvyfewAw1u2_wXRFN0x7z8tCW1/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "sacred-river-night-05.webp",
+          "driveFileId": "1uH7_EWHG63n7HpuXoN8KPkQx-PEEL74l",
+          "sourceFolder": "Sacred River at night",
+          "sourceUrl": "https://drive.google.com/file/d/1uH7_EWHG63n7HpuXoN8KPkQx-PEEL74l/view?usp=drivesdk"
+        },
+        {
+          "fileName": "sacred-river-night-06.webp",
+          "driveFileId": "1pGykuVfiNSNcX1-jQgQeazb6m1DDfCU0",
+          "sourceFolder": "Sacred River at night",
+          "sourceUrl": "https://drive.google.com/file/d/1pGykuVfiNSNcX1-jQgQeazb6m1DDfCU0/view?usp=drivesdk"
+        },
+        {
+          "fileName": "sacred-river-night-13.webp",
+          "driveFileId": "1CTeU_LyApgx1mE_aappgLgty_ppx22A-",
+          "sourceFolder": "Sacred River at night",
+          "sourceUrl": "https://drive.google.com/file/d/1CTeU_LyApgx1mE_aappgLgty_ppx22A-/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-de-noche",
+      "reviewSheetIndex": 13,
+      "featured": {
+        "fileName": "polaris-night-01.webp",
+        "driveFileId": "1kxOlQFCwHptneC0Y2pvvGegTEOQUJH2L",
+        "sourceFolder": "Polaris At Night",
+        "sourceUrl": "https://drive.google.com/file/d/1kxOlQFCwHptneC0Y2pvvGegTEOQUJH2L/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "polaris-night-03.webp",
+          "driveFileId": "167EQXcs_FshWeGbXu2DTUMieQn7MXz9l",
+          "sourceFolder": "Polaris At Night",
+          "sourceUrl": "https://drive.google.com/file/d/167EQXcs_FshWeGbXu2DTUMieQn7MXz9l/view?usp=drivesdk"
+        },
+        {
+          "fileName": "polaris-night-05.webp",
+          "driveFileId": "1laIMu4F4omgxSPVTcIUjlT2M24Sz_u5K",
+          "sourceFolder": "Polaris At Night",
+          "sourceUrl": "https://drive.google.com/file/d/1laIMu4F4omgxSPVTcIUjlT2M24Sz_u5K/view?usp=drivesdk"
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-full-access-polaris",
+      "reviewSheetIndex": 11,
+      "featured": {
+        "fileName": "polaris-vip-03.webp",
+        "driveFileId": "1_nZKvbga7vXS0ggpUVdqcXvmqjiWVjfw",
+        "sourceFolder": "Polaris VIP",
+        "sourceUrl": "https://drive.google.com/file/d/1_nZKvbga7vXS0ggpUVdqcXvmqjiWVjfw/view?usp=drivesdk"
+      },
+      "gallery": [
+        {
+          "fileName": "horseback-riding-04.webp",
+          "driveFileId": "1a38pYR0MA0Cv4kFw2o9Ru1TqXHsfyyiJ",
+          "sourceFolder": "HorseBack Riding",
+          "sourceUrl": "https://drive.google.com/file/d/1a38pYR0MA0Cv4kFw2o9Ru1TqXHsfyyiJ/view?usp=drivesdk"
+        },
+        {
+          "fileName": "sacred-river-75.webp",
+          "driveFileId": "1tm0L2x0OtH5AIwP4UIOeDcKURePBfrqd",
+          "sourceFolder": "Sacred River",
+          "sourceUrl": "https://drive.google.com/file/d/1tm0L2x0OtH5AIwP4UIOeDcKURePBfrqd/view?usp=drivesdk"
+        }
+      ]
+    }
+  ]
+}
