@@ -113,6 +113,25 @@ test('blocks conflicting parent identities and child ownership collisions', asyn
   assert.match((await inspectDatabase(claimed.prisma, preview)).blockers.join(' '), /already claimed/);
 });
 
+test('recognizes the same parent when MySQL returns JSON keys in a different order', async () => {
+  const parent = {
+    ...preview.parent,
+    displayJson: { experienceFamily: {
+      mode: 'multi_inquiry',
+      version: 2,
+      packageSlugs: [...preview.parent.displayJson.experienceFamily.packageSlugs],
+    } },
+  };
+  const { prisma } = fakeDatabase({ parent });
+  const inspection = await inspectDatabase(prisma, preview);
+  assert.deepEqual(inspection.blockers, []);
+  assert.equal(inspection.parent.status, 'DRAFT');
+
+  parent.displayJson.experienceFamily.packageSlugs.reverse();
+  const changed = await inspectDatabase(prisma, preview);
+  assert.match(changed.blockers.join(' '), /parent conflicts/);
+});
+
 test('blocks missing destination and reports published-readiness only for complete family', async () => {
   const missing = fakeDatabase({ destination: null });
   assert.match((await inspectDatabase(missing.prisma, preview)).blockers.join(' '), /destination/);
