@@ -1,6 +1,9 @@
 import type { PublicExperience, PublicExperiencePackageSelection } from './content.types.js';
 
-type FamilyConfig = PublicExperiencePackageSelection & { packageSlugs: string[] };
+type FamilyConfig = PublicExperiencePackageSelection & {
+  packageSlugs: string[];
+  packageLabels: Record<string, string>;
+};
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MODES = new Set<PublicExperiencePackageSelection['mode']>(['single', 'multi_inquiry', 'addons']);
@@ -24,7 +27,21 @@ export function getExperienceFamilyConfig(experience: PublicExperience): FamilyC
     return null;
   }
 
-  return { version: 2, mode: config.mode as FamilyConfig['mode'], packageSlugs: slugs };
+  // Presentation-only labels live outside experienceFamily so legacy slugs/titles
+  // remain the source of truth for direct pages, canonical URLs and editorial data.
+  const rawLabels = experience.display?.experiencePackageLabels;
+  const packageLabels: Record<string, string> = {};
+  if (rawLabels && typeof rawLabels === 'object' && !Array.isArray(rawLabels)) {
+    const labels = rawLabels as Record<string, unknown>;
+    for (const slug of slugs) {
+      const label = labels[slug];
+      if (typeof label === 'string' && label.trim().length > 0 && label.trim().length <= 160) {
+        packageLabels[slug] = label.trim();
+      }
+    }
+  }
+
+  return { version: 2, mode: config.mode as FamilyConfig['mode'], packageSlugs: slugs, packageLabels };
 }
 
 function startingPrice(packages: PublicExperience[]): Record<string, unknown> | undefined {
@@ -69,7 +86,10 @@ export function resolveExperienceFamily(
   ).map(item => [item.slug, item]));
   const packages = config.packageSlugs
     .map(slug => bySlug.get(slug))
-    .filter((item): item is PublicExperience => Boolean(item));
+    .filter((item): item is PublicExperience => Boolean(item))
+    .map(item => config.packageLabels[item.slug]
+      ? { ...item, title: config.packageLabels[item.slug] }
+      : item);
   if (!packages.length) return parent;
 
   const pricing = startingPrice(packages);
