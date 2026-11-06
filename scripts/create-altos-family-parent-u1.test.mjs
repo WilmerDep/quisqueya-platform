@@ -113,6 +113,12 @@ test('creates only parent and primary la-romana relation, then safely no-ops', a
   assert.deepEqual(state.children, before);
   assert.equal(state.modifiedChildren, 0);
 
+  // MariaDB/Prisma may round-trip JSON object keys in a different order.
+  state.parent.displayJson = { experienceFamily: {
+    mode: 'multi_inquiry',
+    version: 2,
+    packageSlugs: [...preview.parent.displayJson.experienceFamily.packageSlugs],
+  } };
   const second = await applyParent(prisma, preview);
   assert.equal(second.operation, 'NOOP_ALREADY_PREPARED');
   assert.equal(second.writesPerformed, false);
