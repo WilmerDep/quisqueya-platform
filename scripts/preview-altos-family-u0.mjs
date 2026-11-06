@@ -9,6 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import console from 'node:console';
 import process from 'node:process';
 
@@ -54,10 +55,6 @@ export const PACKAGES = Object.freeze([
 
 function ensure(condition, message) {
   if (!condition) throw new Error(`Altos U0 stop: ${message}`);
-}
-
-function sameJson(a, b) {
-  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 export function buildPreview(primarySeed, secondSeed) {
@@ -119,7 +116,7 @@ export async function inspectDatabase(prisma, preview) {
     existingParent.sourceProvider !== 'MANUAL' ||
     existingParent.pricingMode !== 'ON_REQUEST' ||
     !['DRAFT', 'PUBLISHED'].includes(existingParent.status) ||
-    !sameJson(existingParent.displayJson?.experienceFamily, preview.parent.displayJson.experienceFamily))) {
+    !isDeepStrictEqual(existingParent.displayJson?.experienceFamily, preview.parent.displayJson.experienceFamily))) {
     blockers.push('existing parent conflicts with the confirmed four-package family');
   }
   if (!destination || destination.status !== 'PUBLISHED') {
