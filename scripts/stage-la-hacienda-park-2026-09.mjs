@@ -1,26 +1,34 @@
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import console from 'node:console';
+import process from 'node:process';
 import { PrismaClient, ContentRecordStatus, ContentSourceProvider } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-const adapter = new PrismaMariaDb({
-  host: process.env.MYSQL_HOST || '127.0.0.1',
-  port: Number(process.env.MYSQL_PORT || 3306),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: process.env.MYSQL_DATABASE || 'quisqueya_core',
-  connectionLimit: Number(process.env.MYSQL_POOL_LIMIT || 5),
-});
-
-const prisma = new PrismaClient({ adapter });
-const APPLY = process.argv.includes('--apply');
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 const seedPath = path.join(
   process.cwd(),
   'data',
   'content',
   'client-experiences-2026-09-la-hacienda-park.seed.json',
 );
+let prisma;
+
+export function localConfig(env) {
+  const host = env.MYSQL_HOST;
+  const port = Number(env.MYSQL_PORT || 3306);
+  const database = env.MYSQL_DATABASE;
+  if (!LOCAL_HOSTS.has(host) || database !== 'quisqueya_core' ||
+    ['production', 'staging'].includes(String(env.APP_ENV || '').toLowerCase()) ||
+    !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error('Safety stop: only the explicit local quisqueya_core database is allowed.');
+  }
+  return { host, port, database, user: env.MYSQL_USER || 'root',
+    password: env.MYSQL_PASSWORD || '', connectionLimit: 2 };
+}
 
 function requiredText(value, label) {
   if (typeof value !== 'string' || value.trim().length === 0) {
@@ -39,7 +47,7 @@ function nullableNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function validatePricing(pricing, slug) {
+export function validatePricing(pricing, slug) {
   if (!pricing || typeof pricing !== 'object') {
     throw new Error(`Safety stop: ${slug} has no pricing object.`);
   }
@@ -100,7 +108,7 @@ function validatePricing(pricing, slug) {
   }
 }
 
-function validatePayload(payload) {
+export function validatePayload(payload) {
   const family = payload.family || {};
   const familyKey = requiredText(family.key, 'family.key');
   if (familyKey !== 'la-hacienda-park') {
@@ -127,12 +135,16 @@ function validatePayload(payload) {
   if (id !== 'manual-exp-la-hacienda-park-7-aventuras' || slug !== 'la-hacienda-park-7-aventuras') {
     throw new Error(`Safety stop: unexpected La Hacienda identity ${id} / ${slug}.`);
   }
+  if (JSON.stringify(family.destinationSlugs) !== '["punta-cana"]' ||
+    JSON.stringify(experience.destinationSlugs) !== '["punta-cana"]') {
+    throw new Error('Safety stop: La Hacienda must belong only to the existing Punta Cana destination.');
+  }
 
   validatePricing(experience.pricing, slug);
   return { family, familyKey, experience };
 }
 
-function mutableClientContent(experience) {
+export function mutableClientContent(experience) {
   return {
     title: requiredText(experience.title, `${experience.slug}.title`),
     excerpt: experience.excerpt || null,
@@ -155,7 +167,7 @@ function mutableClientContent(experience) {
   };
 }
 
-async function findDestinations(slugs, label) {
+async function findDestinations(prisma, slugs, label) {
   const unique = [...new Set(asArray(slugs).map(slug => requiredText(slug, `${label}.destinationSlug`)))];
   if (!unique.length) throw new Error(`Safety stop: ${label} has no destinations.`);
 
@@ -175,29 +187,17 @@ async function findDestinations(slugs, label) {
   });
 }
 
-async function buildProposal(payload, family, experience) {
+export async function buildProposal(prisma, payload, family, experience) {
   const slug = requiredText(experience.slug, 'experience.slug');
   const id = requiredText(experience.id, `${slug}.id`);
-  const destinations = await findDestinations(experience.destinationSlugs, slug);
+  const destinations = await findDestinations(prisma, experience.destinationSlugs, slug);
 
-  const existing = await prisma.experience.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      sourceProvider: true,
-      status: true,
-      provenanceJson: true,
-      updatedAt: true,
-    },
-  });
-
-  if (existing && existing.sourceProvider !== ContentSourceProvider.MANUAL) {
-    throw new Error(`Safety stop: ${slug} already exists with sourceProvider ${existing.sourceProvider}.`);
-  }
-  if (existing && existing.status === ContentRecordStatus.PUBLISHED) {
-    throw new Error(`Safety stop: ${slug} is already PUBLISHED. This workflow never modifies published experiences.`);
+  const [existing, idCollision] = await Promise.all([
+    prisma.experience.findUnique({ where: { slug }, select: { id: true, slug: true } }),
+    prisma.experience.findUnique({ where: { id }, select: { id: true, slug: true } }),
+  ]);
+  if (existing || idCollision) {
+    throw new Error(`Safety stop: ${slug} or its ID already exists. Existing records require a separate review.`);
   }
 
   const data = {
@@ -237,7 +237,6 @@ async function buildProposal(payload, family, experience) {
 }
 
 async function applyRelations(tx, experienceId, destinations) {
-  await tx.experienceDestination.deleteMany({ where: { experienceId } });
   for (const [index, destination] of destinations.entries()) {
     await tx.experienceDestination.create({
       data: {
@@ -249,10 +248,48 @@ async function applyRelations(tx, experienceId, destinations) {
   }
 }
 
+export async function applyProposal(prisma, payload, family, experience, proposal) {
+  return prisma.$transaction(async tx => {
+    const checked = await buildProposal(tx, payload, family, experience);
+    if (checked.data.id !== proposal.data.id || checked.previewSlug !== proposal.previewSlug ||
+      checked.destinations.length !== proposal.destinations.length ||
+      checked.destinations.some((row, index) => row.id !== proposal.destinations[index].id)) {
+      throw new Error('Safety stop: La Hacienda proposal changed after preflight.');
+    }
+    const row = await tx.experience.create({
+      data: proposal.data,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        status: true,
+        sourceProvider: true,
+        duration: true,
+        pricingJson: true,
+        bookingJson: true,
+        featuredMediaId: true,
+        galleryMediaSourceIds: true,
+        editorialFlagsJson: true,
+        provenanceJson: true,
+        updatedAt: true,
+      },
+    });
+    await applyRelations(tx, row.id, checked.destinations);
+    return row;
+  });
+}
+
 async function main() {
+  const args = process.argv.slice(2);
+  if (!(args.length === 0 || (args.length === 1 && args[0] === '--apply'))) {
+    throw new Error('Usage: node scripts/stage-la-hacienda-park-2026-09.mjs [--apply]');
+  }
+  const APPLY = args.includes('--apply');
+  const config = localConfig(process.env);
   const payload = JSON.parse(await readFile(seedPath, 'utf8'));
   const { family, familyKey, experience } = validatePayload(payload);
-  const proposal = await buildProposal(payload, family, experience);
+  prisma = new PrismaClient({ adapter: new PrismaMariaDb(config) });
+  const proposal = await buildProposal(prisma, payload, family, experience);
 
   if (!APPLY) {
     console.log(JSON.stringify({
@@ -292,59 +329,20 @@ async function main() {
         'US$99 remains the Standard plan price, not an inferred adult-only fare.',
         'Provisional age bands are adult 12+, child 5–11, infant 0–4; child and infant prices remain unresolved.',
         'The resident plan requires documentation and excludes transport.',
-        'This workflow creates or refreshes MANUAL DRAFT records only.',
-        'It refuses to overwrite inherited/non-MANUAL records.',
-        'It refuses to modify an already PUBLISHED record.',
+        'This workflow creates only one new MANUAL DRAFT experience.',
+        'It refuses to modify any existing record, including MANUAL drafts.',
         'No child/infant price, complete transport supplement table, cancellation policy, minimum-passenger rule, or final media is inferred.',
       ],
-      nextCommand: 'npm run stage:la-hacienda-park',
+      nextStep: 'Review this dry-run result and obtain separate approval before --apply.',
     }, null, 2));
     return;
   }
 
-  const result = await prisma.$transaction(async tx => {
-    if (proposal.existing) {
-      const current = await tx.experience.findUnique({
-        where: { slug: proposal.previewSlug },
-        select: { id: true, sourceProvider: true, status: true, updatedAt: true },
-      });
-      if (!current || current.sourceProvider !== ContentSourceProvider.MANUAL || current.status === ContentRecordStatus.PUBLISHED) {
-        throw new Error(`Safety stop: ${proposal.previewSlug} changed identity/status after preview.`);
-      }
-      if (current.updatedAt.getTime() !== proposal.existing.updatedAt.getTime()) {
-        throw new Error(`Safety stop: ${proposal.previewSlug} changed after preview. Re-run preview first.`);
-      }
-    }
-
-    const { id, ...mutable } = proposal.data;
-    const row = await tx.experience.upsert({
-      where: { slug: proposal.previewSlug },
-      create: { id, ...mutable },
-      update: mutable,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        status: true,
-        sourceProvider: true,
-        duration: true,
-        pricingJson: true,
-        bookingJson: true,
-        featuredMediaId: true,
-        galleryMediaSourceIds: true,
-        editorialFlagsJson: true,
-        provenanceJson: true,
-        updatedAt: true,
-      },
-    });
-
-    await applyRelations(tx, row.id, proposal.destinations);
-    return row;
-  });
+  const result = await applyProposal(prisma, payload, family, experience, proposal);
 
   console.log(JSON.stringify({
     mode: 'stage',
-    updated: true,
+    created: true,
     family: familyKey,
     publishedExperienceModified: false,
     results: [{ operation: proposal.operation, previewSlug: proposal.previewSlug, result }],
@@ -358,11 +356,18 @@ async function main() {
   }, null, 2));
 }
 
-main()
-  .catch(error => {
-    console.error(error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main()
+    .catch(error => {
+      let detail = String(error?.message || 'Unknown error');
+      for (const secret of [process.env.MYSQL_PASSWORD, process.env.DATABASE_URL]
+        .filter(value => typeof value === 'string' && value.length >= 3)) {
+        detail = detail.replaceAll(secret, '[REDACTED]');
+      }
+      console.error(JSON.stringify({ status: 'STOP', detail: detail.slice(0, 900) }));
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      if (prisma) await prisma.$disconnect();
+    });
+}
