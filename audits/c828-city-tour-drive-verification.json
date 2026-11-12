@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "source": "Google Drive metadata lookups; read-only connector retrieval on 2026-11-12",
+  "scope": "metadata and accessibility for the 15 snapshot storage keys, NOT content inspection or approval of gallery order",
+  "driveParentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+  "verifiedCount": 15,
+  "assets": [
+    {
+      "label": "artesania-recuerdo",
+      "storageKey": "1AaRfBMAErBvFKeszr_6FQ7z-HPlFtSvD",
+      "name": "santo-domingo-city-tour-artesania-recuerdo-dominicano-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 155306,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "artesania-maracas",
+      "storageKey": "1Gpq9i0b8DdYo5vSaZ9jiXTN3jN4lQfcO",
+      "name": "santo-domingo-city-tour-artesania-visitante-maracas-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 158514,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "bebida-presidente",
+      "storageKey": "1Cmgh24xBWkXsJ4Yza5UnBUryG0XFDfak",
+      "name": "santo-domingo-city-tour-bebida-presidente-mesa-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 103990,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "buffet-comida",
+      "storageKey": "1p5ycNo9anWmLzJLlzYm3DF44T-xnWPFM",
+      "name": "santo-domingo-city-tour-buffet-comida-dominicana-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 214940,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "fachada-historica",
+      "storageKey": "1T6xbMOUqyCF_9K9K7Sc-yvx-0yJuqKlC",
+      "name": "santo-domingo-city-tour-fachada-historica-piedra-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 458646,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "grupo-costera",
+      "storageKey": "1Brhl0f85VOHkcPKVq8n4IenSKDl5HwNE",
+      "name": "santo-domingo-city-tour-grupo-vista-costera-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 526842,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "guardia-ceremonial",
+      "storageKey": "1B4ALrwbTneP3lgBcBYkI9E8N8KUTdtFJ",
+      "name": "santo-domingo-city-tour-guardia-ceremonial-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 153060,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "iglesia-interior",
+      "storageKey": "1OMMg3tSbY7KL2RBOHt9vHTJGuTDDsS2G",
+      "name": "santo-domingo-city-tour-iglesia-interior-historico-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 126214,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "los-tres-ojos",
+      "storageKey": "1OA8MqvMFOnlQa-32pf5BThk4OVJb-jZy",
+      "name": "santo-domingo-city-tour-los-tres-ojos-cavidad-mirador-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 655722,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "museo-casas-reales",
+      "storageKey": "1UlvVbS17evKu7rqAvuKcqjDf0ASx_AbM",
+      "name": "santo-domingo-city-tour-museo-casas-reales-grupo-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 467846,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "musica-callejera",
+      "storageKey": "1StOE9WYAaxZN5_kgsEGpyytZl5sRzwb0",
+      "name": "santo-domingo-city-tour-musica-tipica-callejera-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 548962,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "pasillo-bovedas",
+      "storageKey": "1fPeGWHJiix3CH600BTDYtl-PxH6jAMx0",
+      "name": "santo-domingo-city-tour-pasillo-bovedas-ladrillo-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 330548,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "plaza-colonial",
+      "storageKey": "1MpQAQm1MT_04pl8nMSoHLuh183TLmpKZ",
+      "name": "santo-domingo-city-tour-plaza-colonial-palomas-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 489608,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "restaurante-buffet",
+      "storageKey": "1uNSeZ2ZEm4agCuaIX0OIvX-CzOAoyd87",
+      "name": "santo-domingo-city-tour-restaurante-servicio-buffet-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 142966,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    },
+    {
+      "label": "sendero-vegetacion",
+      "storageKey": "1Zohp73gv-OfQw3yI3FdG4r8K5keS4pQY",
+      "name": "santo-domingo-city-tour-sendero-vegetacion-tropical-01.webp",
+      "mimeType": "image/webp",
+      "sizeBytes": 866308,
+      "parentId": "1ojoPdMzAHFeAOkrt8sm-zdnxeLg_GPhw",
+      "metadataVerified": true
+    }
+  ],
+  "limitations": [
+    "Image appearance and copyright/provenance were not independently validated by inspecting pixels",
+    "Source storage access via the local API provider remains to be validated",
+    "No media was registered in local MySQL; no gallery associations were modified"
+  ]
+}
