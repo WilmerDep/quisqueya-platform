@@ -13,6 +13,8 @@ const manifest=JSON.parse(readFileSync(new URL("../audits/c828-city-tour-media-m
 const verification=JSON.parse(readFileSync(new URL("../audits/c828-city-tour-drive-verification.json",import.meta.url),"utf8"));
 const apiUrl=(()=>{try{return new URL(String(process.env.APP_URL||"").trim())}catch{return null}})();
 const strictLoopback=apiUrl?.protocol==="http:"&&["127.0.0.1","localhost"].includes(apiUrl.hostname)&&!apiUrl.username&&!apiUrl.password&&!apiUrl.search&&!apiUrl.hash&&apiUrl.pathname==="/";
+const dbHost=String(process.env.MYSQL_HOST||"127.0.0.1").trim().toLowerCase();
+const dbLocal=["127.0.0.1","localhost","::1"].includes(dbHost);
 const apply=process.argv.includes("--apply");
 const explicit=process.argv.includes("--confirm-local-media-write");
 const requestedArgs=new Set(process.argv.slice(2));
@@ -27,10 +29,22 @@ if(manifest.cityTour.length!==15||verification.assets.length!==15||
    verification.assets.some(x=>!manifest.cityTour.some(y=>y.storageKey===x.storageKey))) {
   console.error("C8_28_L=BLOCKED_MANIFEST_MISMATCH");process.exit(1);
 }
+if(!dbLocal){console.error("C8_28_L=BLOCKED_DATABASE_NOT_LOOPBACK");process.exit(1);}
 if(apply&&!explicit) {console.error("C8_28_L=BLOCKED_CONFIRMATION_REQUIRED");process.exit(1);}
 const bearer=process.env.C828_MEDIA_BEARER_TOKEN?.trim();
 if(apply&&!bearer) {console.error("C8_28_L=BLOCKED_API_BEARER_REQUIRED");process.exit(1);}
 
+if(apply){
+  const meResponse=await fetch(new URL("/api/v1/auth/me",apiUrl),{
+    headers:{Authorization:"Bearer "+bearer},signal:AbortSignal.timeout(10000),redirect:"error"
+  }).catch(()=>null);
+  const me=meResponse?.ok?await meResponse.json().catch(()=>null):null;
+  const role=me?.data?.role;
+  if(!["Super Admin","Administrador","Supervisor"].includes(role)){
+    console.error("C8_28_L=BLOCKED_UNAUTHORIZED_LOCAL_ROLE");process.exit(1);
+  }
+  console.log("LOCAL_API_AUTH=VERIFIED");
+}
 const db=new PrismaClient({adapter:new PrismaMariaDb({
   host:process.env.MYSQL_HOST||"127.0.0.1",port:Number(process.env.MYSQL_PORT||3306),
   user:process.env.MYSQL_USER||"root",password:process.env.MYSQL_PASSWORD||"",
