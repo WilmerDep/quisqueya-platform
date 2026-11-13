@@ -14,7 +14,10 @@ const files=[
   {title:"File:Taíno pictographs Cuevas de las Maravillas.jpg",slug:"cueva-de-las-maravillas-pictografias-tainas-01.jpg"},
   {title:"File:Taíno pictographs Cuevas de las Maravillas 2.jpg",slug:"cueva-de-las-maravillas-pictografias-tainas-02.jpg"}
 ];
-const allowedHost=host=>host==="upload.wikimedia.org";
+const allowedThumbnailUrl=u=>u.protocol==="https:" &&
+  !u.username && !u.password && !u.search && !u.hash &&
+  ((u.hostname==="thumb.wikimedia.org" && u.pathname.startsWith("/wikipedia/commons/thumb/")) ||
+   (u.hostname==="upload.wikimedia.org" && u.pathname.startsWith("/wikipedia/commons/")));
 const urlFor=(title)=>{
   const u=new URL("https://commons.wikimedia.org/w/api.php");
   u.searchParams.set("action","query");
@@ -39,11 +42,10 @@ try{
       throw new Error("LICENSE_OR_AUTHOR_NOT_VERIFIED_"+x.slug);
     const download=info.thumburl;
     const u=new URL(download);
-    if(u.protocol!=="https:"||!allowedHost(u.hostname)){
+    if(!allowedThumbnailUrl(u)){
       console.log("C8_29_F_HOST_DIAGNOSTIC="+JSON.stringify({file:x.slug,hostname:u.hostname,protocol:u.protocol,pathnamePrefix:u.pathname.split("/").slice(0,4).join("/")}));
       throw new Error("UNTRUSTED_DOWNLOAD_HOST");
     }
-    if(!u.pathname.startsWith("/wikipedia/commons/"))throw new Error("UNTRUSTED_WIKIMEDIA_PATH");
     const img=await fetch(download,{redirect:"error",signal:AbortSignal.timeout(30000)});
     if(!img.ok||!String(img.headers.get("content-type")||"").startsWith("image/jpeg"))
       throw new Error("INVALID_IMAGE_RESPONSE_"+x.slug);
