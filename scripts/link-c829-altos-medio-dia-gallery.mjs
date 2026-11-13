@@ -3,7 +3,7 @@
  * Default: dry run. Apply: --apply --confirm-local-altos-gallery-write.
  * Reuses exactly the three existing Google Drive gallery MediaAssets
  * from the DRAFT parent Altos de Chavón. Does not touch featured media,
- * WordPress source references, status, pricing, location or other experiences.
+ * WordPress source references (including pre-existing legacy IDs), status, pricing, location or other experiences.
  */
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
@@ -56,7 +56,7 @@ try{
     parentAssetsDrive:assets.length===3&&parentIds.every(id=>byId.get(id)?.storageProvider==="google-drive" && Boolean(byId.get(id)?.storageKey)),
     targetDraft:target?.status==="DRAFT",
     targetFeaturedUnchanged:target?.featuredMediaId==="wp-media-307",
-    targetSourceRefsEmpty:Array.isArray(target?.galleryMediaSourceIds)&&target.galleryMediaSourceIds.length===0,
+    targetSourceRefsPreservable:Array.isArray(target?.galleryMediaSourceIds),
     targetGalleryEmptyOrAlreadyLinked:gallery.length===0||same(gallery,parentIds)
   };
   log("C8_29_C_MODE",apply?"LOCAL_APPLY":"DRY_RUN");
