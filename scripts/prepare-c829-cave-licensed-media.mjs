@@ -14,10 +14,13 @@ const files=[
   {title:"File:Taíno pictographs Cuevas de las Maravillas.jpg",slug:"cueva-de-las-maravillas-pictografias-tainas-01.jpg"},
   {title:"File:Taíno pictographs Cuevas de las Maravillas 2.jpg",slug:"cueva-de-las-maravillas-pictografias-tainas-02.jpg"}
 ];
+// Thumb URLs returned by the Commons API can contain cache/version query strings.
+// A query is not a new network destination: restrict the host and path, not the presence of a query.
 const allowedThumbnailUrl=u=>u.protocol==="https:" &&
-  !u.username && !u.password && !u.search && !u.hash &&
+  !u.username && !u.password && !u.hash &&
   ((u.hostname==="thumb.wikimedia.org" && u.pathname.startsWith("/wikipedia/commons/thumb/")) ||
-   (u.hostname==="upload.wikimedia.org" && u.pathname.startsWith("/wikipedia/commons/")));
+   (u.hostname==="upload.wikimedia.org" && u.pathname.startsWith("/wikipedia/commons/"))) &&
+  /\.(?:jpe?g)$/i.test(u.pathname);
 const urlFor=(title)=>{
   const u=new URL("https://commons.wikimedia.org/w/api.php");
   u.searchParams.set("action","query");
@@ -43,7 +46,7 @@ try{
     const download=info.thumburl;
     const u=new URL(download);
     if(!allowedThumbnailUrl(u)){
-      console.log("C8_29_F_HOST_DIAGNOSTIC="+JSON.stringify({file:x.slug,hostname:u.hostname,protocol:u.protocol,pathnamePrefix:u.pathname.split("/").slice(0,4).join("/")}));
+      console.log("C8_29_F_HOST_DIAGNOSTIC="+JSON.stringify({file:x.slug,hostname:u.hostname,protocol:u.protocol,pathnamePrefix:u.pathname.split("/").slice(0,4).join("/"),queryPresent:Boolean(u.search),extension:u.pathname.split(".").at(-1)}));
       throw new Error("UNTRUSTED_DOWNLOAD_HOST");
     }
     const img=await fetch(download,{redirect:"error",signal:AbortSignal.timeout(30000)});
