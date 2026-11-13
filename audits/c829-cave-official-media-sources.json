@@ -44,8 +44,12 @@
     {
       "kind": "wikimedia_candidate",
       "url": "https://commons.wikimedia.org/wiki/File:Ta%C3%ADno_pictographs_Cuevas_de_las_Maravillas.jpg",
-      "usageStatus": "CHECK_FILE_PAGE_LICENSE",
-      "notes": "Candidate file for art/pictographs; verify applicable Commons file license before using."
+      "usageStatus": "LICENSE_VERIFIED_CC_BY_SA_4_0",
+      "notes": "File page identifies source Own work, author Danu Widjajanto, CC BY-SA 4.0. Allows commercial reuse with attribution, license link and notice of changes; derivative must comply with ShareAlike. This is a rights-cleared candidate, not yet downloaded, optimized, uploaded or registered.",
+      "claimedAuthor": "Danu Widjajanto",
+      "verifiedLicense": "CC BY-SA 4.0",
+      "originalDimensions": "4032x3024",
+      "filePageVerifiedAt": "2026-11-13"
     }
   ],
   "guardrails": [
