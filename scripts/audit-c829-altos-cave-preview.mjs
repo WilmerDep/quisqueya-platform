@@ -69,12 +69,16 @@ try{
       const path=new URL("/api/v1/media/"+encodeURIComponent(id)+"/content",url);
       const r=await fetch(path,{method:"GET",redirect:"error",signal:AbortSignal.timeout(25000)});
       const buffer=Buffer.from(await r.arrayBuffer());
-      const signature=buffer.length>2&&buffer[0]===0xff&&buffer[1]===0xd8;
-      delivery.push({id,http:r.status,bytes:buffer.length,mime:r.headers.get("content-type"),
-        validJPEG:signature});
+      const mime=String(r.headers.get("content-type")||"").toLowerCase();
+      const jpeg=buffer.length>2&&buffer[0]===0xff&&buffer[1]===0xd8;
+      const webp=buffer.length>12&&buffer.toString("ascii",0,4)==="RIFF"&&
+        buffer.toString("ascii",8,12)==="WEBP";
+      const signature=mime.startsWith("image/jpeg")?jpeg:mime.startsWith("image/webp")?webp:false;
+      delivery.push({id,http:r.status,bytes:buffer.length,mime,
+        validSignature:signature});
      }
      log("C8_29_I_MEDIA_DELIVERY",delivery);
-     const valid=delivery.every(x=>x.http===200&&x.bytes>10000&&x.mime?.startsWith("image/")&&x.validJPEG);
+     const valid=delivery.every(x=>x.http===200&&x.bytes>10000&&x.mime?.startsWith("image/")&&x.validSignature);
      console.log("C8_29_I="+(valid?"API_AND_MEDIA_VERIFIED":"MEDIA_DELIVERY_REVIEW_REQUIRED"));
      if(!valid)process.exitCode=2;
     }
