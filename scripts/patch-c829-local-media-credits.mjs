@@ -23,12 +23,15 @@ const exactly=(s,old,now)=>{
 function transform(type,s){
  if(type==="api"){
   if(s.includes("caption: row.caption ?? undefined"))throw new Error("API_ALREADY_PATCHED");
-  s=exactly(s,"    mimeType: string | null;\n","    mimeType: string | null;\n    caption: string | null;\n");
-  s=exactly(s,"      mimeType: row.mimeType ?? undefined,\n","      mimeType: row.mimeType ?? undefined,\n      caption: row.caption ?? undefined,\n");
-  const match=/^(\s*)mimeType: true,\s*$/gm;
-  let count=0;
-  s=s.replace(match,(full,indent)=>{count++;return indent+"mimeType: true,\n"+indent+"caption: true,"});
-  if(count<3)throw new Error("NOT_ALL_MEDIA_SELECTS_RECOGNIZED_"+count);
+  // Local preview may have compacted same-line declarations. Match the tokens,
+  // not whitespace or line breaks, and require exactly 3 media query selectors.
+  s=exactly(s,"mimeType: string | null;","mimeType: string | null; caption: string | null;");
+  s=exactly(s,"mimeType: row.mimeType ?? undefined,","mimeType: row.mimeType ?? undefined, caption: row.caption ?? undefined,");
+  const selector="mimeType: true,";
+  const selectorCount=num(s,selector);
+  if(selectorCount!==3)throw new Error("EXPECTED_THREE_MEDIA_SELECTS_FOUND_"+selectorCount);
+  if(s.includes("caption: true,"))throw new Error("API_SELECT_CAPTION_ALREADY_PRESENT");
+  s=s.replaceAll(selector,"mimeType: true, caption: true,");
   return s;
  }
  if(type==="types")return exactly(s,"  mimeType?: string;\n}\n\nexport interface ExperienceLocation",
