@@ -34,8 +34,17 @@ function transform(type,s){
   s=s.replaceAll(selector,"mimeType: true, caption: true,");
   return s;
  }
- if(type==="types")return exactly(s,"  mimeType?: string;\n}\n\nexport interface ExperienceLocation",
-   "  mimeType?: string;\n  caption?: string;\n}\n\nexport interface ExperienceLocation");
+ if(type==="types"){
+  const begin="export interface ExperienceMedia";
+  const end="export interface ExperienceLocation";
+  if(num(s,begin)!==1 || num(s,end)!==1)throw new Error("EXPERIENCE_MEDIA_INTERFACE_MISSING");
+  const start=s.indexOf(begin),finish=s.indexOf(end);
+  if(finish<=start)throw new Error("EXPERIENCE_MEDIA_INTERFACE_ORDER_INVALID");
+  const before=s.slice(0,start),segment=s.slice(start,finish),after=s.slice(finish);
+  if(segment.includes("caption?:"))throw new Error("EXPERIENCE_MEDIA_CAPTION_ALREADY_DEFINED");
+  if(num(segment,"mimeType?: string;")!==1)throw new Error("EXPERIENCE_MEDIA_MIME_TYPE_NOT_UNIQUE");
+  return before+segment.replace("mimeType?: string;","mimeType?: string; caption?: string;")+after;
+ }
  if(type==="lightbox"){
   if(s.includes('data-testid="c829-license-attribution"'))throw new Error("LIGHTBOX_ALREADY_PATCHED");
   const old='        <figcaption className="text-sm font-bold text-white/75">{index + 1} / {gallery.length}</figcaption>';
@@ -45,7 +54,7 @@ function transform(type,s){
    '          {typeof currentMedia !== "string" && currentMedia.caption?.includes("CC BY-SA 4.0") && currentMedia.caption?.includes("Danu Widjajanto") && (',
    '            <span data-testid="c829-license-attribution" className="mt-2 block max-w-[80vw] text-xs font-medium leading-relaxed text-white/85">',
    '              Foto: Danu Widjajanto ·{" "}',
-   '              <a href={currentMedia.caption?.match(/https:\\/\\/commons\\.wikimedia\\.org\\/wiki\\/[^\\s·]+/)?.[0]}',
+   '              <a href={currentMedia.caption?.split(" · ").find(part => part.startsWith("https://commons.wikimedia.org/wiki/"))}' ,
    '                 target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white">Fuente original</a>',
    '              {" · "}',
    '              <a href="https://creativecommons.org/licenses/by-sa/4.0/"',
