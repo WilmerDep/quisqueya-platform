@@ -39,10 +39,10 @@ function transform(type,s){
   const lines=[
    '        <figcaption className="text-center text-sm text-white/75">',
    '          <span className="block font-bold">{index + 1} / {gallery.length}</span>',
-   '          {typeof gallery[index] !== "string" && gallery[index].caption?.includes("CC BY-SA 4.0") && (',
+   '          {typeof currentMedia !== "string" && currentMedia.caption?.includes("CC BY-SA 4.0") && currentMedia.caption?.includes("Danu Widjajanto") && (',
    '            <span data-testid="c829-license-attribution" className="mt-2 block max-w-[80vw] text-xs font-medium leading-relaxed text-white/85">',
    '              Foto: Danu Widjajanto ·{" "}',
-   '              <a href={gallery[index].caption?.match(/https:\\/\\/commons\\.wikimedia\\.org\\/wiki\\/[^\\s·]+/)?.[0]}',
+   '              <a href={currentMedia.caption?.match(/https:\\/\\/commons\\.wikimedia\\.org\\/wiki\\/[^\\s·]+/)?.[0]}',
    '                 target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white">Fuente original</a>',
    '              {" · "}',
    '              <a href="https://creativecommons.org/licenses/by-sa/4.0/"',
@@ -52,6 +52,7 @@ function transform(type,s){
    '          )}',
    '        </figcaption>'
   ];
+  s=exactly(s,'  const previous = () => onIndexChange((index - 1 + gallery.length) % gallery.length);','  const currentMedia = gallery[index];\n  const previous = () => onIndexChange((index - 1 + gallery.length) % gallery.length);');
   return exactly(s,old,lines.join("\n"));
  }
  throw new Error("INVALID_TYPE");
