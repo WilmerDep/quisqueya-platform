@@ -344,6 +344,42 @@ export class ContentService {
     };
   }
 
+  /**
+   * Public, media-only projection of the Altos de Chavón family parent.
+   * The administrative parent stays DRAFT; no private editorial, pricing,
+   * booking, or draft child fields are exposed.
+   */
+  async getAltosFamilyMedia(): Promise<{ featuredMedia: PublicMedia | null; gallery: PublicMedia[] } | null> {
+    const childSlugs = [
+      'altos-de-chavon-medio-dia',
+      'altos-de-chavon-cueva-de-las-maravillas',
+      'santo-domingo-city-tour-altos-de-chavon',
+      'aventura-en-buggies-y-altos-de-chavon',
+    ];
+    const publishedChildren = await this.prisma.experience.count({
+      where: { slug: { in: childSlugs }, status: ContentRecordStatus.PUBLISHED },
+    });
+    if (publishedChildren !== childSlugs.length) return null;
+
+    const parent = await this.prisma.experience.findUnique({
+      where: { slug: 'altos-de-chavon' },
+      select: { featuredMediaId: true, galleryMediaIds: true },
+    });
+    if (!parent) return null;
+
+    const galleryIds = this.jsonArray<string>(parent.galleryMediaIds)
+      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
+    const mediaById = await this.mediaMap([parent.featuredMediaId, ...galleryIds]);
+    const featuredMedia = parent.featuredMediaId
+      ? mediaById.get(parent.featuredMediaId) ?? null
+      : null;
+    const gallery = galleryIds
+      .map(id => mediaById.get(id))
+      .filter((media): media is PublicMedia => Boolean(media));
+
+    return { featuredMedia, gallery };
+  }
+
   async getExperiences(): Promise<PublicExperience[]> {
     const rows = await this.prisma.experience.findMany({
       where: { status: ContentRecordStatus.PUBLISHED },
