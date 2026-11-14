@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ContentSourceProvider, type Prisma } from '@prisma/client';
+import { ContentRecordStatus, ContentSourceProvider, type Experience, type Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
+import type { PublicExperience, PublicExperienceEditorialFlag } from './content.types.js';
+import { getExperienceFamilyConfig, resolveExperienceFamily } from './experience-families.js';
 
 @Injectable()
 export class ContentPreviewService {
@@ -30,6 +32,7 @@ export class ContentPreviewService {
     width: number | null;
     height: number | null;
     mimeType: string | null;
+    caption: string | null;
   }) {
     return {
       id: row.id,
@@ -40,6 +43,7 @@ export class ContentPreviewService {
       width: row.width ?? undefined,
       height: row.height ?? undefined,
       mimeType: row.mimeType ?? undefined,
+      caption: row.caption ?? undefined,
     };
   }
 
@@ -47,6 +51,29 @@ export class ContentPreviewService {
     const row = await this.prisma.experience.findUnique({ where: { slug } });
     if (!row) return null;
 
+    const parent = await this.mapExperience(row);
+    const config = getExperienceFamilyConfig(parent);
+    if (!config) return parent;
+
+    const childRows = await this.prisma.experience.findMany({
+      where: {
+        slug: { in: config.packageSlugs },
+        status: { in: [ContentRecordStatus.DRAFT, ContentRecordStatus.PUBLISHED] },
+      },
+    });
+    const children = await Promise.all(childRows.map(child => this.mapExperience(child)));
+    const family = resolveExperienceFamily(parent, children, { includeDrafts: true });
+
+    return {
+      ...family,
+      // Los precios pertenecen a cada modalidad; no se asigna un precio al padre DRAFT.
+      pricingMode: parent.pricingMode,
+      pricing: parent.pricing,
+      preview: true,
+    };
+  }
+
+  private async mapExperience(row: Experience): Promise<PublicExperience & { preview: true }> {
     const featured = row.featuredMediaId
       ? await this.prisma.mediaAsset.findUnique({
           where: { id: row.featuredMediaId },
@@ -59,6 +86,7 @@ export class ContentPreviewService {
             width: true,
             height: true,
             mimeType: true,
+            caption: true,
           },
         })
       : null;
@@ -83,6 +111,7 @@ export class ContentPreviewService {
             width: true,
             height: true,
             mimeType: true,
+            caption: true,
           },
         })
       : [];
@@ -106,6 +135,7 @@ export class ContentPreviewService {
             width: true,
             height: true,
             mimeType: true,
+            caption: true,
           },
         })
       : [];
@@ -168,9 +198,9 @@ export class ContentPreviewService {
       excluded: this.jsonArray<string>(row.excludedItemsJson),
       itinerary: this.jsonArray<Record<string, unknown>>(row.itineraryJson),
       faqs: this.jsonArray<Record<string, unknown>>(row.faqsJson),
-      practicalInfo: this.jsonObject(row.practicalInfoJson),
+      practicalInfo: this.jsonObject(row.practicalInfoJson) as PublicExperience['practicalInfo'],
       display: this.jsonObject(row.displayJson),
-      editorialFlags: this.jsonArray<Record<string, unknown>>(row.editorialFlagsJson),
+      editorialFlags: this.jsonArray<PublicExperienceEditorialFlag>(row.editorialFlagsJson),
       sourceUrl: row.sourceUrl ?? undefined,
       status: row.status.toLowerCase(),
       preview: true,

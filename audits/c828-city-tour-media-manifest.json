@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "file": "quisqueya-media-inventory-2026-11-10.json",
+    "exportedAt": "2026-11-10T00:43:56.636Z",
+    "scope": "CRM snapshot, NOT local database",
+    "usageMeaning": "independent/combined flags reflect associations recorded in snapshot only; not a publication instruction"
+  },
+  "policy": {
+    "readOnly": true,
+    "doNotCopyRemoteUuid": true,
+    "preserveStandalone": true,
+    "doNotChangeStatus": true,
+    "doNotChangePricing": true,
+    "doNotPublish": true
+  },
+  "cityTour": [
+    {
+      "label": "artesania-recuerdo",
+      "storageKey": "1AaRfBMAErBvFKeszr_6FQ7z-HPlFtSvD",
+      "inIndependentSnapshot": false,
+      "inCombinedSnapshot": false
+    },
+    {
+      "label": "artesania-maracas",
+      "storageKey": "1Gpq9i0b8DdYo5vSaZ9jiXTN3jN4lQfcO",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "bebida-presidente",
+      "storageKey": "1Cmgh24xBWkXsJ4Yza5UnBUryG0XFDfak",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": false
+    },
+    {
+      "label": "buffet-comida",
+      "storageKey": "1p5ycNo9anWmLzJLlzYm3DF44T-xnWPFM",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": false
+    },
+    {
+      "label": "fachada-historica",
+      "storageKey": "1T6xbMOUqyCF_9K9K7Sc-yvx-0yJuqKlC",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "grupo-costera",
+      "storageKey": "1Brhl0f85VOHkcPKVq8n4IenSKDl5HwNE",
+      "inIndependentSnapshot": false,
+      "inCombinedSnapshot": false
+    },
+    {
+      "label": "guardia-ceremonial",
+      "storageKey": "1B4ALrwbTneP3lgBcBYkI9E8N8KUTdtFJ",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "iglesia-interior",
+      "storageKey": "1OMMg3tSbY7KL2RBOHt9vHTJGuTDDsS2G",
+      "inIndependentSnapshot": false,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "los-tres-ojos",
+      "storageKey": "1OA8MqvMFOnlQa-32pf5BThk4OVJb-jZy",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "museo-casas-reales",
+      "storageKey": "1UlvVbS17evKu7rqAvuKcqjDf0ASx_AbM",
+      "inIndependentSnapshot": false,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "musica-callejera",
+      "storageKey": "1StOE9WYAaxZN5_kgsEGpyytZl5sRzwb0",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "pasillo-bovedas",
+      "storageKey": "1fPeGWHJiix3CH600BTDYtl-PxH6jAMx0",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "plaza-colonial",
+      "storageKey": "1MpQAQm1MT_04pl8nMSoHLuh183TLmpKZ",
+      "inIndependentSnapshot": true,
+      "inCombinedSnapshot": true
+    },
+    {
+      "label": "restaurante-buffet",
+      "storageKey": "1uNSeZ2ZEm4agCuaIX0OIvX-CzOAoyd87",
+      "inIndependentSnapshot": false,
+      "inCombinedSnapshot": false
+    },
+    {
+      "label": "sendero-vegetacion",
+      "storageKey": "1Zohp73gv-OfQw3yI3FdG4r8K5keS4pQY",
+      "inIndependentSnapshot": false,
+      "inCombinedSnapshot": false
+    }
+  ],
+  "altos": [
+    {
+      "label": "altos-pueblo",
+      "storageKey": "1KM6P5ym80X2lFc7RN_rWVkAwdQ4lIuop"
+    },
+    {
+      "label": "altos-pueblo-1",
+      "storageKey": "1ectCTk-cyWKQwlVNUTlvPFM-oUHQzKda"
+    },
+    {
+      "label": "altos-pueblo-2",
+      "storageKey": "1-sZ3gWzg4sfdljSre5pbo7FhEYR63kRh"
+    },
+    {
+      "label": "altos-iglesia-portada",
+      "storageKey": "1Uf8lYC9GRaB9_v4uIByGyxbjYGYUQGM4"
+    }
+  ]
+}

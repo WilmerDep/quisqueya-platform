@@ -54,6 +54,11 @@ export type PublicExperienceEditorialFlag = {
   message: string;
 };
 
+export type PublicExperiencePackageSelection = {
+  version: 2;
+  mode: 'single' | 'multi_inquiry' | 'addons';
+};
+
 export type PublicExperience = {
   id: string;
   sourceId?: number;
@@ -87,6 +92,12 @@ export type PublicExperience = {
   editorialFlags: PublicExperienceEditorialFlag[];
   sourceUrl?: string;
   status?: string;
+  /** Campos v2 opcionales: las experiencias individuales conservan el contrato v1. */
+  kind?: 'package_family';
+  packageSelection?: PublicExperiencePackageSelection;
+  packageCount?: number;
+  /** Solo se incluye en el detalle de la experiencia principal. */
+  packages?: PublicExperience[];
 };
 
 export type PublicDestinationLocation = {

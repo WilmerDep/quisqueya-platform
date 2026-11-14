@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "cycle": "C8.29-E",
+  "experienceSlug": "altos-de-chavon-cueva-de-las-maravillas",
+  "status": "SOURCE_REVIEW_REQUIRED",
+  "driveInventory": {
+    "asOf": "2026-11-13",
+    "source": "Local Platform storage provider audited by user",
+    "root": "PAGINA WEB/Experiencias",
+    "foldersVisited": 30,
+    "objectsScanned": 224,
+    "caveMatches": 0,
+    "completeWithinScannerLimits": true
+  },
+  "storageRule": "Download/optimize only after commercial-use rights are verified; upload under PAGINA WEB/Experiencias/Cueva de las Maravillas through authorized Platform storage provider, register MediaAsset by storageKey, link by MediaAsset IDs, keep DRAFT",
+  "sources": [
+    {
+      "kind": "official_destination_site",
+      "url": "https://cuevadelasmaravillas.com.do/",
+      "usageStatus": "REVIEW_LICENSE",
+      "notes": "Destination official website; no commercial image reuse permission documented in this audit."
+    },
+    {
+      "kind": "official_tourism",
+      "url": "https://es.godominicanrepublic.com/que-hacer/cueva-de-las-maravillas",
+      "imageUrl": "https://images.prismic.io/prismic-rd-2/Z461CJbqstJ99p6E_cueva-de-las-maravillas6_7943e7fb-e1ea-ffb6-9c04dfdef3c5eade.jpg?auto=format%2Ccompress&fit=max&w=1920",
+      "usageStatus": "REVIEW_LICENSE",
+      "notes": "Photo corresponds to cave interior; official tourism publication does not by itself authorize commercial rehosting."
+    },
+    {
+      "kind": "government_location_image",
+      "url": "https://dgcine.gob.do/locaciones/locacion/cueva-de-las-maravillas/",
+      "usageStatus": "REVIEW_LICENSE",
+      "notes": "DGCINE identifies image source as Ministerio de Turismo; obtain permission/licensing."
+    },
+    {
+      "kind": "attributed_cc_gallery",
+      "url": "https://visitrepublicadominicana.com/atraccion/cueva-de-las-maravillas?lang=es",
+      "usageStatus": "CHECK_ORIGINAL_FILE_LICENSE",
+      "claimedLicense": "CC BY-SA 4.0",
+      "claimedAuthor": "Danu Widjajanto",
+      "notes": "Site displays two images crediting Danu Widjajanto CC BY-SA 4.0. Before reuse verify original file identity and terms, preserve attribution, license, source URL and adaptation information."
+    },
+    {
+      "kind": "wikimedia_candidate",
+      "url": "https://commons.wikimedia.org/wiki/File:Ta%C3%ADno_pictographs_Cuevas_de_las_Maravillas.jpg",
+      "usageStatus": "LICENSE_VERIFIED_CC_BY_SA_4_0",
+      "notes": "File page identifies source Own work, author Danu Widjajanto, CC BY-SA 4.0. Allows commercial reuse with attribution, license link and notice of changes; derivative must comply with ShareAlike. This is a rights-cleared candidate, not yet downloaded, optimized, uploaded or registered.",
+      "claimedAuthor": "Danu Widjajanto",
+      "verifiedLicense": "CC BY-SA 4.0",
+      "originalDimensions": "4032x3024",
+      "filePageVerifiedAt": "2026-11-13"
+    },
+    {
+      "kind": "wikimedia_candidate",
+      "url": "https://commons.wikimedia.org/wiki/File:Cuevas_de_las_Maravillas.jpg",
+      "scene": "cave_interior",
+      "usageStatus": "LICENSE_VERIFIED_CC_BY_SA_4_0",
+      "claimedAuthor": "Danu Widjajanto",
+      "verifiedLicense": "CC BY-SA 4.0",
+      "notes": "Wikimedia Commons file information confirms own work, author Danu Widjajanto, commercial reuse allowed with credit, link to license, alteration notice and ShareAlike requirements. Prepare only, no upload/register yet."
+    },
+    {
+      "kind": "wikimedia_candidate",
+      "url": "https://commons.wikimedia.org/wiki/File:Ta%C3%ADno_pictographs_Cuevas_de_las_Maravillas_2.jpg",
+      "scene": "cave_pictographs_2",
+      "usageStatus": "LICENSE_VERIFIED_CC_BY_SA_4_0",
+      "claimedAuthor": "Danu Widjajanto",
+      "verifiedLicense": "CC BY-SA 4.0",
+      "notes": "Wikimedia Commons file information confirms own work, author Danu Widjajanto, commercial reuse allowed with credit, link to license, alteration notice and ShareAlike requirements. Prepare only, no upload/register yet."
+    }
+  ],
+  "guardrails": [
+    "Do not auto-upload or publish candidate files until license and authenticity are verified",
+    "Do not overwrite existing gallery or featured media",
+    "Do not mix La Hacienda Park media into Altos",
+    "No staging/production operations",
+    "Use provider-mediated Drive upload, not direct public shared Drive URL"
+  ]
+}
