@@ -20,6 +20,13 @@ export class ContentController {
     return ok(await this.content.getExperiences());
   }
 
+  @Get('experience-families/altos-de-chavon/media')
+  async altosFamilyMedia() {
+    const media = await this.content.getAltosFamilyMedia();
+    if (!media) throw new NotFoundException('Altos family media not available');
+    return ok(media);
+  }
+
   @Get('experiences/:slug')
   async experience(@Param('slug') slug: string) {
     const item = await this.content.getExperience(slug);
