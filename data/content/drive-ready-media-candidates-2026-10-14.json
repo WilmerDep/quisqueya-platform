@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "qt-experience-media-proposal-2026-10-14",
+  "source": "DRIVE_READY(1).zip + QUISQUEYA_DRIVE_MANIFEST_VALIDATION_PACK.zip (40 selected; user-provided materials)",
+  "purpose": "candidate file names for editorial review; never use as Drive IDs or auto-apply",
+  "provenance": {
+    "sourceManifestSha256": "74a4d5afad3363beb8beb829caa7d4bd271382789d4e3c249a0bd41ecb33d4a2",
+    "totalSelected": 40,
+    "featured": 12,
+    "gallery": 28,
+    "folders": 12
+  },
+  "groups": [
+    {
+      "folder": "Blue Lagoon Cenote",
+      "featured": "Blue Lagoon Cenote/blue-lagoon-cenote-03.webp",
+      "gallery": [
+        "Blue Lagoon Cenote/blue-lagoon-cenote-02.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Buggy VIP",
+      "featured": "Buggy VIP/buggy-vip-01.webp",
+      "gallery": [
+        "Buggy VIP/buggy-vip-02.webp",
+        "Buggy VIP/buggy-vip-05.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Catamaran Adventure",
+      "featured": "Catamaran Adventure/catamaran-adventure-02.webp",
+      "gallery": [
+        "Catamaran Adventure/catamaran-adventure-04.webp",
+        "Catamaran Adventure/catamaran-adventure-05.webp",
+        "Catamaran Adventure/catamaran-adventure-07.webp",
+        "Catamaran Adventure/catamaran-adventure-08.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Dominican Village",
+      "featured": "Dominican Village/dominican-village-01.webp",
+      "gallery": [
+        "Dominican Village/dominican-village-02.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Jungle River",
+      "featured": "Jungle River/jungle-river-03.webp",
+      "gallery": [
+        "Jungle River/jungle-river-04.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Maze Garden",
+      "featured": "Maze Garden/maze-garden-02.webp",
+      "gallery": [],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Polaris At Night",
+      "featured": "Polaris At Night/polaris-night-01.webp",
+      "gallery": [],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Polaris VIP",
+      "featured": "Polaris VIP/polaris-vip-02.webp",
+      "gallery": [
+        "Polaris VIP/polaris-vip-01.webp",
+        "Polaris VIP/polaris-vip-03.webp",
+        "Polaris VIP/polaris-vip-04.webp",
+        "Polaris VIP/polaris-vip-05.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Sacred River",
+      "featured": "Sacred River/sacred-river-68.webp",
+      "gallery": [
+        "Sacred River/sacred-river-45.webp",
+        "Sacred River/sacred-river-48.webp",
+        "Sacred River/sacred-river-51.webp",
+        "Sacred River/sacred-river-66.webp",
+        "Sacred River/sacred-river-75.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Sacred River at night",
+      "featured": "Sacred River at night/sacred-river-night-03.webp",
+      "gallery": [
+        "Sacred River at night/sacred-river-night-04.webp",
+        "Sacred River at night/sacred-river-night-05.webp",
+        "Sacred River at night/sacred-river-night-06.webp",
+        "Sacred River at night/sacred-river-night-13.webp",
+        "Sacred River at night/sacred-river-night-17.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Waterfall Pool",
+      "featured": "Waterfall Pool/waterfall-pool-04.webp",
+      "gallery": [
+        "Waterfall Pool/waterfall-pool-02.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    },
+    {
+      "folder": "Zipline Mega Splash",
+      "featured": "Zipline Mega Splash/zipline-mega-splash-01.webp",
+      "gallery": [
+        "Zipline Mega Splash/zipline-mega-splash-02.webp",
+        "Zipline Mega Splash/zipline-mega-splash-03.webp",
+        "Zipline Mega Splash/zipline-mega-splash-05.webp",
+        "Zipline Mega Splash/zipline-mega-splash-06.webp"
+      ],
+      "status": "CANDIDATE_NOT_LINKED",
+      "driveFileIds": null,
+      "mediaAssetIds": null
+    }
+  ]
+}

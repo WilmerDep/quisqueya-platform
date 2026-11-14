@@ -9,6 +9,8 @@ export default defineConfig({
       '**/dist/**',
       '**/server-dist/**',
       '**/e2e/**',
+      // This file uses node:test, not Vitest. Run it separately with node --test.
+      '**/scripts/review-experience-media-audit.test.mjs',
     ],
   },
 });

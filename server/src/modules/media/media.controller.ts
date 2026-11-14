@@ -48,6 +48,11 @@ export class MediaController {
 export class MediaAdminController {
   constructor(private readonly media: MediaService) {}
 
+  @Get('inventory')
+  async inventory() {
+    return ok(await this.media.getExperienceMediaInventory());
+  }
+
   @Get('storage/objects')
   async storageObjects(@Query('parentKey') parentKey?: string) {
     return ok(await this.media.listStorageObjects(parentKey));

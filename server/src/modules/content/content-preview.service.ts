@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ContentSourceProvider, type Prisma } from '@prisma/client';
+import { ContentRecordStatus, ContentSourceProvider, type Experience, type Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
+import type { PublicExperience, PublicExperienceEditorialFlag } from './content.types.js';
+import { getExperienceFamilyConfig, resolveExperienceFamily } from './experience-families.js';
 
 @Injectable()
 export class ContentPreviewService {
@@ -29,7 +31,8 @@ export class ContentPreviewService {
     altText: string | null;
     width: number | null;
     height: number | null;
-    mimeType: string | null; caption: string | null;
+    mimeType: string | null;
+    caption: string | null;
   }) {
     return {
       id: row.id,
@@ -39,14 +42,38 @@ export class ContentPreviewService {
       alt: row.altText ?? undefined,
       width: row.width ?? undefined,
       height: row.height ?? undefined,
-      mimeType: row.mimeType ?? undefined, caption: row.caption ?? undefined,
+      mimeType: row.mimeType ?? undefined,
+      caption: row.caption ?? undefined,
     };
   }
 
-  private async getExperienceRecord(slug: string) {
+  async getExperience(slug: string) {
     const row = await this.prisma.experience.findUnique({ where: { slug } });
     if (!row) return null;
 
+    const parent = await this.mapExperience(row);
+    const config = getExperienceFamilyConfig(parent);
+    if (!config) return parent;
+
+    const childRows = await this.prisma.experience.findMany({
+      where: {
+        slug: { in: config.packageSlugs },
+        status: { in: [ContentRecordStatus.DRAFT, ContentRecordStatus.PUBLISHED] },
+      },
+    });
+    const children = await Promise.all(childRows.map(child => this.mapExperience(child)));
+    const family = resolveExperienceFamily(parent, children, { includeDrafts: true });
+
+    return {
+      ...family,
+      // Los precios pertenecen a cada modalidad; no se asigna un precio al padre DRAFT.
+      pricingMode: parent.pricingMode,
+      pricing: parent.pricing,
+      preview: true,
+    };
+  }
+
+  private async mapExperience(row: Experience): Promise<PublicExperience & { preview: true }> {
     const featured = row.featuredMediaId
       ? await this.prisma.mediaAsset.findUnique({
           where: { id: row.featuredMediaId },
@@ -58,16 +85,42 @@ export class ContentPreviewService {
             altText: true,
             width: true,
             height: true,
-            mimeType: true, caption: true,
+            mimeType: true,
+            caption: true,
           },
         })
       : null;
 
+    // Match the public experience contract: managed MediaAsset references take
+    // precedence over legacy WordPress source IDs whenever they are present.
+    const galleryMediaIds = this.jsonArray<string>(row.galleryMediaIds)
+      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
     const galleryMediaSourceIds = this.jsonArray<number>(row.galleryMediaSourceIds)
       .map(Number)
       .filter(Number.isFinite);
 
-    const galleryRows = galleryMediaSourceIds.length
+    const managedGalleryRows = galleryMediaIds.length
+      ? await this.prisma.mediaAsset.findMany({
+          where: { id: { in: [...new Set(galleryMediaIds)] } },
+          select: {
+            id: true,
+            sourceId: true,
+            sourceUrl: true,
+            publicUrl: true,
+            altText: true,
+            width: true,
+            height: true,
+            mimeType: true,
+            caption: true,
+          },
+        })
+      : [];
+    const managedGalleryMap = new Map(
+      managedGalleryRows.map(item => [item.id, this.mapMedia(item)]),
+    );
+
+    // Do not mix old WordPress media into a gallery migrated to Google Drive.
+    const galleryRows = !galleryMediaIds.length && galleryMediaSourceIds.length
       ? await this.prisma.mediaAsset.findMany({
           where: {
             sourceProvider: ContentSourceProvider.WORDPRESS,
@@ -81,33 +134,11 @@ export class ContentPreviewService {
             altText: true,
             width: true,
             height: true,
-            mimeType: true, caption: true,
+            mimeType: true,
+            caption: true,
           },
         })
       : [];
-
-    const galleryMediaIds = this.jsonArray<string>(row.galleryMediaIds)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0);
-
-    const managedGalleryRows = galleryMediaIds.length
-      ? await this.prisma.mediaAsset.findMany({
-          where: { id: { in: galleryMediaIds } },
-          select: {
-            id: true,
-            sourceId: true,
-            sourceUrl: true,
-            publicUrl: true,
-            altText: true,
-            width: true,
-            height: true,
-            mimeType: true, caption: true,
-          },
-        })
-      : [];
-
-    const managedGalleryMap = new Map(
-      managedGalleryRows.map(item => [item.id, this.mapMedia(item)] as const),
-    );
 
     const galleryMap = new Map(
       galleryRows.flatMap(item => {
@@ -115,6 +146,16 @@ export class ContentPreviewService {
         return sourceId === undefined ? [] : [[sourceId, this.mapMedia(item)] as const];
       }),
     );
+
+    const gallery = galleryMediaIds.length
+      ? galleryMediaIds.flatMap(id => {
+          const media = managedGalleryMap.get(id);
+          return media ? [media] : [];
+        })
+      : galleryMediaSourceIds.flatMap(sourceId => {
+          const media = galleryMap.get(sourceId);
+          return media ? [media] : [];
+        });
 
     const latitude = row.latitude === null ? undefined : Number(row.latitude);
     const longitude = row.longitude === null ? undefined : Number(row.longitude);
@@ -145,13 +186,7 @@ export class ContentPreviewService {
         : undefined,
       category: row.categoryLabel ?? undefined,
       featuredMedia: featured ? this.mapMedia(featured) : null,
-      gallery: galleryMediaIds.length
-        ? galleryMediaIds
-            .map(id => managedGalleryMap.get(id))
-            .filter(Boolean)
-        : galleryMediaSourceIds
-            .map(sourceId => galleryMap.get(sourceId))
-            .filter(Boolean),
+      gallery,
       galleryMediaIds,
       galleryMediaSourceIds,
       pricingMode: row.pricingMode === 'FIXED' ? 'fixed' : 'on_request',
@@ -163,66 +198,12 @@ export class ContentPreviewService {
       excluded: this.jsonArray<string>(row.excludedItemsJson),
       itinerary: this.jsonArray<Record<string, unknown>>(row.itineraryJson),
       faqs: this.jsonArray<Record<string, unknown>>(row.faqsJson),
-      practicalInfo: this.jsonObject(row.practicalInfoJson),
+      practicalInfo: this.jsonObject(row.practicalInfoJson) as PublicExperience['practicalInfo'],
       display: this.jsonObject(row.displayJson),
-      editorialFlags: this.jsonArray<Record<string, unknown>>(row.editorialFlagsJson),
+      editorialFlags: this.jsonArray<PublicExperienceEditorialFlag>(row.editorialFlagsJson),
       sourceUrl: row.sourceUrl ?? undefined,
       status: row.status.toLowerCase(),
       preview: true,
-    };
-  }
-
-  // Read the base experience without resolving a family recursively.
-  async getExperience(slug: string) {
-    const parent = await this.getExperienceRecord(slug);
-
-    if (!parent) return null;
-
-    // Only Altos uses this private family expansion.
-    if (slug !== 'altos-de-chavon' || parent.status !== 'draft') {
-      return parent;
-    }
-
-    const family = parent.display?.experienceFamily;
-
-    if (!family || typeof family !== 'object' || Array.isArray(family)) {
-      return null;
-    }
-
-    const packageSlugs = (family as { packageSlugs?: unknown }).packageSlugs;
-
-    if (
-      !Array.isArray(packageSlugs) ||
-      packageSlugs.length !== 4 ||
-      !packageSlugs.every(
-        (value): value is string =>
-          typeof value === 'string' &&
-          /^[a-z0-9-]+$/.test(value) &&
-          value !== parent.slug,
-      ) ||
-      new Set(packageSlugs).size !== 4
-    ) {
-      return null;
-    }
-
-    const children = await Promise.all(
-      packageSlugs.map(childSlug => this.getExperienceRecord(childSlug)),
-    );
-
-    if (
-      children.some(
-        (child, index) =>
-          !child ||
-          child.slug !== packageSlugs[index] ||
-          !['draft', 'published'].includes(child.status),
-      )
-    ) {
-      return null;
-    }
-
-    return {
-      ...parent,
-      packages: children,
     };
   }
 }

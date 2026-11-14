@@ -92,6 +92,9 @@ See:
 
 `docs/MEDIA_STORAGE_GOOGLE_DRIVE.md`
 
+For the reviewed 44-image Bávaro Adventure Park C3 batch, see
+`docs/BAVARO_FAMILY_MEDIA_C3_DRIVE_RUNBOOK_2026-11-05.md`.
+
 ## Important
 
 Do not add production credentials, OAuth client secrets, Google refresh tokens, JWT secrets, database passwords, or legacy WordPress credentials to this repository.

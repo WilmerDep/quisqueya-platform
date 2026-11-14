@@ -98,6 +98,69 @@ export interface GoogleDrivePickerConfig {
   rootFolderId: string;
 }
 
+export interface MediaStorageObject {
+  key: string;
+  name: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  checksum?: string;
+  modifiedAt?: string;
+  parentKey?: string;
+}
+
+export interface MediaStorageListing {
+  provider: string;
+  parentKey: string | null;
+  objects: MediaStorageObject[];
+}
+
+export interface MediaExperienceInventory {
+  mode: 'read-only';
+  summary: {
+    draftExperiences: number;
+    publishedExperiences: number;
+    mediaAssets: number;
+    googleDriveMediaAssets: number;
+    experiencesWithMissingMedia: number;
+    experiencesWithManagedFeatured: number;
+    experiencesWithManagedGallery: number;
+    experiencesWithDuplicateGalleryIds: number;
+  };
+  experiences: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    status: 'DRAFT' | 'PUBLISHED';
+    featuredMediaId: string | null;
+    galleryMediaIds: string[];
+    galleryMediaSourceIds: unknown[];
+    missingMediaAssetIds: string[];
+    duplicateGalleryMediaIds: string[];
+    excerpt: string | null;
+    description: string | null;
+    categoryLabel: string | null;
+    locationAddress: string | null;
+    included: unknown[];
+    itinerary: unknown[];
+    editorialFlags: unknown[];
+    sourceProvider: string;
+  }>;
+  mediaAssets: Array<{
+    id: string;
+    storageProvider: string;
+    storageKey: string;
+    fileName: string | null;
+    publicUrl: string;
+    usages: Array<{
+      experienceId: string;
+      slug: string;
+      status: string;
+      role: 'featured' | 'gallery';
+    }>;
+    linkedExperienceCount: number;
+  }>;
+}
+
 export interface GoogleDriveFileMetadata {
   id: string;
   name: string;
@@ -240,6 +303,19 @@ export const apiClient = {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
+    });
+  },
+
+  async getMediaStorageObjects(parentKey: string): Promise<ApiItemResponse<MediaStorageListing>> {
+    return request<ApiItemResponse<MediaStorageListing>>(
+      `/media/storage/objects?parentKey=${encodeURIComponent(parentKey)}`,
+      { headers: authHeaders() },
+    );
+  },
+
+  async getExperienceMediaInventory(): Promise<ApiItemResponse<MediaExperienceInventory>> {
+    return request<ApiItemResponse<MediaExperienceInventory>>('/media/inventory', {
+      headers: authHeaders(),
     });
   },
 
