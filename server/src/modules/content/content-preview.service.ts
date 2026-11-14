@@ -29,7 +29,7 @@ export class ContentPreviewService {
     altText: string | null;
     width: number | null;
     height: number | null;
-    mimeType: string | null;
+    mimeType: string | null; caption: string | null;
   }) {
     return {
       id: row.id,
@@ -39,11 +39,11 @@ export class ContentPreviewService {
       alt: row.altText ?? undefined,
       width: row.width ?? undefined,
       height: row.height ?? undefined,
-      mimeType: row.mimeType ?? undefined,
+      mimeType: row.mimeType ?? undefined, caption: row.caption ?? undefined,
     };
   }
 
-  async getExperience(slug: string) {
+  private async getExperienceRecord(slug: string) {
     const row = await this.prisma.experience.findUnique({ where: { slug } });
     if (!row) return null;
 
@@ -58,7 +58,7 @@ export class ContentPreviewService {
             altText: true,
             width: true,
             height: true,
-            mimeType: true,
+            mimeType: true, caption: true,
           },
         })
       : null;
@@ -81,10 +81,33 @@ export class ContentPreviewService {
             altText: true,
             width: true,
             height: true,
-            mimeType: true,
+            mimeType: true, caption: true,
           },
         })
       : [];
+
+    const galleryMediaIds = this.jsonArray<string>(row.galleryMediaIds)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+    const managedGalleryRows = galleryMediaIds.length
+      ? await this.prisma.mediaAsset.findMany({
+          where: { id: { in: galleryMediaIds } },
+          select: {
+            id: true,
+            sourceId: true,
+            sourceUrl: true,
+            publicUrl: true,
+            altText: true,
+            width: true,
+            height: true,
+            mimeType: true, caption: true,
+          },
+        })
+      : [];
+
+    const managedGalleryMap = new Map(
+      managedGalleryRows.map(item => [item.id, this.mapMedia(item)] as const),
+    );
 
     const galleryMap = new Map(
       galleryRows.flatMap(item => {
@@ -122,9 +145,14 @@ export class ContentPreviewService {
         : undefined,
       category: row.categoryLabel ?? undefined,
       featuredMedia: featured ? this.mapMedia(featured) : null,
-      gallery: galleryMediaSourceIds
-        .map(sourceId => galleryMap.get(sourceId))
-        .filter(Boolean),
+      gallery: galleryMediaIds.length
+        ? galleryMediaIds
+            .map(id => managedGalleryMap.get(id))
+            .filter(Boolean)
+        : galleryMediaSourceIds
+            .map(sourceId => galleryMap.get(sourceId))
+            .filter(Boolean),
+      galleryMediaIds,
       galleryMediaSourceIds,
       pricingMode: row.pricingMode === 'FIXED' ? 'fixed' : 'on_request',
       pricing: this.jsonObject(row.pricingJson),
@@ -141,6 +169,60 @@ export class ContentPreviewService {
       sourceUrl: row.sourceUrl ?? undefined,
       status: row.status.toLowerCase(),
       preview: true,
+    };
+  }
+
+  // Read the base experience without resolving a family recursively.
+  async getExperience(slug: string) {
+    const parent = await this.getExperienceRecord(slug);
+
+    if (!parent) return null;
+
+    // Only Altos uses this private family expansion.
+    if (slug !== 'altos-de-chavon' || parent.status !== 'draft') {
+      return parent;
+    }
+
+    const family = parent.display?.experienceFamily;
+
+    if (!family || typeof family !== 'object' || Array.isArray(family)) {
+      return null;
+    }
+
+    const packageSlugs = (family as { packageSlugs?: unknown }).packageSlugs;
+
+    if (
+      !Array.isArray(packageSlugs) ||
+      packageSlugs.length !== 4 ||
+      !packageSlugs.every(
+        (value): value is string =>
+          typeof value === 'string' &&
+          /^[a-z0-9-]+$/.test(value) &&
+          value !== parent.slug,
+      ) ||
+      new Set(packageSlugs).size !== 4
+    ) {
+      return null;
+    }
+
+    const children = await Promise.all(
+      packageSlugs.map(childSlug => this.getExperienceRecord(childSlug)),
+    );
+
+    if (
+      children.some(
+        (child, index) =>
+          !child ||
+          child.slug !== packageSlugs[index] ||
+          !['draft', 'published'].includes(child.status),
+      )
+    ) {
+      return null;
+    }
+
+    return {
+      ...parent,
+      packages: children,
     };
   }
 }
