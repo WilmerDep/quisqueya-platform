@@ -16,8 +16,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // mariadb@3.5.4 pool hangs during Prisma queries in C15.4, while the
     // adapter-owned pool passes both SELECT 1 and experience.findUnique.
     //
-    // IMPORTANT: package.json overrides the adapter's nested MariaDB driver
-    // with the patched root dependency. Do not drop that override: the
+    // IMPORTANT: package.json overrides every MariaDB driver resolution
+    // to the patched root dependency. Do not drop that override: the
     // adapter otherwise resolves an older connector version.
     const adapter = new PrismaMariaDb({
       host,
