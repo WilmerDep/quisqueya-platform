@@ -93,9 +93,7 @@
     "rxjs": "^7.8.2"
   },
   "overrides": {
-    "@prisma/adapter-mariadb": {
-      "mariadb": "$mariadb"
-    }
+    "mariadb": "$mariadb"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
