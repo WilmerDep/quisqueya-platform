@@ -92,6 +92,11 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
+  "overrides": {
+    "@prisma/adapter-mariadb": {
+      "mariadb": "$mariadb"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.59.1",
