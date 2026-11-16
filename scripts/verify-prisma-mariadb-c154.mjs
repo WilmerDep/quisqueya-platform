@@ -2,6 +2,8 @@
 // Run only inside an isolated QA worktree after npm has regenerated package-lock.json.
 import 'dotenv/config';
 import { createRequire } from 'node:module';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
@@ -17,9 +19,28 @@ if (host !== '127.0.0.1' || port !== 3306 || database !== 'quisqueya_core') {
 
 // Guard against reintroducing the older connector bundled by the Prisma
 // adapter. The root and adapter-resolved MariaDB versions must be identical.
+// MariaDB does not export the "./package.json" package subpath under Node 24.
+// Resolve its real entry point and read the nearest owning manifest instead.
+function installedMariaDbVersion(loader) {
+  let directory = dirname(loader.resolve('mariadb'));
+  for (let depth = 0; depth < 12; depth += 1) {
+    const manifestPath = join(directory, 'package.json');
+    if (existsSync(manifestPath)) {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      if (manifest.name === 'mariadb' && typeof manifest.version === 'string') {
+        return manifest.version;
+      }
+    }
+    const parent = dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+  }
+  throw new Error('C15.4_MARIADB_MANIFEST_NOT_FOUND');
+}
+
 const adapterRequire = createRequire(require.resolve('@prisma/adapter-mariadb'));
-const rootMariaVersion = require('mariadb/package.json').version;
-const adapterMariaVersion = adapterRequire('mariadb/package.json').version;
+const rootMariaVersion = installedMariaDbVersion(require);
+const adapterMariaVersion = installedMariaDbVersion(adapterRequire);
 
 console.log('=== C15.4 PRISMA MARIADB REGRESSION ===');
 console.log('ROOT_DRIVER=' + rootMariaVersion);
