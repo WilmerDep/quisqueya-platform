@@ -2,43 +2,35 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import * as mariadb from 'mariadb';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  private readonly pool: ReturnType<typeof mariadb.createPool>;
-
   constructor(config: ConfigService) {
-    // Use the independently patched MariaDB connector rather than the adapter's
-    // bundled connector. The external pool is owned and closed by this service.
     const host = config.get<string>('MYSQL_HOST', '127.0.0.1');
     const password = config.get<string>('MYSQL_PASSWORD', '');
     const isLocalDevelopment =
       config.get<string>('NODE_ENV') === 'development' &&
       ['127.0.0.1', 'localhost', '::1'].includes(host);
 
-    const pool = mariadb.createPool({
+    // Construct the pool inside the Prisma adapter. Passing an external
+    // mariadb@3.5.4 pool hangs during Prisma queries in C15.4, while the
+    // adapter-owned pool passes both SELECT 1 and experience.findUnique.
+    //
+    // IMPORTANT: package.json overrides every MariaDB driver resolution
+    // to the patched root dependency. Do not drop that override: the
+    // adapter otherwise resolves an older connector version.
+    const adapter = new PrismaMariaDb({
       host,
       port: Number(config.get<string>('MYSQL_PORT', '3306')),
       user: config.get<string>('MYSQL_USER', 'root'),
       ...(password ? { password } : {}),
       database: config.get<string>('MYSQL_DATABASE', 'quisqueya_core'),
       connectionLimit: Number(config.get<string>('MYSQL_POOL_LIMIT', '10')),
-      // Match PrismaMariaDb's internal-pool behavior for prepared statements.
       prepareCacheLength: 0,
       ...(isLocalDevelopment && !password ? { allowPublicKeyRetrieval: true } : {}),
     });
 
-    // The adapter types its Pool against bundled mariadb@3.4.5, while this
-    // runtime pool comes from patched mariadb@3.5.4. TypeScript treats their
-    // PoolConnection signatures as incompatible despite compatible runtime APIs.
-    // Limit the assertion to this driver boundary; never replace the pool.
-    type AdapterPool = Extract<
-      ConstructorParameters<typeof PrismaMariaDb>[0],
-      { getConnection(): Promise<unknown> }
-    >;
-    super({ adapter: new PrismaMariaDb(pool as unknown as AdapterPool) });
-    this.pool = pool;
+    super({ adapter });
   }
 
   async onModuleInit() {
@@ -46,10 +38,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleDestroy() {
-    try {
-      await this.$disconnect();
-    } finally {
-      await this.pool.end();
-    }
+    await this.$disconnect();
   }
 }

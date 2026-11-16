@@ -46,8 +46,11 @@ async function bootstrap() {
   app.useGlobalFilters(new ApiExceptionFilter());
 
   const port = Number(process.env.PORT || 3000);
-  await app.listen(port, '0.0.0.0');
-  console.log(`Quisqueya Platform API listening on ${port}`);
+  // Keep the existing network bind by default; QA can explicitly bind to
+  // loopback to avoid exposing a private preview server to the local network.
+  const host = process.env.QUISQUEYA_BIND_HOST || '0.0.0.0';
+  await app.listen(port, host);
+  console.log(`Quisqueya Platform API listening on ${host}:${port}`);
 }
 
 bootstrap();
