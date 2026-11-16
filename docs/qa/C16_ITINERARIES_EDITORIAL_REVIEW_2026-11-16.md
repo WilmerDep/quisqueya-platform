@@ -28,6 +28,23 @@ Las semillas existentes `client-experiences-2026-09-bavaro-adventure-park.seed.j
 - En la UI, titular **«Recorrido orientativo»** hasta confirmación operacional; mostrar aviso de que el proveedor define orden y horarios.
 - **Altos de Chavón**: las variantes hijas ya tienen 6 y 8 pasos en staging; la web de familias usa `experience.itinerary` (padre) en vez del itinerario del paquete seleccionado. Requiere ajuste visual propio, **no copiar los pasos al padre**.
 
+## Preflight SQL de staging, únicamente lectura (preparado)
+
+`scripts/audit-staging-itinerary-preflight-c16.mjs` emite una consulta `SELECT` que coteja **ID y slug al mismo tiempo** para las 14 experiencias PUBLISHED/MANUAL, e incluye `updated_at`, `JSON_LENGTH(itinerary_json)` y `c16_preflight`. El script **no conecta a MySQL ni emite UPDATE**.
+
+```powershell
+node scripts/verify-editorial-itineraries-2026-11.mjs
+node scripts/audit-staging-itinerary-preflight-c16.mjs
+```
+
+Ejecutar el SQL devuelto en phpMyAdmin con la base **u424080957_quisqueya_core** seleccionada, sin alterar credenciales ni datos. Debe devolver **14 filas** con `c16_preflight=C16_CANDIDATE`, `status=PUBLISHED`, `source_provider=MANUAL` e `itinerary_steps=0`. Si hay menos, diferencias de IDs, más de 0 pasos o cualquier otra discrepancia, **detener**.
+
+El archivo de propuestas sigue siendo **editorial y no aprobado**. Un resultado positivo del SELECT **no autoriza** modificaciones de los registros hasta revisar contenidos, exportar el respaldo e implementar la transacción de actualización con controles y rollback.
+
+## Nota de UI sobre las cinco modalidades de La Hacienda
+
+La Hacienda es **una sola fila** en la BD y sus cinco rate plans son opciones **virtuales** en la vista. El nuevo adaptador en [Web PR #23](https://github.com/WilmerDep/quisqueya-web/pull/23) propone derivar de los **cuatro pasos generales C16** un recorrido por modalidad cuando `itinerary_json` esté presente, usando únicamente los flags del plan ya guardados en `pricing_json` (`transportIncluded`, `transportMode`, `mealIncluded`, `mealAddOnPrice`, `drinksIncluded`). Si la estructura de los pasos no coincide exactamente o no existe, **no inventa itinerario**. Esto no afecta el diseño original de las single ni crea nuevos registros ni modifica tarifas.
+
 ## Validación automatizada / prueba
 
 ```powershell
