@@ -114,3 +114,18 @@ Se espera `C16_OFFLINE_SQL_QA_OK` con `C16_POST_UPDATE_HASH_GUARD=14`, `C16_BACK
 - Los archivos anteriores en `C16_STAGING_SQL_REVISAR` están **obsoletos** tras esta revisión de seguridad; es obligatorio regenerarlos antes de usarlos.
 - La actualización de datos y el despliegue de frontend/backend son operaciones separadas. Mantener PRs en DRAFT hasta QA integral de staging.
 
+
+## Decisión C16 — Solo paquetes; API y BD existentes (17/11/2026)
+
+Wilmer confirmó que la adaptación de la línea de tiempo es **exclusivamente para las familias de paquetes** y que otras experiencias ya disponen de itinerario. Esos itinerarios existentes deben permanecer intactos. La actualización de datos se limita a **13 filas PUBLISHED/MANUAL de Bávaro Adventure Park y la fila única PUBLISHED/MANUAL de La Hacienda Park**; las cinco tarifas de La Hacienda no generan cinco filas de experiencia.
+
+**Contrato actual verificado en el código, sin migración nueva:**
+
+- **BD MariaDB / tabla experiences:** el campo existente `itinerary_json` es el único campo asignado por el SQL C16; se verifica cada ID/slug/status/origen/hash/fecha antes de escribir, y hash posterior antes del COMMIT.
+- **API pública:** `server/src/modules/content/content.controller.ts` publica `GET /api/v1/public/experiences/:slug`; `ContentService.mapExperience` serializa `row.itineraryJson` como `itinerary` (arreglo de pasos).
+- **API de previsualización:** `GET /api/v1/preview/experiences/:slug` con `x-preview-token` usa el mismo campo mediante `ContentPreviewService.mapExperience`.
+- **Web:** `src/services/public-content-reader.ts` conserva la propiedad del API; `FamilyItinerarySection` usa `itinerary` de la modalidad seleccionada. La Hacienda deriva las cinco condiciones operativas desde `pricing.ratePlans` de la fila única, sin duplicar itinerarios en MySQL. Las singles preexistentes mantienen la rama JSX original.
+
+**Guardia de regresión:** `node scripts/verify-c16-api-contract.mjs` comprueba estáticamente contrato público/preview, 13+1 slugs exactos y alcance SQL (solo `itinerary_json`), sin acceder a la BD. Para la comprobación de extremo a extremo después del futuro UPDATE se deberá contrastar el API real: los 13 slugs deben devolver el número esperado de pasos, La Hacienda debe devolver sus cuatro etapas, y experiencias anteriores de control conservarán los suyos. Requiere despliegue de Web PR #23 para ver el selector nuevo; el contrato base de API ya existe.
+
+**No implica:** nuevos campos de Prisma, cambios a precios/medios/estado, modificación de otras experiencias, merge de ramas ni actualización de producción. Todo SQL de aplicación/rollback permanece desactivado por defecto hasta el paso de cambio controlado.
