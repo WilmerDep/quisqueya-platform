@@ -69,24 +69,24 @@ Relacionado: [Issue #14 — Itinerarios faltantes](https://github.com/WilmerDep/
 
 ## Respaldo real recibido y validado — staging
 
-Wilmer exportó el resultado de la consulta de 14 registros desde phpMyAdmin, sin exportar toda la BD. Respaldo local privado: \`quisqueya-c16-itinerarios-backup-staging-2026-11-16.json\`. Archivo JSON de 5.499 bytes, SHA256 \`048689f48bfb39cfa373a15c0c53d1d853a2f5eb0f491dea0805b4599e7bed9a\`. **No versionar ni publicar este backup.**
+Wilmer exportó el resultado de la consulta de 14 registros desde phpMyAdmin, sin exportar toda la BD. Respaldo local privado: `quisqueya-c16-itinerarios-backup-staging-2026-11-16.json`. Archivo JSON de 5.499 bytes, SHA256 `048689f48bfb39cfa373a15c0c53d1d853a2f5eb0f491dea0805b4599e7bed9a`. **No versionar ni publicar este backup.**
 
-Inspección del archivo real: una tabla \`experiences\` de \`u424080957_quisqueya_core\`, **14 filas**, 14 IDs/slugs únicos, 14 \`PUBLISHED\`/\`MANUAL\`, \`itinerary_json=[]\` y \`itinerary_steps=0\` en las 14. Los 14 checksum SHA-256 del campo son válidos e idénticos a \`4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\` (\`[]\`). \`updated_at\` no es uniforme: 12 registros en 16/10/2026 21:04:59, Polaris de Noche en 20/10/2026 04:09:43 y Hacienda en 17/10/2026 20:31:23. Estas fechas se respetan por fila.
+Inspección del archivo real: una tabla `experiences` de `u424080957_quisqueya_core`, **14 filas**, 14 IDs/slugs únicos, 14 `PUBLISHED`/`MANUAL`, `itinerary_json=[]` y `itinerary_steps=0` en las 14. Los 14 checksum SHA-256 del campo son válidos e idénticos a `4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945` (`[]`). `updated_at` no es uniforme: 12 registros en 16/10/2026 21:04:59, Polaris de Noche en 20/10/2026 04:09:43 y Hacienda en 17/10/2026 20:31:23. Estas fechas se respetan por fila.
 
-**Nuevo generador offline versionado:** \`scripts/prepare-staging-itineraries-c16.mjs\`. Recibe una ruta local a este backup y una carpeta de salida; valida datos del respaldo con hashes, compara cada \`id + slug\` con los 14 seeds, confirma \`PUBLISHED/MANUAL\`, estado original vacío, \`updated_at\`, y las 14 propuestas marcadas como no confirmadas, y genera cuatro archivos:
+**Nuevo generador offline versionado:** `scripts/prepare-staging-itineraries-c16.mjs`. Recibe una ruta local a este backup y una carpeta de salida; valida datos del respaldo con hashes, compara cada `id + slug` con los 14 seeds, confirma `PUBLISHED/MANUAL`, estado original vacío, `updated_at`, y las 14 propuestas marcadas como no confirmadas, y genera cuatro archivos:
 
-- \`C16_01_PREVIA_SOLO_LECTURA.sql\` — consulta previa no mutante;
-- \`C16_02_APLICACION_DESACTIVADA.sql\` — SQL de aplicación con bandera \`@c16_allow_apply=0\` por defecto;
-- \`C16_03_REVERSION_DESACTIVADA.sql\` — SQL de reversión con bandera \`@c16_allow_rollback=0\` por defecto;
-- \`C16_04_MANIFEST.json\` — resultado y checksums por modalidad, sin credenciales.
+- `C16_01_PREVIA_SOLO_LECTURA.sql` — consulta previa no mutante;
+- `C16_02_APLICACION_DESACTIVADA.sql` — SQL de aplicación con bandera `@c16_allow_apply=0` por defecto;
+- `C16_03_REVERSION_DESACTIVADA.sql` — SQL de reversión con bandera `@c16_allow_rollback=0` por defecto;
+- `C16_04_MANIFEST.json` — resultado y checksums por modalidad, sin credenciales.
 
 Aplicación y reversión usan una transacción, bloqueo de 14 IDs, validación de entorno/identidad/estado/huella y **COMMIT condicional solo si modifica exactamente 14 filas**; en caso contrario ROLLBACK. Esto es una **propuesta técnica de SQL para revisión**, no prueba de ejecución sobre la versión específica de MariaDB de Hostinger. **No ejecutar aún los archivos mutantes**; validar la SQL y contenido editorial, confirmar versión y permisos de MariaDB, y preservar el respaldo externo antes de activar cualquier bandera. No se modifica ni se confirma la secuencia real de las actividades con este generador.
 
 ### Preparación en entorno QA del usuario (sin conexión a MySQL)
 
-\`\`\`powershell
+```powershell
 node scripts/prepare-staging-itineraries-c16.mjs --backup "RUTA_LOCAL_AL_BACKUP.json" --out-dir "RUTA_LOCAL_A_CARPETA_C16_SQL"
-\`\`\`
+```
 
-**QA esperado:** \`C16_BACKUP_VALID=14\`, \`C16_PROPOSED_STEPS=55\`, \`C16_OUTPUT_FILES=4\`, \`C16_APPLY_ENABLED=false\`, \`C16_DB_WRITES=NONE\`.
+**QA esperado:** `C16_BACKUP_VALID=14`, `C16_PROPOSED_STEPS=55`, `C16_OUTPUT_FILES=4`, `C16_APPLY_ENABLED=false`, `C16_DB_WRITES=NONE`.
 
