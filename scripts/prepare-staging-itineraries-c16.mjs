@@ -42,6 +42,7 @@ function verifySql(rows) {
   return [
     '-- C16 01 / READ ONLY / No database changes.',
     '-- Select database ' + DATABASE + ' in phpMyAdmin before executing.',
+    'USE `'+ DATABASE +'`;',
     'SELECT e.id, e.slug, e.status, e.source_provider, e.updated_at,',
     '       COALESCE(JSON_LENGTH(e.itinerary_json),0) AS itinerary_steps,',
     "       CASE WHEN " + conditions(false) + " THEN 'C16_READY' ELSE 'STOP_REVIEW' END AS c16_result",
@@ -55,6 +56,7 @@ function mutationSql(rows, restore) {
   const flag = restore ? '@c16_allow_rollback' : '@c16_allow_apply';
   const ready = restore ? '@c16_rb_ready' : '@c16_apply_ready';
   const changed = restore ? '@c16_rb_changed' : '@c16_apply_changed';
+  const verified = restore ? '@c16_rb_verified' : '@c16_apply_verified';
   const finish = restore ? '@c16_rb_finish' : '@c16_apply_finish';
   const rowsCondition = rows.map((r) => '  (' + quote(r.seed.id) + ', ' + quote(r.seed.slug) + ')').join(',\n');
   return [
@@ -64,6 +66,7 @@ function mutationSql(rows, restore) {
     '-- Changes ONLY itinerary_json. If fewer than 14 rows qualify, ROLLBACK.',
     '-- If an SQL error occurs, do not issue COMMIT manually.',
     'SET NAMES utf8mb4;',
+    'USE `'+DATABASE+'`;',
     'SET ' + flag + ' := 0;',
     'SET @c16_database_ok := (DATABASE() = ' + quote(DATABASE) + ');',
     'START TRANSACTION;',
@@ -77,15 +80,21 @@ function mutationSql(rows, restore) {
     'WHERE ' + flag + ' = 1 AND @c16_database_ok = 1 AND ' + ready + ' = 14',
     '  AND ' + conditions(restore) + ';',
     'SET ' + changed + ' := ROW_COUNT();',
-    '-- Conditional COMMIT only after exactly 14 updates. Otherwise ROLLBACK.',
-    'SET ' + finish + ' := IF(' + flag + ' = 1 AND @c16_database_ok = 1 AND ' + ready + ' = 14 AND ' + changed + " = 14, 'COMMIT', 'SELECT 0 AS c16_not_committed');",
+    '-- Validate the exact expected JSON content for all 14 records before COMMIT.',
+    'SET ' + verified + ' := (SELECT COUNT(*) FROM experiences AS e JOIN (',
+    reference(rows, false, !restore),
+    ') AS r ON e.id = r.id AND e.slug = r.slug',
+    'WHERE e.status = \'PUBLISHED\' AND e.source_provider = \'MANUAL\'',
+    'AND SHA2(COALESCE(CAST(e.itinerary_json AS CHAR), \'NULL\'), 256) = r.expected_sha);',
+    '-- Conditional COMMIT only after exactly 14 matched, updated AND checksum-verified. Otherwise ROLLBACK.',
+    'SET ' + finish + ' := IF(' + flag + ' = 1 AND @c16_database_ok = 1 AND ' + ready + ' = 14 AND ' + changed + ' = 14 AND ' + verified + " = 14, 'COMMIT', 'SELECT 0 AS c16_not_committed');",
     'PREPARE c16_finish_statement FROM ' + finish + ';',
     'EXECUTE c16_finish_statement;',
     'DEALLOCATE PREPARE c16_finish_statement;',
     'ROLLBACK;',
     'SELECT @c16_database_ok AS c16_database_ok, ' + flag + ' AS c16_authorized,',
-    '       ' + ready + ' AS c16_ready_rows, ' + changed + ' AS c16_written_rows,',
-    "       IF(" + flag + ' = 1 AND @c16_database_ok = 1 AND ' + ready + ' = 14 AND ' + changed + " = 14, 'C16_COMMITTED', 'C16_NOT_APPLIED') AS c16_status;",
+    '       ' + ready + ' AS c16_ready_rows, ' + changed + ' AS c16_written_rows, ' + verified + ' AS c16_verified_rows,',
+    "       IF(" + flag + ' = 1 AND @c16_database_ok = 1 AND ' + ready + ' = 14 AND ' + changed + ' = 14 AND ' + verified + " = 14, 'C16_COMMITTED', 'C16_NOT_APPLIED') AS c16_status;",
     'SELECT id,slug,status,source_provider,updated_at,',
     '       COALESCE(JSON_LENGTH(itinerary_json),0) AS itinerary_steps,',
     "       SHA2(COALESCE(CAST(itinerary_json AS CHAR),'NULL'),256) AS itinerary_checksum",
