@@ -90,3 +90,27 @@ node scripts/prepare-staging-itineraries-c16.mjs --backup "RUTA_LOCAL_AL_BACKUP.
 
 **QA esperado:** `C16_BACKUP_VALID=14`, `C16_PROPOSED_STEPS=55`, `C16_OUTPUT_FILES=4`, `C16_APPLY_ENABLED=false`, `C16_DB_WRITES=NONE`.
 
+
+
+## Revisión de seguridad posterior al preflight en Hostinger (17/11/2026)
+
+**Comprobaciones del usuario en phpMyAdmin:** `USE u424080957_quisqueya_core;` seguido de `SELECT DATABASE(), VERSION()` confirmó **u424080957_quisqueya_core / 11.8.9-MariaDB-log**; `SHOW TABLE STATUS` confirmó **experiences / InnoDB**; `COUNT(*)` de las modalidades objetivo devolvió **14 totales / 14 pendientes**; `C16_01_PREVIA_SOLO_LECTURA.sql` devolvió **14/14 C16_READY** con checksum/updated_at por par ID+slug. Estas comprobaciones se consideran cerradas; la estimación `Rows` de InnoDB no equivale a `COUNT(*)`.
+
+**Endurecimiento del generador:** `scripts/prepare-staging-itineraries-c16.mjs` ahora incluye `USE u424080957_quisqueya_core;` en los tres archivos SQL; la aplicación y reversión comprueban de forma explícita **14/14 hashes exactos del JSON resultante dentro de la transacción, ANTES de poder ejecutar COMMIT**, además de las verificaciones originales de estado, fuente, identidad, hash previo, fecha previa (aplicación) y 14 registros modificados. Las banderas siguen **DESACTIVADAS** en 0. El procedimiento solo asigna `itinerary_json`.
+
+Nuevo auditor offline `scripts/verify-c16-generated-sql.mjs`, ejecutable después de regenerar los cuatro archivos:
+
+```powershell
+node scripts/prepare-staging-itineraries-c16.mjs --backup "RUTA_BACKUP.json" --out-dir "RUTA_CARPETA_SQL"
+node scripts/verify-c16-generated-sql.mjs --backup "RUTA_BACKUP.json" --out-dir "RUTA_CARPETA_SQL"
+```
+
+Se espera `C16_OFFLINE_SQL_QA_OK` con `C16_POST_UPDATE_HASH_GUARD=14`, `C16_BACKUP_HASH_MATCH=true` y `C16_SQL_WRITES_PERFORMED=NONE`. Este auditor confirma seguridad estructural del SQL generado, **no sustituye una prueba de ejecución transaccional sobre MariaDB ni una autorización editorial**.
+
+**Límites importantes:**
+- La transacción y su `COMMIT` condicionado dependen de que phpMyAdmin ejecute el lote entero en la misma sesión. Si se interrumpe o produce un error SQL, **no ejecutar COMMIT manualmente** y comprobar el estado real antes de reintentar.
+- Un resultado `C16_READY=14` solo confirma precondiciones; no confirma que el proveedor aprobó los 55 pasos como itinerario horario.
+- La reversión automatizada exige que todavía estén presentes las 14 propuestas exactas; si hubo cambios editoriales posteriores, detener y analizar el respaldo en vez de forzar.
+- Los archivos anteriores en `C16_STAGING_SQL_REVISAR` están **obsoletos** tras esta revisión de seguridad; es obligatorio regenerarlos antes de usarlos.
+- La actualización de datos y el despliegue de frontend/backend son operaciones separadas. Mantener PRs en DRAFT hasta QA integral de staging.
+
