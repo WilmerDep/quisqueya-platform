@@ -27,13 +27,14 @@ async function main() {
   const out = argv('--out-dir');
   assert.ok(backup && out, 'Pass --backup and --out-dir');
 
-  const [snapshot, proposal, manifest, preview, apply, rollback] = await Promise.all([
+  const [snapshot, proposal, manifest, preview, apply, rollback, diagnostic] = await Promise.all([
     read(resolve(backup)),
     load(join(root, 'data/content/itinerary-proposals-2026-11-bavaro-hacienda.json')),
     load(join(resolve(out), 'C16_04_MANIFEST.json')),
     read(join(resolve(out), 'C16_01_PREVIA_SOLO_LECTURA.sql')),
     read(join(resolve(out), 'C16_02_APLICACION_DESACTIVADA.sql')),
     read(join(resolve(out), 'C16_03_REVERSION_DESACTIVADA.sql')),
+    read(join(resolve(out), 'C16_05_DIAGNOSTICO_PAYLOAD_SOLO_LECTURA.sql')),
   ]);
 
   assert.equal(manifest.status, 'PREPARED_NOT_APPLIED');
@@ -58,12 +59,17 @@ async function main() {
     assert.equal(item.originalHash, sha('[]'));
   }
 
-  for (const [label, sql] of [['preview', preview], ['apply', apply], ['rollback', rollback]]) {
+  for (const [label, sql] of [['preview', preview], ['apply', apply], ['rollback', rollback], ['diagnostic', diagnostic]]) {
     assert.match(sql, /USE \x60u424080957_quisqueya_core\x60;/,
       label + ' must select the intended schema');
   }
 
   assert.doesNotMatch(preview, /\b(?:UPDATE|INSERT|DELETE|DROP|TRUNCATE|ALTER)\s+(?:TABLE\s+)?experiences\b/i);
+  assert.match(diagnostic, /'C16_PAYLOAD_OK'/);
+  assert.equal((diagnostic.match(/AS next_json\b/g) || []).length, 14);
+  assert.match(diagnostic, /FROM information_schema\.COLUMNS/);
+  assert.match(diagnostic, /FROM information_schema\.TRIGGERS/);
+  assert.doesNotMatch(diagnostic, /\bUPDATE\s+experiences\s+SET\b/i);
   assert.match(preview, /'C16_READY'/);
   for (const [label, sql, flag, verified] of [
     ['apply', apply, 'apply', '@c16_apply_verified'],
@@ -85,6 +91,7 @@ async function main() {
   for (const entry of proposal.items) {
     const encoded = Buffer.from(JSON.stringify(entry.itinerary), 'utf8').toString('hex');
     assert.ok(apply.includes('0x' + encoded), 'Missing exact payload for ' + entry.slug);
+    assert.ok(diagnostic.includes('0x' + encoded), 'Missing diagnostic payload for ' + entry.slug);
   }
 
   console.log('C16_SOURCE_STEPS=55');
@@ -93,6 +100,7 @@ async function main() {
   console.log('C16_SQL_APPLY_DISABLED=true');
   console.log('C16_SQL_ROLLBACK_DISABLED=true');
   console.log('C16_POST_UPDATE_HASH_GUARD=14');
+  console.log('C16_DIAGNOSTIC_SQL_READ_ONLY=true');
   console.log('C16_SQL_WRITES_PERFORMED=NONE');
   console.log('C16_OFFLINE_SQL_QA_OK');
 }
