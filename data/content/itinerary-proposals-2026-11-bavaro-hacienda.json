@@ -1,0 +1,455 @@
+{
+  "version": 1,
+  "status": "PROPOSED_NOT_APPLIED",
+  "createdAt": "2026-11-16",
+  "sourceDocument": "Tercera parte excursiones descriptivos.docx",
+  "sourceSections": "Bávaro Adventure Park (pp. 6-14); La Hacienda Park (pp. 21-28)",
+  "scope": "13 published Bavaro children plus 1 published La Hacienda experience",
+  "dataPolicy": "Only field itinerary_json can be proposed for update, never status/pricing/media/booking. No fixed activity order or clock times are asserted.",
+  "reviewRequired": "Provider must confirm actual sequence, durations and pickups before text is represented as confirmed itinerary.",
+  "items": [
+    {
+      "slug": "bavaro-adventure-park-explorer-adventure-catamaran",
+      "sourcePages": [
+        12,
+        13
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Verificar mínimo operativo de 15 pasajeros indicado en documento; no presentarlo como mínimo de reserva individual.",
+      "itinerary": [
+        {
+          "time": "Salida por confirmar",
+          "title": "Traslado y embarque",
+          "desc": "Transporte desde el hotel y encuentro para la experiencia Adventure Explorer. Hora y punto exactos sujetos a confirmación."
+        },
+        {
+          "time": "Durante la navegación",
+          "title": "Catamarán, snorkel y playa",
+          "desc": "Navegación en catamarán con snorkel y visita a una playa semi-virgen. El orden de las paradas depende de la operación."
+        },
+        {
+          "time": "Durante la actividad",
+          "title": "Bebidas y entretenimiento",
+          "desc": "Barra libre de bebidas nacionales, nachos y salsas, entretenimiento y equipo de seguridad según el paquete."
+        },
+        {
+          "time": "Al finalizar",
+          "title": "Regreso",
+          "desc": "Finalizada la experiencia, retorno conforme al transporte coordinado."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-vip",
+      "sourcePages": [
+        6,
+        7
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Los bloques describen servicios y actividades documentados. El orden y los horarios los confirma el operador.",
+      "itinerary": [
+        {
+          "time": "Recogida por confirmar",
+          "title": "Llegada al parque",
+          "desc": "Traslado compartido desde hoteles seleccionados, acceso al parque e indicaciones de seguridad."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Ruta en buggy",
+          "desc": "Recorrido todoterreno por senderos y pista off-road en el entorno del parque."
+        },
+        {
+          "time": "Durante la visita",
+          "title": "Cenote y espacios del parque",
+          "desc": "Visita al Cenote Blue Lagoon, Pueblo Dominicano, laberinto y piscina con cascada, según organización del operador."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Almuerzo dominicano",
+          "desc": "Almuerzo típico dominicano sin bebidas y regreso con el transporte incluido."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-zipline-mega-splash",
+      "sourcePages": [
+        7
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Los bloques describen servicios y actividades documentados. El orden y los horarios los confirma el operador.",
+      "itinerary": [
+        {
+          "time": "Recogida por confirmar",
+          "title": "Llegada e instrucciones",
+          "desc": "Traslado compartido, entrada al parque e indicaciones y equipo de seguridad."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Zipline Mega Splash",
+          "desc": "Circuito de tirolesas, puente Himalaya y llegada acuática Mega Splash."
+        },
+        {
+          "time": "Durante la visita",
+          "title": "Cenote y espacios del parque",
+          "desc": "Acceso a Blue Lagoon, piscina con cascada, laberinto y Pueblo Dominicano según operación."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Almuerzo y regreso",
+          "desc": "Almuerzo típico dominicano sin bebidas y traslado de regreso conforme a coordinación."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river",
+      "sourcePages": [
+        8
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Los bloques describen servicios y actividades documentados. El orden y los horarios los confirma el operador.",
+      "itinerary": [
+        {
+          "time": "Recogida por confirmar",
+          "title": "Acceso al parque",
+          "desc": "Traslado compartido, ingreso y equipo de seguridad para la experiencia."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Sacred River",
+          "desc": "Recorrido por el río subterráneo entre formaciones de piedra caliza y aguas cristalinas."
+        },
+        {
+          "time": "Durante la visita",
+          "title": "Jungle River y Blue Lagoon",
+          "desc": "La descripción de la fuente continúa hacia Jungle River y Cenote Blue Lagoon, con acceso a espacios recreativos del parque."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Almuerzo y regreso",
+          "desc": "Almuerzo típico dominicano sin bebidas y retorno conforme a la operación del traslado."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-zipline",
+      "sourcePages": [
+        8,
+        9
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Los bloques describen servicios y actividades documentados. El orden y los horarios los confirma el operador.",
+      "itinerary": [
+        {
+          "time": "Recogida por confirmar",
+          "title": "Llegada e indicaciones",
+          "desc": "Traslado compartido de ida y vuelta, acceso y equipo de seguridad."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Buggy y Zipline Mega Splash",
+          "desc": "Participación en la experiencia de buggy y el circuito de tirolesas. El orden entre ambas actividades no está confirmado."
+        },
+        {
+          "time": "Durante la visita",
+          "title": "Cenote y zonas del parque",
+          "desc": "Blue Lagoon, piscina con cascada, Pueblo Dominicano y laberinto, según el recorrido del operador."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Almuerzo y regreso",
+          "desc": "Almuerzo dominicano sin bebidas y retorno en el transporte compartido."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river-zipline",
+      "sourcePages": [
+        9
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "El documento no confirma almuerzo específico en esta modalidad: no incorporarlo al itinerario.",
+      "itinerary": [
+        {
+          "time": "Inicio por confirmar",
+          "title": "Acceso e indicaciones",
+          "desc": "Traslado compartido sujeto a operación, entrada y equipo de seguridad."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Sacred River y tirolesas",
+          "desc": "La modalidad reúne el recorrido natural de Sacred River y el circuito de Zipline Mega Splash. Su orden no está definido en el documento."
+        },
+        {
+          "time": "Durante el recorrido",
+          "title": "Espacios acuáticos del parque",
+          "desc": "Tiempo para disfrutar de los espacios de agua y relajación que correspondan a la modalidad; disponibilidad sujeta al operador."
+        },
+        {
+          "time": "Al finalizar",
+          "title": "Cierre y regreso",
+          "desc": "Finalización del recorrido y retorno según la logística del transporte coordinado."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-buggy-party-boat",
+      "sourcePages": [
+        12
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "La fuente presenta combinación tierra y mar, sin confirmar la secuencia operativa ni horario de sus bloques.",
+      "itinerary": [
+        {
+          "time": "Inicio por confirmar",
+          "title": "Traslado coordinado",
+          "desc": "Transporte compartido según la operación de la modalidad Tierra y Mar."
+        },
+        {
+          "time": "Durante la experiencia",
+          "title": "Aventura terrestre",
+          "desc": "Experiencia todoterreno en buggy, visita cultural y acceso a piscina con cascada. El orden exacto depende del operador."
+        },
+        {
+          "time": "Durante la experiencia",
+          "title": "Catamarán Adventure Explorer",
+          "desc": "Navegación, snorkel, barra libre de bebidas nacionales, snacks y entretenimiento."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Almuerzo y regreso",
+          "desc": "Almuerzo dominicano incluido y traslado de regreso según coordinación."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-vip",
+      "sourcePages": [
+        9,
+        10
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Para conducir Polaris se requieren 18 años o más y licencia vigente, según fuente.",
+      "itinerary": [
+        {
+          "time": "Inicio por confirmar",
+          "title": "Traslado y preparación",
+          "desc": "Transporte compartido, entrada y equipo e instrucciones de seguridad."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Ruta todoterreno en Polaris",
+          "desc": "Recorrido en Polaris o Can-Am, conforme a las condiciones del parque y los requisitos del conductor."
+        },
+        {
+          "time": "Durante la visita",
+          "title": "Blue Lagoon y espacios culturales",
+          "desc": "Cenote Blue Lagoon, Pueblo Dominicano, piscina con cascada y laberinto."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Almuerzo y regreso",
+          "desc": "Almuerzo típico dominicano sin bebidas y regreso con el transporte coordinado."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-zipline",
+      "sourcePages": [
+        10,
+        11
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Suplementos de Bayahibe/La Romana sujetos a confirmación; no fijar en el itinerario.",
+      "itinerary": [
+        {
+          "time": "Recogida por confirmar",
+          "title": "Traslado al parque",
+          "desc": "Transporte compartido desde las zonas elegibles, entrada e indicaciones de seguridad."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Polaris y Zipline Mega Splash",
+          "desc": "Recorrido en Polaris o Can-Am y circuito de tirolesas; la secuencia exacta no está establecida."
+        },
+        {
+          "time": "Durante la visita",
+          "title": "Blue Lagoon y piscina",
+          "desc": "Acceso al cenote y piscina con cascada según operación."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Almuerzo y regreso",
+          "desc": "Almuerzo dominicano y retorno conforme al transporte coordinado."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-full-access-buggy",
+      "sourcePages": [
+        11
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Los bloques describen servicios y actividades documentados. El orden y los horarios los confirma el operador.",
+      "itinerary": [
+        {
+          "time": "Inicio por confirmar",
+          "title": "Traslado e ingreso",
+          "desc": "Traslado compartido, entrada al parque y equipamiento de seguridad."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Full Access en buggy",
+          "desc": "Experiencia en buggy, Zipline Mega Splash, paseo a caballo y Sacred River; el operador determina el orden."
+        },
+        {
+          "time": "Durante el recorrido",
+          "title": "Cenote y otras zonas",
+          "desc": "Cenote Blue Lagoon, Jungle River, piscina con cascada, laberinto y Pueblo Dominicano."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Almuerzo y regreso",
+          "desc": "Almuerzo típico dominicano sin bebidas y transporte de regreso."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-sacred-river-de-noche",
+      "sourcePages": [
+        13,
+        14
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "Experiencia nocturna independiente: no utilizar itinerarios de las opciones diurnas.",
+      "itinerary": [
+        {
+          "time": "Inicio nocturno por confirmar",
+          "title": "Traslado y preparación",
+          "desc": "Transporte compartido e indicaciones de seguridad para la operación nocturna."
+        },
+        {
+          "time": "Durante la noche",
+          "title": "Sacred River y Cenote Blue Lagoon",
+          "desc": "Experiencia nocturna de Sacred River y recorrido especial por Cenote Blue Lagoon."
+        },
+        {
+          "time": "Durante la velada",
+          "title": "Cóctel y música",
+          "desc": "Cóctel junto a la piscina con cascada y ambiente musical."
+        },
+        {
+          "time": "Durante la velada",
+          "title": "Cena y fiesta en la jungla",
+          "desc": "Cena Mar & Tierra, barra libre durante la noche y fiesta en la jungla, con regreso coordinado."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-polaris-de-noche",
+      "sourcePages": [
+        14
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "La fuente no fija el orden del cóctel, cena y otras actividades nocturnas.",
+      "itinerary": [
+        {
+          "time": "Inicio nocturno por confirmar",
+          "title": "Traslado e indicaciones",
+          "desc": "Transporte compartido y preparación de seguridad. Conducir exige mayoría de edad y licencia vigente."
+        },
+        {
+          "time": "Durante la noche",
+          "title": "Polaris y aventura en la selva",
+          "desc": "Tour nocturno en Polaris y experiencia nocturna en el entorno del Cenote Blue Lagoon y la selva."
+        },
+        {
+          "time": "Durante la velada",
+          "title": "Cóctel y cena Mar & Tierra",
+          "desc": "Cóctel junto a la piscina con cascada y cena Mar & Tierra de tres tiempos."
+        },
+        {
+          "time": "Al finalizar",
+          "title": "Barra libre y regreso",
+          "desc": "Barra libre incluida y retorno con el transporte organizado."
+        }
+      ]
+    },
+    {
+      "slug": "bavaro-adventure-park-full-access-polaris",
+      "sourcePages": [
+        11,
+        12
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "No inferir almuerzo, acceso a otros espacios ni servicios del Full Access Buggy: la fuente no confirma idénticas inclusiones.",
+      "itinerary": [
+        {
+          "time": "Inicio por confirmar",
+          "title": "Traslado e ingreso",
+          "desc": "Traslado compartido sujeto a operación, entrada y equipo de seguridad."
+        },
+        {
+          "time": "Durante la aventura",
+          "title": "Full Access en Polaris",
+          "desc": "Ruta en Polaris, Zipline Mega Splash, paseo a caballo y Sacred River. El orden del circuito no está confirmado."
+        },
+        {
+          "time": "Al finalizar",
+          "title": "Cierre de actividades y regreso",
+          "desc": "Finalización del recorrido y retorno conforme a la logística del transporte."
+        }
+      ]
+    },
+    {
+      "slug": "la-hacienda-park-7-aventuras",
+      "sourcePages": [
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
+      ],
+      "operatorSequenceConfirmed": false,
+      "reviewStatus": "editorial_proposal",
+      "notes": "No asignar una secuencia fija a las siete aventuras; la recogida 07:00–09:00 aplica a Standard según hotel y no a todas las modalidades.",
+      "itinerary": [
+        {
+          "time": "Inicio por confirmar",
+          "title": "Llegada a La Hacienda Park",
+          "desc": "En Standard se coordina recogida compartida desde hoteles seleccionados; VIP dispone de transporte privado en zonas aplicables. Solo Admisión y residentes requieren transporte propio."
+        },
+        {
+          "time": "Durante el día",
+          "title": "Siete aventuras en Anamuya",
+          "desc": "Buggies, tirolesas, paseo a caballo, safari cultural, telesilla panorámica, Quick Jump y experiencia cultural dominicana. El operador determina el orden."
+        },
+        {
+          "time": "Durante la jornada",
+          "title": "Alimentación según modalidad",
+          "desc": "En Standard y Solo Admisión el almuerzo es opcional con suplemento; en VIP está incluido, y la tarifa para residentes indica alimentación incluida en el documento."
+        },
+        {
+          "time": "Al finalizar",
+          "title": "Salida y regreso",
+          "desc": "Cierre de la jornada. El traslado de regreso corresponde a las modalidades que incluyen transporte; las demás regresan por sus propios medios."
+        }
+      ]
+    }
+  ]
+}
