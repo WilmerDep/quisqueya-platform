@@ -52,6 +52,54 @@ function verifySql(rows) {
   ].join('\n');
 }
 
+/**
+ * C16 05: Diagnose MariaDB's interpretation of the exact proposed JSON
+ * WITHOUT writing it to experiences (or to any other table).
+ * Compare the SQL SHA2 result against the Node-generated SHA256 per package.
+ */
+function diagnosticSql(rows) {
+  const derived = rows.map((r, index) => {
+    const json = JSON.stringify(r.proposal.itinerary);
+    const fields = [
+      quote(r.seed.id) + ' AS id',
+      quote(r.seed.slug) + ' AS slug',
+      hex(json) + ' AS next_json',
+      quote(hash(json)) + ' AS expected_sha',
+      String(r.proposal.itinerary.length) + ' AS expected_steps',
+    ];
+    return (index ? 'UNION ALL SELECT ' : 'SELECT ') + fields.join(', ');
+  }).join('\n');
+  return [
+    '-- C16 05 / DIAGNOSTICO SOLO LECTURA. NO APLICA NI REVIERTE CAMBIOS.',
+    '-- Caso: UPDATE 14 filas pero el COMMIT condicionado fue rechazado.',
+    '-- Compara las 14 huellas calculadas por MariaDB ANTES de guardar.',
+    'USE \x60' + DATABASE + '\x60;',
+    'SELECT p.id, p.slug, p.expected_steps,',
+    '       JSON_VALID(p.next_json) AS payload_valid_json,',
+    '       JSON_LENGTH(p.next_json) AS payload_steps,',
+    '       p.expected_sha AS sha_node,',
+    '       SHA2(COALESCE(CAST(p.next_json AS CHAR), \x27NULL\x27), 256) AS sha_mariadb,',
+    '       CASE WHEN JSON_VALID(p.next_json) = 1',
+    '              AND JSON_LENGTH(p.next_json) = p.expected_steps',
+    '              AND SHA2(COALESCE(CAST(p.next_json AS CHAR), \x27NULL\x27), 256) = p.expected_sha',
+    "            THEN 'C16_PAYLOAD_OK' ELSE 'C16_PAYLOAD_MISMATCH' END AS c16_diagnostic",
+    'FROM (', derived, ') AS p ORDER BY p.slug;',
+    '-- Comprobar metadatos del campo de destino, sin cambiar la tabla.',
+    'SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE,',
+    '       CHARACTER_SET_NAME, COLLATION_NAME, EXTRA',
+    'FROM information_schema.COLUMNS',
+    'WHERE TABLE_SCHEMA = ' + quote(DATABASE),
+    "  AND TABLE_NAME = 'experiences'",
+    "  AND COLUMN_NAME IN ('itinerary_json', 'updated_at');",
+    '-- Triggers existentes sobre experiences, por si normalizan el JSON.',
+    'SELECT TRIGGER_NAME, EVENT_MANIPULATION, ACTION_TIMING',
+    'FROM information_schema.TRIGGERS',
+    'WHERE TRIGGER_SCHEMA = ' + quote(DATABASE),
+    "  AND EVENT_OBJECT_TABLE = 'experiences';",
+    '',
+  ].join('\n');
+}
+
 function mutationSql(rows, restore) {
   const flag = restore ? '@c16_allow_rollback' : '@c16_allow_apply';
   const ready = restore ? '@c16_rb_ready' : '@c16_apply_ready';
@@ -158,6 +206,7 @@ async function main() {
     ['C16_01_PREVIA_SOLO_LECTURA.sql', verifySql(rows)],
     ['C16_02_APLICACION_DESACTIVADA.sql', mutationSql(rows, false)],
     ['C16_03_REVERSION_DESACTIVADA.sql', mutationSql(rows, true)],
+    ['C16_05_DIAGNOSTICO_PAYLOAD_SOLO_LECTURA.sql', diagnosticSql(rows)],
   ];
   for (const [filename, text] of outputs) await writeFile(join(dir, filename), text, 'utf8');
   const manifest = {
@@ -176,7 +225,7 @@ async function main() {
   await writeFile(join(dir, 'C16_04_MANIFEST.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
   console.log('C16_BACKUP_VALID=14');
   console.log('C16_PROPOSED_STEPS=' + manifest.steps);
-  console.log('C16_OUTPUT_FILES=4');
+  console.log('C16_OUTPUT_FILES=' + (outputs.length + 1));
   console.log('C16_APPLY_ENABLED=false');
   console.log('C16_DB_WRITES=NONE');
   console.log('C16_OUTPUT=' + dir);
