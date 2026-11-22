@@ -4,6 +4,7 @@ export type PublicMedia = {
   sourceUrl?: string;
   url: string;
   alt?: string;
+  caption?: string;
   width?: number;
   height?: number;
   mimeType?: string;
