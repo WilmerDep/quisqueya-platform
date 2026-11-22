@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ContentRecordStatus, ContentSourceProvider, type Experience, type Prisma } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma.service.js';
-import type { PublicExperience, PublicExperienceEditorialFlag } from './content.types.js';
+import type { PublicExperience, PublicExperienceEditorialFlag, PublicMedia } from './content.types.js';
 import { getExperienceFamilyConfig, resolveExperienceFamily } from './experience-families.js';
 
 @Injectable()
@@ -32,18 +32,18 @@ export class ContentPreviewService {
     width: number | null;
     height: number | null;
     mimeType: string | null;
-    caption: string | null;
-  }) {
+    caption?: string | null;
+  }): PublicMedia {
     return {
       id: row.id,
       sourceId: this.toNumericSourceId(row.sourceId),
       sourceUrl: row.sourceUrl ?? undefined,
       url: row.publicUrl,
       alt: row.altText ?? undefined,
+      caption: row.caption ?? undefined,
       width: row.width ?? undefined,
       height: row.height ?? undefined,
       mimeType: row.mimeType ?? undefined,
-      caption: row.caption ?? undefined,
     };
   }
 

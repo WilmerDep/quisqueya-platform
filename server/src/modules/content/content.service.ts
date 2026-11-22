@@ -21,6 +21,18 @@ import {
 type ExperienceRow = Prisma.ExperienceGetPayload<Record<string, never>>;
 type DestinationRow = Prisma.DestinationGetPayload<Record<string, never>>;
 
+const PUBLIC_MEDIA_SELECT = {
+  id: true,
+  sourceId: true,
+  sourceUrl: true,
+  publicUrl: true,
+  altText: true,
+  caption: true,
+  width: true,
+  height: true,
+  mimeType: true,
+} as const;
+
 @Injectable()
 export class ContentService {
   constructor(private readonly prisma: PrismaService) {}
@@ -136,6 +148,7 @@ export class ContentService {
     sourceUrl: string | null;
     publicUrl: string;
     altText: string | null;
+    caption?: string | null;
     width: number | null;
     height: number | null;
     mimeType: string | null;
@@ -146,6 +159,7 @@ export class ContentService {
       sourceUrl: row.sourceUrl ?? undefined,
       url: row.publicUrl,
       alt: row.altText ?? undefined,
+      caption: row.caption ?? undefined,
       width: row.width ?? undefined,
       height: row.height ?? undefined,
       mimeType: row.mimeType ?? undefined,
@@ -158,16 +172,7 @@ export class ContentService {
 
     const rows = await this.prisma.mediaAsset.findMany({
       where: { id: { in: mediaIds } },
-      select: {
-        id: true,
-        sourceId: true,
-        sourceUrl: true,
-        publicUrl: true,
-        altText: true,
-        width: true,
-        height: true,
-        mimeType: true,
-      },
+      select: PUBLIC_MEDIA_SELECT,
     });
 
     return new Map(rows.map(row => [row.id, this.mapMedia(row)]));
@@ -182,16 +187,7 @@ export class ContentService {
         sourceProvider: ContentSourceProvider.WORDPRESS,
         sourceId: { in: normalized.map(String) },
       },
-      select: {
-        id: true,
-        sourceId: true,
-        sourceUrl: true,
-        publicUrl: true,
-        altText: true,
-        width: true,
-        height: true,
-        mimeType: true,
-      },
+      select: PUBLIC_MEDIA_SELECT,
     });
 
     return new Map(
@@ -515,16 +511,7 @@ export class ContentService {
   async getMedia(): Promise<PublicMedia[]> {
     const rows = await this.prisma.mediaAsset.findMany({
       orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        sourceId: true,
-        sourceUrl: true,
-        publicUrl: true,
-        altText: true,
-        width: true,
-        height: true,
-        mimeType: true,
-      },
+      select: PUBLIC_MEDIA_SELECT,
     });
     return rows.map(row => this.mapMedia(row));
   }
